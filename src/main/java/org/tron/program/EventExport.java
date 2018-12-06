@@ -65,7 +65,11 @@ public class EventExport {
       eventExport.initAllContract();
 
       AtomicLong latestBlockNumber = new AtomicLong(0);
-      dataSource.allValues().iterator().forEachRemaining(item -> {
+      AtomicLong count = new AtomicLong(0);
+
+
+      dataSource.allKeys().parallelStream().forEach(key -> {
+        byte[] item = dataSource.getData(key);
         TransactionInfo transactionInfo = null;
         try {
           transactionInfo = TransactionInfo.parseFrom(item).toBuilder().build();
@@ -80,6 +84,10 @@ public class EventExport {
               transactionInfo.getBlockTimeStamp(),
               new TransactionInfoCapsule(transactionInfo)
           );
+
+          if(count.getAndIncrement() % 10000 == 0) {
+            System.out.println(count.get());
+          }
         } catch (Exception e) {
           e.printStackTrace();
         }
