@@ -72,7 +72,6 @@ public class WalletOnSolidity {
   }
 
   public void futureGet(Runnable runnable) {
-    logger.info(executorService.toString());
     ListenableFuture<?> future = executorService.submit(() -> {
       try {
         dbManager.setMode(false);
