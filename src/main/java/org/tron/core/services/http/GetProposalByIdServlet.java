@@ -47,7 +47,7 @@ public class GetProposalByIdServlet extends HttpServlet {
           .collect(Collectors.joining(System.lineSeparator()));
       Util.checkBodySize(input);
       JSONObject jsonObject = JSONObject.parseObject(input);
-      long id = jsonObject.getLong("id");
+      long id = Util.getJsonLongValue(jsonObject, "id");
       Proposal reply = wallet.getProposalById(ByteString.copyFrom(ByteArray.fromLong(id)));
       if (reply != null) {
         response.getWriter().println(JsonFormat.printToString(reply));

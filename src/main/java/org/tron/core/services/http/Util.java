@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import java.math.BigDecimal;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.api.GrpcAPI.BlockList;
@@ -585,5 +587,10 @@ public class Util {
     if (body.getBytes().length > args.getMaxMessageSize()) {
       throw new Exception("body size is too big, limit is " + args.getMaxMessageSize());
     }
+  }
+
+  public static long getJsonLongValue(final JSONObject jsonObject, final String key) {
+    BigDecimal bigDecimal = jsonObject.getBigDecimal(key);
+    return bigDecimal.longValueExact();
   }
 }
