@@ -20,18 +20,26 @@ public class GetNowBlockServlet extends HttpServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
+      long time1, time2, time3, time4;
+      time1 = System.currentTimeMillis();
       Block reply = wallet.getNowBlock();
+      time2 = System.currentTimeMillis();
       if (reply != null) {
-        response.getWriter().println(Util.printBlock(reply));
+        String ret = Util.printBlock(reply);
+        time3 = System.currentTimeMillis();
+        response.getWriter().println(ret);
       } else {
+        time3 = System.currentTimeMillis();
         response.getWriter().println("{}");
       }
+      time4 = System.currentTimeMillis();
+      logger.info("all={}, getnowblock={}, printblock={}, println={}", time4 - time1, time2-time1, time3 - time2, time4 - time3);
     } catch (Exception e) {
-      logger.debug("Exception: {}", e.getMessage());
+      logger.error("Exception: {}", e.getMessage());
       try {
         response.getWriter().println(Util.printErrorMsg(e));
       } catch (IOException ioe) {
-        logger.debug("IOException: {}", ioe.getMessage());
+        logger.error("IOException: {}", ioe.getMessage());
       }
     }
   }

@@ -72,22 +72,24 @@ public class WalletOnSolidity {
   }
 
   public void futureGet(Runnable runnable) {
+    logger.info(executorService.toString());
     ListenableFuture<?> future = executorService.submit(() -> {
       try {
         dbManager.setMode(false);
         runnable.run();
       } catch (Exception e) {
-        logger.info("futureGet " + e.getMessage());
+        logger.error("futureGet run exception", e);
       }
     });
 
     try {
-      future.get(1000, TimeUnit.MILLISECONDS);
+//      future.get(1000, TimeUnit.MILLISECONDS);
+      future.get();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     } catch (ExecutionException ignored) {
-    } catch (TimeoutException e) {
-      logger.info("futureGet time out");
-    }
+    }// catch (TimeoutException e) {
+     // logger.info("futureGet time out", e);
+    //}
   }
 }
