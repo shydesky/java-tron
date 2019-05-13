@@ -203,7 +203,7 @@ public class ContractUnknownException {
     logger.info("afterenergyLimit:" + aftereenergyLimit);
     Assert.assertThat(s, containsString("REVERT opcode executed"));
     Assert.assertFalse(energyFee == 1000000000);
-
+    logger.info("fee:" + fee);
     Assert.assertTrue(beforeBalance - fee == afterBalance);
 
   }
