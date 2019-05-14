@@ -103,6 +103,7 @@ import org.tron.core.exception.UnLinkedBlockException;
 import org.tron.core.exception.VMIllegalException;
 import org.tron.core.exception.ValidateScheduleException;
 import org.tron.core.exception.ValidateSignatureException;
+import org.tron.core.pbft.PbftMessageHandle;
 import org.tron.core.services.WitnessService;
 import org.tron.core.witness.ProposalController;
 import org.tron.core.witness.WitnessController;
@@ -228,6 +229,9 @@ public class Manager {
   @Autowired
   private TrieService trieService;
   private Set<String> ownerAddressSet = new HashSet<>();
+
+  @Autowired
+  private PbftMessageHandle pbftMessageHandle;
 
   public WitnessStore getWitnessStore() {
     return this.witnessStore;
@@ -1071,6 +1075,8 @@ public class Manager {
         ownerAddressSet.addAll(result);
       }
     }
+    //pbft
+    pbftMessageHandle.onPrePrepare(block);
     logger.info("pushBlock block number:{}, cost/txs:{}/{}",
         block.getNum(),
         System.currentTimeMillis() - start,

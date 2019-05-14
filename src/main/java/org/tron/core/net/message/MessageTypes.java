@@ -49,6 +49,8 @@ public enum MessageTypes {
 
   DISCOVER_PEERS(0x33),
 
+  PBFT_MSG(0x34),
+
   LAST(0xFF);
 
   private final int type;
