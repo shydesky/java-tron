@@ -24,8 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.spongycastle.util.encoders.Hex;
 import org.tron.common.utils.ByteUtil;
-import org.tron.protos.Protocol.TransactionInfo.Log;
-
+import org.tron.protos.Protocol.TransactionResult.Log;
 /**
  * @author Roman Mandeleil
  * @since 19.11.2014
@@ -110,5 +109,6 @@ public class LogInfo {
     ByteString data = ByteString.copyFrom(logInfo.getData());
     return Log.newBuilder().setAddress(address).addAllTopics(topics).setData(data).build();
   }
+
 
 }
