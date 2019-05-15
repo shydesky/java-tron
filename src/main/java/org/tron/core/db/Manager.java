@@ -835,8 +835,10 @@ public class Manager {
     processBlock(block);
     this.blockStore.put(block.getBlockId().getBytes(), block);
     this.blockIndexStore.put(block.getBlockId());
-    this.resultStore.put(block.getBlockId().getBytes(), block.getResult());
-
+    if (block.getTransactions().size() != 0) {
+      this.resultStore.put(block.getBlockId().getBytes(), block.getResult());
+    }
+    
     updateFork(block);
     if (System.currentTimeMillis() - block.getTimeStamp() >= 60_000) {
       revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MAX_FLUSH_COUNT);
