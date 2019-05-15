@@ -1507,14 +1507,18 @@ public class Manager {
         Thread.currentThread().interrupt();
       }
     }
+    TransactionResultListCapsule transationResultCapsule =
+        new TransactionResultListCapsule(block);
 
     for (TransactionCapsule transactionCapsule : block.getTransactions()) {
       transactionCapsule.setBlockNum(block.getNum());
       if (block.generatedByMyself) {
         transactionCapsule.setVerified(true);
       }
-      processTransaction(transactionCapsule, block);
+      TransactionResult result = processTransaction(transactionCapsule, block);
+      transationResultCapsule.addTransactionResult(result);
     }
+    block.setResult(transationResultCapsule);
 
     boolean needMaint = needMaintenance(block.getTimeStamp());
     if (needMaint) {
