@@ -1,6 +1,8 @@
 package org.tron.core.db;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.capsule.TransactionResultListCapsule;
@@ -9,7 +11,8 @@ import org.tron.core.capsule.TransactionResultListCapsule;
 @Component
 public class TransactionResultListStore  extends TronStoreWithRevoking<TransactionResultListCapsule>  {
 
-  protected TransactionResultListStore(String dbName) {
+  @Autowired
+  public TransactionResultListStore(@Value("transactionResultListStore") String dbName) {
     super(dbName);
   }
 }
