@@ -15,4 +15,6 @@ public class TransactionResultListStore  extends TronStoreWithRevoking<Transacti
   public TransactionResultListStore(@Value("transactionResultListStore") String dbName) {
     super(dbName);
   }
+
+
 }

@@ -1158,6 +1158,13 @@ public class Wallet {
       block = dbManager.getBlockStore().get(BlockId.toByteArray()).getInstance();
     } catch (StoreException e) {
     }
+
+    int tmp1 = 0;
+    for (Transaction trx : block.getTransactionsList()) {
+      TransactionInfoCapsule tmp = dbManager.getTransactionHistoryStore().getUnchecked(new TransactionCapsule(trx).getTransactionId().getBytes());
+      tmp1 += tmp.getInstance().getSerializedSize();
+    }
+
     return block;
   }
 
