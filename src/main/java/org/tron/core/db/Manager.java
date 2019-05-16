@@ -1082,19 +1082,19 @@ public class Manager {
     if (block.getNum() != 1) {
       slot = witnessController.getSlotAtTime(block.getTimeStamp());
     }
-    for (int i = 1; i < slot; ++i) {
-      if (!witnessController.getScheduledWitness(i).equals(block.getWitnessAddress())) {
-        WitnessCapsule w =
-            this.witnessStore
-                .getUnchecked(
-                    StringUtil.createDbKey(witnessController.getScheduledWitness(i)));
-        w.setTotalMissed(w.getTotalMissed() + 1);
-        this.witnessStore.put(w.createDbKey(), w);
-        logger.info(
-            "{} miss a block. totalMissed = {}", w.createReadableString(), w.getTotalMissed());
-      }
-      this.dynamicPropertiesStore.applyBlock(false);
-    }
+//    for (int i = 1; i < slot; ++i) {
+//      if (!witnessController.getScheduledWitness(i).equals(block.getWitnessAddress())) {
+//        WitnessCapsule w =
+//            this.witnessStore
+//                .getUnchecked(
+//                    StringUtil.createDbKey(witnessController.getScheduledWitness(i)));
+//        w.setTotalMissed(w.getTotalMissed() + 1);
+//        this.witnessStore.put(w.createDbKey(), w);
+//        logger.info(
+//            "{} miss a block. totalMissed = {}", w.createReadableString(), w.getTotalMissed());
+//      }
+//      this.dynamicPropertiesStore.applyBlock(false);
+//    }
     this.dynamicPropertiesStore.applyBlock(true);
 
     if (slot <= 0) {
@@ -1199,8 +1199,8 @@ public class Manager {
       return false;
     }
 
-    validateTapos(trxCap);
-    validateCommon(trxCap);
+//    validateTapos(trxCap);
+//    validateCommon(trxCap);
 
     if (trxCap.getInstance().getRawData().getContractList().size() != 1) {
       throw new ContractSizeNotEqualToOneException(
@@ -1931,6 +1931,27 @@ public class Manager {
       }
     }
   }
+
+
+  public void insertWitness(byte[] keyAddress, long voteCount, int idx) {
+    ByteString address = ByteString.copyFrom(keyAddress);
+
+    final AccountCapsule accountCapsule;
+    if (!this.accountStore.has(keyAddress)) {
+      accountCapsule = new AccountCapsule(ByteString.EMPTY,
+          address, AccountType.AssetIssue, 0L);
+    } else {
+      accountCapsule = this.accountStore.getUnchecked(keyAddress);
+    }
+    accountCapsule.setIsWitness(true);
+    this.accountStore.put(keyAddress, accountCapsule);
+
+    final WitnessCapsule witnessCapsule =
+        new WitnessCapsule(address, voteCount, "mock_witness_" + idx);
+    witnessCapsule.setIsJobs(true);
+    this.witnessStore.put(keyAddress, witnessCapsule);
+  }
+
 
   private void postContractTrigger(final TransactionTrace trace, boolean remove) {
     if (eventPluginLoaded &&
