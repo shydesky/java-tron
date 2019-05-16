@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.core.exception.BadItemException;
 import org.tron.core.exception.ItemNotFoundException;
-import org.tron.core.pbft.message.PbftMessageCapsule;
+import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
 @Slf4j
 @Component
@@ -25,7 +25,7 @@ public class PbftManager {
   private volatile boolean isRun = false;
 
   // 消息队列
-  private BlockingQueue<PbftMessageCapsule> messageQueue = Queues.newLinkedBlockingQueue();
+  private BlockingQueue<PbftBlockMessageCapsule> messageQueue = Queues.newLinkedBlockingQueue();
   // 预准备阶段投票信息
   private Set<String> preVotes = Sets.newConcurrentHashSet();
   // 准备阶段投票信息
@@ -35,14 +35,14 @@ public class PbftManager {
   private Set<String> commitVotes = Sets.newConcurrentHashSet();
   private AtomicLongMap<String> agreeCommit = AtomicLongMap.create();
   // 成功处理过的请求
-  private Map<String, PbftMessageCapsule> doneMsg = Maps.newConcurrentMap();
+  private Map<String, PbftBlockMessageCapsule> doneMsg = Maps.newConcurrentMap();
   // 作为主节点受理过的请求
-  private Map<String, PbftMessageCapsule> applyMsg = Maps.newConcurrentMap();
+  private Map<String, PbftBlockMessageCapsule> applyMsg = Maps.newConcurrentMap();
 
   @Autowired
   private PbftMessageHandle pbftMessageHandle;
 
-  public boolean doAction(PbftMessageCapsule msg)
+  public boolean doAction(PbftBlockMessageCapsule msg)
       throws SignatureException, BadItemException, ItemNotFoundException {
     if (!isRun) {
       return false;
@@ -50,6 +50,9 @@ public class PbftManager {
     if (msg != null) {
       logger.info("收到消息:{}", msg);
       switch (msg.getPbftMessage().getPbftMsgType()) {
+        case PP:
+          pbftMessageHandle.onPrePrepare(msg);
+          break;
         case PA:
           // prepare
           pbftMessageHandle.onPrepare(msg);

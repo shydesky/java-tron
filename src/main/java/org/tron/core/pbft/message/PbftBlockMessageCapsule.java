@@ -12,19 +12,21 @@ import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.config.args.LocalWitnesses;
+import org.tron.core.exception.P2pException;
+import org.tron.core.exception.P2pException.TypeEnum;
 import org.tron.core.net.message.MessageTypes;
 import org.tron.protos.Protocol.PbftMessage;
 import org.tron.protos.Protocol.PbftMessage.Type;
 
-public class PbftMessageCapsule extends Message {
+public class PbftBlockMessageCapsule extends Message {
 
   private PbftMessage pbftMessage;
 
-  public PbftMessageCapsule() {
+  public PbftBlockMessageCapsule() {
   }
 
-  public PbftMessageCapsule(byte[] data) throws Exception {
-    super(MessageTypes.PBFT_MSG.asByte(), data);
+  public PbftBlockMessageCapsule(byte[] data) throws Exception {
+    super(MessageTypes.PBFT_BLOCK_MSG.asByte(), data);
     this.pbftMessage = PbftMessage.parseFrom(getCodedInputStream(data));
     if (isFilter()) {
       compareBytes(data, pbftMessage.toByteArray());
@@ -40,31 +42,40 @@ public class PbftMessageCapsule extends Message {
     return pbftMessage;
   }
 
-  public PbftMessageCapsule setPbftMessage(PbftMessage pbftMessage) {
+  public PbftBlockMessageCapsule setPbftMessage(PbftMessage pbftMessage) {
     this.pbftMessage = pbftMessage;
     return this;
   }
 
-  public PbftMessageCapsule setData(byte[] data) {
+  public PbftBlockMessageCapsule setData(byte[] data) {
     this.data = data;
     return this;
   }
 
-  public PbftMessageCapsule setType(byte type) {
+  public PbftBlockMessageCapsule setType(byte type) {
     this.type = type;
     return this;
   }
 
-  public String getKey() {
-    return getBlockNum() + "_" + Hex.toHexString(pbftMessage.getPublicKey().toByteArray());
+  public String getKey() throws P2pException {
+    return getNo() + "_" + Hex.toHexString(pbftMessage.getPublicKey().toByteArray());
   }
 
-  public long getBlockNum() {
+  public String getDataKey() throws P2pException {
+    return getNo() + "_" + Hex.toHexString(getPbftMessage().getData().toByteArray());
+  }
+
+  public long getNo() throws P2pException {
+    if (MessageTypes.fromByte(type) == MessageTypes.PBFT_BLOCK_MSG) {
+
+    } else {
+      throw new P2pException(TypeEnum.BAD_MESSAGE, "don't support pbft message");
+    }
     return pbftMessage.getBlockNum();
   }
 
-  public static PbftMessageCapsule buildVoteMessage(BlockCapsule blockCapsule) {
-    PbftMessageCapsule pbftMessageCapsule = new PbftMessageCapsule();
+  public static PbftBlockMessageCapsule buildVoteMessage(BlockCapsule blockCapsule) {
+    PbftBlockMessageCapsule pbftMessageCapsule = new PbftBlockMessageCapsule();
     LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     ECDSASignature signature = ecKey.sign(blockCapsule.getBlockId().getBytes());
@@ -77,34 +88,43 @@ public class PbftMessageCapsule extends Message {
         .setData(blockCapsule.getBlockId().getByteString())
         .setSign(ByteString.copyFrom(signature.toByteArray()));
     PbftMessage message = builder.build();
-    return pbftMessageCapsule.setType(MessageTypes.PBFT_MSG.asByte())
+    return pbftMessageCapsule.setType(MessageTypes.PBFT_BLOCK_MSG.asByte())
         .setPbftMessage(message).setData(message.toByteArray());
   }
 
-  public static PbftMessageCapsule buildCommitMessage(PbftMessageCapsule paMessage) {
-    PbftMessageCapsule pbftMessageCapsule = new PbftMessageCapsule();
+  public static PbftBlockMessageCapsule buildPrePareMessage(PbftBlockMessageCapsule ppMessage) {
+    return buildMessageCapsule(ppMessage, Type.PA);
+  }
+
+  public static PbftBlockMessageCapsule buildCommitMessage(PbftBlockMessageCapsule paMessage) {
+    return buildMessageCapsule(paMessage, Type.CM);
+  }
+
+  public static PbftBlockMessageCapsule buildMessageCapsule(PbftBlockMessageCapsule paMessage,
+      Type type) {
+    PbftBlockMessageCapsule pbftMessageCapsule = new PbftBlockMessageCapsule();
     LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     ECDSASignature signature = ecKey.sign(paMessage.getPbftMessage().getData().toByteArray());
     PbftMessage.Builder builder = PbftMessage.newBuilder();
     builder.setBlockId(paMessage.getPbftMessage().getBlockId())
         .setBlockNum(paMessage.getPbftMessage().getBlockNum())
-        .setPbftMsgType(Type.CM)
+        .setPbftMsgType(type)
         .setTime(System.currentTimeMillis())
         .setPublicKey(ByteString.copyFrom(localWitnesses.getPublicKey()))
         .setData(paMessage.getPbftMessage().getData())
         .setSign(ByteString.copyFrom(signature.toByteArray()));
     PbftMessage message = builder.build();
-    return pbftMessageCapsule.setType(MessageTypes.PBFT_MSG.asByte())
+    return pbftMessageCapsule.setType(MessageTypes.PBFT_BLOCK_MSG.asByte())
         .setPbftMessage(message).setData(message.toByteArray());
   }
 
-  public boolean validateSignature(PbftMessageCapsule pbftMessageCapsule, BlockCapsule blockCapsule)
+
+  public boolean validateSignature(PbftBlockMessageCapsule pbftMessageCapsule)
       throws SignatureException {
     byte[] sigAddress = ECKey.signatureToAddress(pbftMessageCapsule.getData(),
         TransactionCapsule.getBase64FromByteString(pbftMessageCapsule.getPbftMessage().getSign()));
-    byte[] witnessAccountAddress = blockCapsule.getInstance().getBlockHeader().getRawData()
-        .getWitnessAddress().toByteArray();
+    byte[] witnessAccountAddress = pbftMessageCapsule.getPbftMessage().getPublicKey().toByteArray();
     return Arrays.equals(sigAddress, witnessAccountAddress);
   }
 

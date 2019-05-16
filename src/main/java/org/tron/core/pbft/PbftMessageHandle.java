@@ -15,7 +15,6 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.common.overlay.server.SyncPool;
@@ -25,7 +24,8 @@ import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
 import org.tron.core.exception.BadItemException;
 import org.tron.core.exception.ItemNotFoundException;
-import org.tron.core.pbft.message.PbftMessageCapsule;
+import org.tron.core.exception.P2pException;
+import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 import org.tron.core.witness.WitnessController;
 
 @Slf4j
@@ -49,7 +49,7 @@ public class PbftMessageHandle {
   private Map<String, Long> timeOutsReq = Maps.newHashMap();
 
   // 成功处理过的请求
-  private Map<Long, PbftMessageCapsule> doneMsg = Maps.newConcurrentMap();
+  private Map<Long, PbftBlockMessageCapsule> doneMsg = Maps.newConcurrentMap();
 
   private Timer timer;
 
@@ -60,11 +60,11 @@ public class PbftMessageHandle {
   @Autowired
   private WitnessController witnessController;
 
-  public void onPrePrepare(BlockCapsule blockCapsule) {
+  public void onPrePrepare(PbftBlockMessageCapsule message) throws P2pException {
     if (!checkIsCanSendPrePrepareMsg()) {
       return;
     }
-    long key = blockCapsule.getNum();
+    long key = message.getNo();
     if (preVotes.contains(key)) {
       // 说明已经发起过，不能重复发起，同一高度只能发起一次投票
       return;
@@ -73,14 +73,14 @@ public class PbftMessageHandle {
     // 启动超时控制
     timeOuts.put(key, System.currentTimeMillis());
     // 进入准备阶段
-    PbftMessageCapsule paMessage = PbftMessageCapsule.buildVoteMessage(blockCapsule);
+    PbftBlockMessageCapsule paMessage = PbftBlockMessageCapsule.buildPrePareMessage(message);
     syncPool.getActivePeers().forEach(peerConnection -> {
       peerConnection.sendMessage(paMessage);
     });
   }
 
-  public void onPrepare(PbftMessageCapsule message)
-      throws SignatureException, BadItemException, ItemNotFoundException {
+  public void onPrepare(PbftBlockMessageCapsule message)
+      throws SignatureException, P2pException {
     if (!checkMsg(message)) {
       logger.info("异常消息:{}", message);
       return;
@@ -88,7 +88,7 @@ public class PbftMessageHandle {
 
     String key = message.getKey();
 
-    if (!preVotes.contains(message.getBlockNum())) {
+    if (!preVotes.contains(message.getNo())) {
       // 必须先过预准备
       return;
     }
@@ -99,12 +99,12 @@ public class PbftMessageHandle {
     pareVotes.add(key);
 
     // 票数 +1
-    long agCou = agreePare.incrementAndGet(getDataKey(message));
+    long agCou = agreePare.incrementAndGet(message.getDataKey());
     if (agCou >= 2 * PbftManager.maxf + 1) {
       pareVotes.remove(key);
       // 进入提交阶段
-      PbftMessageCapsule cmMessage = PbftMessageCapsule.buildCommitMessage(message);
-      doneMsg.put(message.getBlockNum(), cmMessage);
+      PbftBlockMessageCapsule cmMessage = PbftBlockMessageCapsule.buildCommitMessage(message);
+      doneMsg.put(message.getNo(), cmMessage);
       syncPool.getActivePeers().forEach(peerConnection -> {
         peerConnection.sendMessage(cmMessage);
       });
@@ -112,8 +112,8 @@ public class PbftMessageHandle {
     // 后续的票数肯定凑不满，超时自动清除
   }
 
-  public void onCommit(PbftMessageCapsule message)
-      throws SignatureException, BadItemException, ItemNotFoundException {
+  public void onCommit(PbftBlockMessageCapsule message)
+      throws SignatureException, P2pException {
     if (!checkMsg(message)) {
       return;
     }
@@ -129,26 +129,25 @@ public class PbftMessageHandle {
     }
     commitVotes.add(key);
     // 票数 +1
-    long agCou = agreeCommit.incrementAndGet(getDataKey(message));
+    long agCou = agreeCommit.incrementAndGet(message.getDataKey());
     if (agCou >= 2 * PbftManager.maxf + 1) {
-      remove(message.getBlockNum());
+      remove(message.getNo());
       //commit,
 
     }
   }
 
-  public void onRequestData(PbftMessageCapsule message) {
+  public void onRequestData(PbftBlockMessageCapsule message) {
 
   }
 
-  public void onChangeView(PbftMessageCapsule message) {
+  public void onChangeView(PbftBlockMessageCapsule message) {
 
   }
 
-  public boolean checkMsg(PbftMessageCapsule msg)
-      throws BadItemException, ItemNotFoundException, SignatureException {
-    return (msg.getPbftMessage().getBlockNum() == blockNum)
-        && msg.validateSignature(msg, getBlockByHash(msg.getPbftMessage().getBlockId()));
+  public boolean checkMsg(PbftBlockMessageCapsule msg)
+      throws SignatureException {
+    return (msg.getPbftMessage().getBlockNum() == blockNum) && msg.validateSignature(msg);
   }
 
   public boolean checkIsCanSendPrePrepareMsg() {
@@ -168,25 +167,20 @@ public class PbftMessageHandle {
     return result.get();
   }
 
-  private String getDataKey(PbftMessageCapsule message) {
-    return message.getBlockNum() + "_" + Hex
-        .toHexString(message.getPbftMessage().getBlockId().toByteArray());
-  }
-
   public BlockCapsule getBlockByHash(ByteString blockId)
       throws BadItemException, ItemNotFoundException {
     return manager.getBlockById(Sha256Hash.of((blockId.toByteArray())));
   }
 
   // 清理请求相关状态
-  private void remove(long blockNum) {
-    String pre = String.valueOf(blockNum) + "_";
-    preVotes.remove(blockNum);
+  private void remove(long no) {
+    String pre = String.valueOf(no) + "_";
+    preVotes.remove(no);
     pareVotes.removeIf((vp) -> StringUtils.startsWith(vp, pre));
     commitVotes.removeIf((vp) -> StringUtils.startsWith(vp, pre));
     agreePare.asMap().keySet().removeIf((vp) -> StringUtils.startsWith(vp, pre));
     agreeCommit.asMap().keySet().removeIf((vp) -> StringUtils.startsWith(vp, pre));
-    timeOuts.remove(blockNum);
+    timeOuts.remove(no);
   }
 
   /**
