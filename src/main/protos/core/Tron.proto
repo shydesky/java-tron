@@ -681,7 +681,6 @@ message PbftMessage {
   int64 blockNum = 2;
   int64 time = 3;
   bytes publicKey = 4;
-  bytes blockId = 5;
-  bytes data = 6;
-  bytes sign = 7;
+  bytes data = 5;
+  bytes sign = 6;
 }

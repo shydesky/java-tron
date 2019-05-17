@@ -1076,7 +1076,7 @@ public class Manager {
       }
     }
     //pbft
-    pbftMessageHandle.onPrePrepare(block);
+//    pbftMessageHandle.onPrePrepare(block);
     logger.info("pushBlock block number:{}, cost/txs:{}/{}",
         block.getNum(),
         System.currentTimeMillis() - start,

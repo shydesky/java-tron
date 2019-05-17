@@ -11,8 +11,7 @@ import java.util.concurrent.BlockingQueue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tron.core.exception.BadItemException;
-import org.tron.core.exception.ItemNotFoundException;
+import org.tron.core.exception.P2pException;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
 @Slf4j
@@ -43,7 +42,7 @@ public class PbftManager {
   private PbftMessageHandle pbftMessageHandle;
 
   public boolean doAction(PbftBlockMessageCapsule msg)
-      throws SignatureException, BadItemException, ItemNotFoundException {
+      throws SignatureException, P2pException {
     if (!isRun) {
       return false;
     }

@@ -62,16 +62,16 @@ public class PbftBlockMessageCapsule extends Message {
   }
 
   public String getDataKey() throws P2pException {
-    return getNo() + "_" + Hex.toHexString(getPbftMessage().getData().toByteArray());
+    return getNo() + "_" + Hex.toHexString(pbftMessage.getData().toByteArray());
   }
 
-  public long getNo() throws P2pException {
-    if (MessageTypes.fromByte(type) == MessageTypes.PBFT_BLOCK_MSG) {
-
+  public String getNo() throws P2pException {
+    MessageTypes messageTypes = MessageTypes.fromByte(type);
+    if (messageTypes == MessageTypes.PBFT_BLOCK_MSG) {
+      return pbftMessage.getBlockNum() + "_" + messageTypes.asByte();
     } else {
       throw new P2pException(TypeEnum.BAD_MESSAGE, "don't support pbft message");
     }
-    return pbftMessage.getBlockNum();
   }
 
   public static PbftBlockMessageCapsule buildVoteMessage(BlockCapsule blockCapsule) {
@@ -80,8 +80,7 @@ public class PbftBlockMessageCapsule extends Message {
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     ECDSASignature signature = ecKey.sign(blockCapsule.getBlockId().getBytes());
     PbftMessage.Builder builder = PbftMessage.newBuilder();
-    builder.setBlockId(blockCapsule.getBlockId().getByteString())
-        .setBlockNum(blockCapsule.getNum())
+    builder.setBlockNum(blockCapsule.getNum())
         .setPbftMsgType(Type.PA)
         .setTime(System.currentTimeMillis())
         .setPublicKey(ByteString.copyFrom(localWitnesses.getPublicKey()))
@@ -107,8 +106,7 @@ public class PbftBlockMessageCapsule extends Message {
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     ECDSASignature signature = ecKey.sign(paMessage.getPbftMessage().getData().toByteArray());
     PbftMessage.Builder builder = PbftMessage.newBuilder();
-    builder.setBlockId(paMessage.getPbftMessage().getBlockId())
-        .setBlockNum(paMessage.getPbftMessage().getBlockNum())
+    builder.setBlockNum(paMessage.getPbftMessage().getBlockNum())
         .setPbftMsgType(type)
         .setTime(System.currentTimeMillis())
         .setPublicKey(ByteString.copyFrom(localWitnesses.getPublicKey()))

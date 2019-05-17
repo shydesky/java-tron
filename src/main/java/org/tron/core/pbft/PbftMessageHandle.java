@@ -35,7 +35,7 @@ public class PbftMessageHandle {
   private long blockNum;
 
   // 预准备阶段投票信息
-  private Set<Long> preVotes = Sets.newConcurrentHashSet();
+  private Set<String> preVotes = Sets.newConcurrentHashSet();
   // 准备阶段投票信息
   private Set<String> pareVotes = Sets.newConcurrentHashSet();
   private AtomicLongMap<String> agreePare = AtomicLongMap.create();
@@ -44,12 +44,12 @@ public class PbftMessageHandle {
   private AtomicLongMap<String> agreeCommit = AtomicLongMap.create();
 
   // pbft超时
-  private Map<Long, Long> timeOuts = Maps.newHashMap();
+  private Map<String, Long> timeOuts = Maps.newHashMap();
   // 请求超时，view加1，重试
   private Map<String, Long> timeOutsReq = Maps.newHashMap();
 
   // 成功处理过的请求
-  private Map<Long, PbftBlockMessageCapsule> doneMsg = Maps.newConcurrentMap();
+  private Map<String, PbftBlockMessageCapsule> doneMsg = Maps.newConcurrentMap();
 
   private Timer timer;
 
@@ -64,7 +64,7 @@ public class PbftMessageHandle {
     if (!checkIsCanSendPrePrepareMsg()) {
       return;
     }
-    long key = message.getNo();
+    String key = message.getNo();
     if (preVotes.contains(key)) {
       // 说明已经发起过，不能重复发起，同一高度只能发起一次投票
       return;
@@ -173,7 +173,7 @@ public class PbftMessageHandle {
   }
 
   // 清理请求相关状态
-  private void remove(long no) {
+  private void remove(String no) {
     String pre = String.valueOf(no) + "_";
     preVotes.remove(no);
     pareVotes.removeIf((vp) -> StringUtils.startsWith(vp, pre));
@@ -187,8 +187,8 @@ public class PbftMessageHandle {
    * 检测超时情况
    */
   private void checkTimer() {
-    List<Long> remo = Lists.newArrayList();
-    for (Entry<Long, Long> item : timeOuts.entrySet()) {
+    List<String> remo = Lists.newArrayList();
+    for (Entry<String, Long> item : timeOuts.entrySet()) {
       if (System.currentTimeMillis() - item.getValue() > 300) {
         // 超时还没达成一致，则本次投票无效
         logger.info("投票无效:{}", item.getKey());
