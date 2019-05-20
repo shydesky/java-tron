@@ -59,6 +59,8 @@ public class PbftMessageHandle {
   private SyncPool syncPool;
   @Autowired
   private WitnessController witnessController;
+  @Autowired
+  private PbftMessageAction pbftMessageAction;
 
   public void onPrePrepare(PbftBlockMessageCapsule message) throws P2pException {
     if (!checkIsCanSendPrePrepareMsg()) {
@@ -133,7 +135,7 @@ public class PbftMessageHandle {
     if (agCou >= 2 * PbftManager.maxf + 1) {
       remove(message.getNo());
       //commit,
-
+      pbftMessageAction.action(message);
     }
   }
 
