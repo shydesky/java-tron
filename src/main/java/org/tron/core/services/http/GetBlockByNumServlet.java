@@ -1,6 +1,8 @@
 package org.tron.core.services.http;
 
+import com.google.common.util.concurrent.RateLimiter;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +21,18 @@ public class GetBlockByNumServlet extends HttpServlet {
   @Autowired
   private Wallet wallet;
 
+  private static RateLimiter rateLimiter = RateLimiter.create(50);
+
+  private boolean tryAcquire() {
+    return rateLimiter.tryAcquire(1, 1000, TimeUnit.MILLISECONDS);
+  }
+
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
+    if (tryAcquire() == false) {
+      logger.info("ratelimit test");
+      return;
+    }
+
     try {
       long num = Long.parseLong(request.getParameter("num"));
       Block reply = wallet.getBlockByNum(num);
@@ -39,6 +52,11 @@ public class GetBlockByNumServlet extends HttpServlet {
   }
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
+    if (tryAcquire() == false) {
+      logger.info("ratelimit test");
+      return;
+    }
+
     try {
       String input = request.getReader().lines()
           .collect(Collectors.joining(System.lineSeparator()));
