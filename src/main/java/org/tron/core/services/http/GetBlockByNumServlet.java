@@ -18,7 +18,7 @@ import org.tron.protos.Protocol.Block;
 @Slf4j(topic = "API")
 public class GetBlockByNumServlet extends HttpServlet {
 
-  private RateLimiter rateLimiter = RateLimiter.create(500);
+  private RateLimiter rateLimiter = RateLimiter.create(200);
 
   private boolean tryAcquire() {
     return rateLimiter.tryAcquire(1, 1000, TimeUnit.MILLISECONDS);
@@ -29,7 +29,7 @@ public class GetBlockByNumServlet extends HttpServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     if (tryAcquire() == false) {
-      logger.debug("ratelimit test");
+      logger.info("ratelimit test");
       return;
     }
 
@@ -53,7 +53,7 @@ public class GetBlockByNumServlet extends HttpServlet {
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
     if (tryAcquire() == false) {
-      logger.debug("ratelimit test");
+      logger.info("ratelimit test");
       return;
     }
     
