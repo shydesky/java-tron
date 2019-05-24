@@ -27,14 +27,19 @@ public class GetBlockByNumServlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
 
     try {
-      permit.acquire();
-      long num = Long.parseLong(request.getParameter("num"));
-      Block reply = wallet.getBlockByNum(num);
-      if (reply != null) {
-        response.getWriter().println(Util.printBlock(reply));
+      if (permit.tryAcquire()) {
+        long num = Long.parseLong(request.getParameter("num"));
+        Block reply = wallet.getBlockByNum(num);
+        if (reply != null) {
+          response.getWriter().println(Util.printBlock(reply));
+        } else {
+          response.getWriter().println("{}");
+        }
+        permit.release();
       } else {
-        response.getWriter().println("{}");
+        logger.info("release test");
       }
+
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {
@@ -42,25 +47,27 @@ public class GetBlockByNumServlet extends HttpServlet {
       } catch (IOException ioe) {
         logger.debug("IOException: {}", ioe.getMessage());
       }
-    } finally {
-      permit.release();
     }
 
   }
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
     try {
-      permit.acquire();
-      String input = request.getReader().lines()
-          .collect(Collectors.joining(System.lineSeparator()));
-      Util.checkBodySize(input);
-      NumberMessage.Builder build = NumberMessage.newBuilder();
-      JsonFormat.merge(input, build);
-      Block reply = wallet.getBlockByNum(build.getNum());
-      if (reply != null) {
-        response.getWriter().println(Util.printBlock(reply));
+      if (permit.tryAcquire()) {
+        String input = request.getReader().lines()
+            .collect(Collectors.joining(System.lineSeparator()));
+        Util.checkBodySize(input);
+        NumberMessage.Builder build = NumberMessage.newBuilder();
+        JsonFormat.merge(input, build);
+        Block reply = wallet.getBlockByNum(build.getNum());
+        if (reply != null) {
+          response.getWriter().println(Util.printBlock(reply));
+        } else {
+          response.getWriter().println("{}");
+        }
+        permit.release();
       } else {
-        response.getWriter().println("{}");
+        logger.info("release test");
       }
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
