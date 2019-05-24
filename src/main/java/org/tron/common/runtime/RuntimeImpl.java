@@ -679,6 +679,18 @@ public class RuntimeImpl implements Runtime {
       logger.info("timeout: {}", result.getException().getMessage());
     } catch (ContractValidateException e) {
       logger.info("when check constant, {}", e.getMessage());
+    } catch (Throwable e) {
+      program.spendAllEnergy();
+      result = program.getResult();
+      result.rejectInternalTransactions();
+      if (Objects.isNull(result.getException())) {
+        logger.error(e.getMessage(), e);
+        result.setException(new RuntimeException("Unknown Throwable"));
+      }
+      if (StringUtils.isEmpty(runtimeError)) {
+        runtimeError = result.getException().getMessage();
+      }
+      logger.info("runtime result is :{}", result.getException().getMessage());
     }
     trace.setBill(result.getEnergyUsed());
   }

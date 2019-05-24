@@ -22,24 +22,24 @@ public class GetBlockByNumServlet extends HttpServlet {
   @Autowired
   private Wallet wallet;
 
-//  private final Semaphore permit = new Semaphore(10, true);
+  private static Semaphore permit = new Semaphore(10, true);
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
 
     try {
-   //   if (permit.tryAcquire()) {
+      if (permit.tryAcquire(50, TimeUnit.MILLISECONDS)) {
         long num = Long.parseLong(request.getParameter("num"));
         Block reply = wallet.getBlockByNum(num);
         if (reply != null) {
           response.getWriter().println(Util.printBlock(reply));
         } else {
           response.getWriter().println("{}");
-//        }
-//        permit.release();
-//      } else {
-//        logger.info("release test");
-//      }
         }
+        permit.release();
+      } else {
+        logger.info("release test");
+      }
+
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {
@@ -53,7 +53,7 @@ public class GetBlockByNumServlet extends HttpServlet {
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
     try {
-     // if (permit.tryAcquire()) {
+      if (permit.tryAcquire(50, TimeUnit.MILLISECONDS)) {
         String input = request.getReader().lines()
             .collect(Collectors.joining(System.lineSeparator()));
         Util.checkBodySize(input);
@@ -65,10 +65,10 @@ public class GetBlockByNumServlet extends HttpServlet {
         } else {
           response.getWriter().println("{}");
         }
-//        permit.release();
-//      } else {
-//        logger.info("release test");
-//      }
+        permit.release();
+      } else {
+        logger.info("release test");
+      }
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {
@@ -76,9 +76,6 @@ public class GetBlockByNumServlet extends HttpServlet {
       } catch (IOException ioe) {
         logger.debug("IOException: {}", ioe.getMessage());
       }
-//    } finally {
-//      permit.release();
-//    }
     }
   }
 }

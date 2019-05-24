@@ -259,7 +259,6 @@ public class FullNodeHttpApiService implements Service {
       context.addServlet(
           new ServletHolder(getDelegatedResourceAccountIndexServlet),
           "/getdelegatedresourceaccountindex");
-      server.addBean(new ConnectionLimit(200,server));
       server.start();
     } catch (Exception e) {
       logger.debug("IOException: {}", e.getMessage());
