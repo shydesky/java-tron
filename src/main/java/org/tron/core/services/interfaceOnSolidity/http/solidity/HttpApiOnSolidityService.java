@@ -1,6 +1,7 @@
 package org.tron.core.services.interfaceOnSolidity.http.solidity;
 
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.jetty.server.ConnectionLimit;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -127,6 +128,7 @@ public class HttpApiOnSolidityService implements Service {
 
       context.addServlet(new ServletHolder(getNodeInfoOnSolidityServlet), "/wallet/getnodeinfo");
 
+      server.addBean(new ConnectionLimit(Args.getInstance().getMaxHttpConnectNumber(),server));
       server.start();
     } catch (Exception e) {
       logger.debug("IOException: {}", e.getMessage());
