@@ -2,6 +2,7 @@ package org.tron.core.services.http;
 
 import com.google.common.util.concurrent.RateLimiter;
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServlet;
@@ -21,19 +22,12 @@ public class GetBlockByNumServlet extends HttpServlet {
   @Autowired
   private Wallet wallet;
 
-  private static RateLimiter rateLimiter = RateLimiter.create(50);
-
-  private boolean tryAcquire() {
-    return rateLimiter.tryAcquire(1, 1000, TimeUnit.MILLISECONDS);
-  }
+  private final Semaphore permit = new Semaphore(200, true);
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-    if (tryAcquire() == false) {
-      logger.info("ratelimit test");
-      return;
-    }
 
     try {
+      permit.acquire();
       long num = Long.parseLong(request.getParameter("num"));
       Block reply = wallet.getBlockByNum(num);
       if (reply != null) {
@@ -48,16 +42,15 @@ public class GetBlockByNumServlet extends HttpServlet {
       } catch (IOException ioe) {
         logger.debug("IOException: {}", ioe.getMessage());
       }
+    } finally {
+      permit.release();
     }
+
   }
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-    if (tryAcquire() == false) {
-      logger.info("ratelimit test");
-      return;
-    }
-
     try {
+      permit.acquire();
       String input = request.getReader().lines()
           .collect(Collectors.joining(System.lineSeparator()));
       Util.checkBodySize(input);
@@ -76,6 +69,8 @@ public class GetBlockByNumServlet extends HttpServlet {
       } catch (IOException ioe) {
         logger.debug("IOException: {}", ioe.getMessage());
       }
+    } finally {
+      permit.release();
     }
   }
 }
