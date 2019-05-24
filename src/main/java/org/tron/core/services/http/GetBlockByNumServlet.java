@@ -22,7 +22,7 @@ public class GetBlockByNumServlet extends HttpServlet {
   @Autowired
   private Wallet wallet;
 
-  private static Semaphore permit = new Semaphore(10, true);
+  private static Semaphore permit = new Semaphore(200, true);
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
 
