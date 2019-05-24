@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -157,6 +159,8 @@ public class Wallet {
   private static byte addressPreFixByte = Constant.ADD_PRE_FIX_BYTE_MAINNET;
 
   private int minEffectiveConnection = Args.getInstance().getMinEffectiveConnection();
+
+  private static Semaphore apiSemaphore = new Semaphore(200);
 
   /**
    * Creates a new Wallet with a random ECKey.
@@ -667,8 +671,22 @@ public class Wallet {
   }
 
   public Block getBlockByNum(long blockNum) {
+
+    boolean concurrentPermission = false;
     try {
-      return dbManager.getBlockByNum(blockNum).getInstance();
+      concurrentPermission = apiSemaphore.tryAcquire(50, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+    }
+
+    if (concurrentPermission == false) {
+      logger.error("test api limit");
+      return null;
+    }
+
+    try {
+      Block block = dbManager.getBlockByNum(blockNum).getInstance();
+      apiSemaphore.release();
+      return block;
     } catch (StoreException e) {
       logger.info(e.getMessage());
       return null;
