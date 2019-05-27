@@ -141,7 +141,7 @@ public class SolidityNodeHttpApiService implements Service {
 
       int maxHttpConnectNumber = Args.getInstance().getMaxHttpConnectNumber();
       if (maxHttpConnectNumber > 0) {
-        server.addBean(new ConnectionLimit(maxHttpConnectNumber));
+        server.addBean(new ConnectionLimit(maxHttpConnectNumber, server));
       }
 
       server.start();

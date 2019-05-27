@@ -262,7 +262,7 @@ public class FullNodeHttpApiService implements Service {
 
       int maxHttpConnectNumber = Args.getInstance().getMaxHttpConnectNumber();
       if (maxHttpConnectNumber > 0) {
-        server.addBean(new ConnectionLimit(maxHttpConnectNumber));
+        server.addBean(new ConnectionLimit(maxHttpConnectNumber, server));
       }
 
       server.start();
