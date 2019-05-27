@@ -128,7 +128,11 @@ public class HttpApiOnSolidityService implements Service {
 
       context.addServlet(new ServletHolder(getNodeInfoOnSolidityServlet), "/wallet/getnodeinfo");
 
-      server.addBean(new ConnectionLimit(Args.getInstance().getMaxHttpConnectNumber(),server));
+      int maxHttpConnectNumber = Args.getInstance().getMaxHttpConnectNumber();
+      if (maxHttpConnectNumber > 0) {
+        server.addBean(new ConnectionLimit(maxHttpConnectNumber));
+      }
+
       server.start();
     } catch (Exception e) {
       logger.debug("IOException: {}", e.getMessage());

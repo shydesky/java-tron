@@ -260,7 +260,11 @@ public class FullNodeHttpApiService implements Service {
           new ServletHolder(getDelegatedResourceAccountIndexServlet),
           "/getdelegatedresourceaccountindex");
 
-      server.addBean(new ConnectionLimit(Args.getInstance().getMaxHttpConnectNumber(),server));
+      int maxHttpConnectNumber = Args.getInstance().getMaxHttpConnectNumber();
+      if (maxHttpConnectNumber > 0) {
+        server.addBean(new ConnectionLimit(maxHttpConnectNumber));
+      }
+
       server.start();
     } catch (Exception e) {
       logger.debug("IOException: {}", e.getMessage());
