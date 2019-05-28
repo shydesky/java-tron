@@ -151,6 +151,14 @@ public class Args {
   private boolean fastForward = false;
 
   @Getter
+  @Parameter(names = {"--zk-transaction-number"})
+  private long zkTransactionNum = 1000L;
+
+  @Getter
+  @Parameter(names = {"--zk-concurrent-number"})
+  private long zkConcurrentNum = 10L;
+
+  @Getter
   private Storage storage;
 
   @Getter
