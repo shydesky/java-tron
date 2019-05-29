@@ -122,6 +122,7 @@ public class ZkTransactionGenerator {
                       try {
                         generateTransaction();
                       } catch (Exception ex) {
+                        ex.printStackTrace();
                         logger.error("", ex);
                       }
                     });
@@ -130,6 +131,7 @@ public class ZkTransactionGenerator {
       countDownLatch.await();
 
       System.out.println("generate cost time:" + (System.currentTimeMillis() - startGenerate));
+      logger.info("generate cost time:" + (System.currentTimeMillis() - startGenerate));
       fos.flush();
       fos.close();
     } catch (InterruptedException | IOException e) {
