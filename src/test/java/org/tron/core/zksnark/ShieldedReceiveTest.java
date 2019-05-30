@@ -223,7 +223,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(0);
     createCapsule();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     //generate input
@@ -263,7 +263,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(0);// or 1
     createCapsule();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     //generate input
@@ -368,7 +368,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilderWithoutColumnInDescription(builder, ctx, TestReceiveMissingColumn.CV);
@@ -412,7 +412,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilderWithoutColumnInDescription(builder, ctx, TestReceiveMissingColumn.CM);
@@ -454,7 +454,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilderWithoutColumnInDescription(builder, ctx, TestReceiveMissingColumn.EPK);
@@ -495,7 +495,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilderWithoutColumnInDescription(builder, ctx,
@@ -537,7 +537,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilderWithoutColumnInDescription(builder, ctx,
@@ -579,7 +579,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilderWithoutColumnInDescription(builder, ctx,
@@ -813,7 +813,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilder(builder, ctx);
@@ -842,7 +842,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilder(builder, ctx);
@@ -871,7 +871,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilder(builder, ctx);
@@ -900,7 +900,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilder(builder, ctx);
@@ -929,7 +929,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilder(builder, ctx);
@@ -958,7 +958,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateBuilder(builder, ctx);
@@ -987,7 +987,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     // generate sk
@@ -1039,7 +1039,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     // generate sk
@@ -1084,7 +1084,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     // generate input
@@ -1134,7 +1134,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     // generate input
@@ -1186,7 +1186,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     // generate input
@@ -1233,7 +1233,7 @@ public class ShieldedReceiveTest {
       ContractExeException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
     createCapsule();
 
@@ -1479,7 +1479,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateShield2ShieldBuilder(builder, ctx);
@@ -1518,7 +1518,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateShield2ShieldBuilder(builder, ctx);
@@ -1557,7 +1557,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateShield2ShieldBuilder(builder, ctx);
@@ -1604,7 +1604,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateShield2ShieldBuilder(builder, ctx);
@@ -1650,7 +1650,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateShield2ShieldBuilder(builder, ctx);
@@ -1689,7 +1689,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     builder = generateShield2ShieldBuilder(builder, ctx);
@@ -1729,7 +1729,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     // generate input
@@ -1891,7 +1891,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
     // generate shield spend

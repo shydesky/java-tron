@@ -145,7 +145,7 @@ public class ShieldedTransferActuatorTest2 {
 
   private TransactionCapsule getPublicToShieldedTransaction() throws Exception {
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     //From amount
     builder.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE), AMOUNT);
     //TO amount
@@ -199,7 +199,7 @@ public class ShieldedTransferActuatorTest2 {
   public void publicAddressToPublicAddressFailure() {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     //From amount
     builder.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE), AMOUNT);
     //TO amount
@@ -416,7 +416,7 @@ public class ShieldedTransferActuatorTest2 {
 
     try {
       long amount = 0;
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
       //From amount
       builder.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE), amount);
       //TO amount
@@ -446,7 +446,7 @@ public class ShieldedTransferActuatorTest2 {
 
     try {
       long amount = -100;
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
       //From amount
       builder.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE), amount);
       //TO amount
@@ -481,7 +481,7 @@ public class ShieldedTransferActuatorTest2 {
   @Test
   public void publicAddressToShieldedInvalidToAmount() {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     try {
       long amount = 0;
       //From amount
@@ -556,7 +556,7 @@ public class ShieldedTransferActuatorTest2 {
   public void publicAddressToShieldedInvalidFromAddress() throws ZksnarkException {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     //From amount
     builder.setTransparentInput(ByteArray.fromHexString(INVAILID_ADDRESS), AMOUNT);
     //TO amount
@@ -595,7 +595,7 @@ public class ShieldedTransferActuatorTest2 {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
 
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     try {
       //From amount
       SpendingKey sk = SpendingKey.random();
@@ -638,7 +638,7 @@ public class ShieldedTransferActuatorTest2 {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
 
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     try {
       //From shield address
       SpendingKey sk = SpendingKey.random();
@@ -703,7 +703,7 @@ public class ShieldedTransferActuatorTest2 {
         List<Note> listNote = new ArrayList<>();
         long ownerBalance = dbManager.getAccountStore().get(ByteArray
             .fromHexString(PUBLIC_ADDRESS_ONE)).getBalance();
-        ZenTransactionBuilder builderOne = new ZenTransactionBuilder(wallet);
+        ZenTransactionBuilder builderOne = new ZenTransactionBuilder();
         //From amount
         builderOne.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE),
             (noteNum * AMOUNT + fee));
@@ -753,7 +753,7 @@ public class ShieldedTransferActuatorTest2 {
         IncrementalMerkleVoucherInfo merkleVoucherInfo = wallet
             .getMerkleTreeVoucherInfo(request.build());
 
-        ZenTransactionBuilder builderTwo = new ZenTransactionBuilder(wallet);
+        ZenTransactionBuilder builderTwo = new ZenTransactionBuilder();
         //From shield address
         ExpandedSpendingKey expsk = spendingKey.expandedSpendingKey();
         for (int i = 0; i < noteNum; i++) {
@@ -788,7 +788,7 @@ public class ShieldedTransferActuatorTest2 {
   public void ShieldAddressMore10NoteToPublicAddressFailure() {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     try {
       //From shield address
       SpendingKey sk = SpendingKey.random();
@@ -833,7 +833,7 @@ public class ShieldedTransferActuatorTest2 {
   public void publicAddressToShieldMoreThan10NoteFailure() {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     try {
       //From amount
       builder.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE), 11 * AMOUNT + fee);
@@ -875,7 +875,7 @@ public class ShieldedTransferActuatorTest2 {
   public void shieldAddressToNoTargetAccountFailure() {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
 
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     try {
       //From shield address
       SpendingKey sk = SpendingKey.random();
@@ -915,7 +915,7 @@ public class ShieldedTransferActuatorTest2 {
   public void publicAddressToShieldAddressNoFromAddressFailure() throws ZksnarkException {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     //From amount
     builder.setTransparentInput(ByteArray.fromHexString(null), AMOUNT);
     //TO amount
@@ -954,7 +954,7 @@ public class ShieldedTransferActuatorTest2 {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
     try {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
       //From amount
       builder.setTransparentInput(ByteArray.fromHexString(null), AMOUNT);
 
@@ -1003,7 +1003,7 @@ public class ShieldedTransferActuatorTest2 {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
     try {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
       //From amount
       builder.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE), 2 * AMOUNT + fee);
       //TO amount
@@ -1061,7 +1061,7 @@ public class ShieldedTransferActuatorTest2 {
       List<Note> listNote = new ArrayList<>();
       long ownerBalance = dbManager.getAccountStore().get(ByteArray
           .fromHexString(PUBLIC_ADDRESS_ONE)).getBalance();
-      ZenTransactionBuilder builderOne = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builderOne = new ZenTransactionBuilder();
       //From amount
       builderOne.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE),
           (AMOUNT + fee));
@@ -1115,7 +1115,7 @@ public class ShieldedTransferActuatorTest2 {
       IncrementalMerkleVoucherInfo merkleVoucherInfo = wallet
           .getMerkleTreeVoucherInfo(request.build());
 
-      ZenTransactionBuilder builderTwo = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builderTwo = new ZenTransactionBuilder();
       //From shield address
       ExpandedSpendingKey expsk = spendingKey.expandedSpendingKey();
       for (int i = 0; i < noteNum; i++) {
@@ -1149,7 +1149,7 @@ public class ShieldedTransferActuatorTest2 {
   public void ShieldToPublicAddressWithZoreValueFailure() {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     try {
       //From shield address
       SpendingKey sk = SpendingKey.random();
@@ -1201,7 +1201,7 @@ public class ShieldedTransferActuatorTest2 {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
     try {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
       //From amount
       builder.setTransparentInput(ByteArray.fromHexString(PUBLIC_ADDRESS_ONE),
           (AMOUNT + fee));
@@ -1242,7 +1242,7 @@ public class ShieldedTransferActuatorTest2 {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     long fee = dbManager.getDynamicPropertiesStore().getShieldedTransactionFee();
     try {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
       //From shield address
       SpendingKey sk = SpendingKey.random();
       ExpandedSpendingKey expsk = sk.expandedSpendingKey();
@@ -1297,7 +1297,7 @@ public class ShieldedTransferActuatorTest2 {
     dbManager.getAccountStore()
         .put(accountCapsuleTwo.getAddress().toByteArray(), accountCapsuleTwo);
 
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     try {
       //From shield address
       SpendingKey sk = SpendingKey.random();

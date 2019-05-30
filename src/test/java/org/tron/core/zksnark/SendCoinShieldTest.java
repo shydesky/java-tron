@@ -215,7 +215,7 @@ public class SendCoinShieldTest {
   @Test
   public void testGenerateSpendProof() throws Exception {
     librustzcashInitZksnarkParams();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     SpendingKey sk = SpendingKey
         .decode("ff2c06269315333a9207f817d2eca0ac555ca8f90196976324c7756504e7c9ee");
     ExpandedSpendingKey expsk = sk.expandedSpendingKey();
@@ -233,7 +233,7 @@ public class SendCoinShieldTest {
   @Test
   public void generateOutputProof() throws ZksnarkException {
     librustzcashInitZksnarkParams();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     SpendingKey spendingKey = SpendingKey.random();
     FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
     IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
@@ -248,7 +248,7 @@ public class SendCoinShieldTest {
   @Test
   public void verifyOutputProof() throws ZksnarkException {
     librustzcashInitZksnarkParams();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     SpendingKey spendingKey = SpendingKey.random();
     FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
     IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
@@ -414,7 +414,7 @@ public class SendCoinShieldTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(4010 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
     // generate spend proof
     SpendingKey sk = SpendingKey
@@ -490,7 +490,7 @@ public class SendCoinShieldTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(4010 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
     // generate spend proof
     SpendingKey sk = SpendingKey
@@ -571,7 +571,7 @@ public class SendCoinShieldTest {
   @Test
   public void testVerifySpendProof() throws BadItemException, ZksnarkException {
     librustzcashInitZksnarkParams();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     SpendingKey sk = SpendingKey
         .decode("ff2c06269315333a9207f817d2eca0ac555ca8f90196976324c7756504e7c9ee");
     ExpandedSpendingKey expsk = sk.expandedSpendingKey();
@@ -616,7 +616,7 @@ public class SendCoinShieldTest {
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
     // generate spend proof
     librustzcashInitZksnarkParams();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     SpendingKey sk = SpendingKey
         .decode("ff2c06269315333a9207f817d2eca0ac555ca8f90196976324c7756504e7c9ee");
     ExpandedSpendingKey expsk = sk.expandedSpendingKey();
@@ -658,7 +658,7 @@ public class SendCoinShieldTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(4010 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     SpendingKey sk = SpendingKey
         .decode("ff2c06269315333a9207f817d2eca0ac555ca8f90196976324c7756504e7c9ee");
     ExpandedSpendingKey expsk = sk.expandedSpendingKey();
@@ -686,7 +686,7 @@ public class SendCoinShieldTest {
   public void finalCheck() throws BadItemException, ZksnarkException {
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
     librustzcashInitZksnarkParams();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     // generate spend proof
     SpendingKey sk = SpendingKey
         .decode("ff2c06269315333a9207f817d2eca0ac555ca8f90196976324c7756504e7c9ee");
@@ -872,7 +872,7 @@ public class SendCoinShieldTest {
     // generate spend proof
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     //prepare two cm with different sk
     SpendingKey sk1 = SpendingKey.random();
     ExpandedSpendingKey expsk1 = sk1.expandedSpendingKey();
@@ -933,7 +933,7 @@ public class SendCoinShieldTest {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     //case 1， a public input, no input cm,  an output cm, no public output
     {
-//      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+//      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 //      String OWNER_ADDRESS = Wallet.getAddressPreFixString() + "548794500882809695a8a687866e76d4271a1abc";
 //      AccountCapsule ownerCapsule =
 //          new AccountCapsule(
@@ -967,7 +967,7 @@ public class SendCoinShieldTest {
 
     //case 2， a public input, no input cm,  an output cm, a public output
     {
-//      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+//      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 //
 //      String OWNER_ADDRESS = Wallet.getAddressPreFixString() + "548794500882809695a8a687866e76d4271a1abc";
 //      AccountCapsule ownerCapsule =
@@ -1011,7 +1011,7 @@ public class SendCoinShieldTest {
 
     //case 3， no public input, an input cm,  no output cm, a public output
     {
-//      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+//      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 //
 //      //prepare  cm
 //      SpendingKey sk1 = SpendingKey.random();
@@ -1059,7 +1059,7 @@ public class SendCoinShieldTest {
 
     //case 4， no public input, an input cm,  an output cm, no public output
     {
-//      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+//      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 //
 //      //prepare  cm
 //      SpendingKey sk1 = SpendingKey.random();
@@ -1104,7 +1104,7 @@ public class SendCoinShieldTest {
 
     //case 5， no public input, an input cm,  an output cm, a public output
     {
-//      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+//      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 //
 //      //prepare  cm
 //      SpendingKey sk1 = SpendingKey.random();
@@ -1167,7 +1167,7 @@ public class SendCoinShieldTest {
     List<TransactionCapsule> txList = Lists.newArrayList();
     //case 1， a public input, no input cm,  an output cm, no public output
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
       String OWNER_ADDRESS =
           Wallet.getAddressPreFixString() + "548794500882809695a8a687866e76d4271a1abc";
       AccountCapsule ownerCapsule =
@@ -1196,7 +1196,7 @@ public class SendCoinShieldTest {
 
     //case 2， a public input, no input cm,  an output cm, a public output
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
       String OWNER_ADDRESS =
           Wallet.getAddressPreFixString() + "548794500882809695a8a687866e76d4271a1abc";
@@ -1237,7 +1237,7 @@ public class SendCoinShieldTest {
 
     //case 3， no public input, an input cm,  no output cm, a public output
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
       //prepare  cm
       SpendingKey sk1 = SpendingKey.random();
@@ -1328,7 +1328,7 @@ public class SendCoinShieldTest {
           .getMerkleContainer()
           .putMerkleTreeIntoStore(anchor2, voucher2.getVoucherCapsule().getTree());
 
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet) {
+      ZenTransactionBuilder builder = new ZenTransactionBuilder() {
         @Override
         public SpendDescriptionCapsule generateSpendProof(SpendDescriptionInfo spend,
             Pointer ctx) throws ZksnarkException {
@@ -1395,7 +1395,7 @@ public class SendCoinShieldTest {
           .getMerkleContainer()
           .putMerkleTreeIntoStore(anchor2, voucher2.getVoucherCapsule().getTree());
 
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet) {
+      ZenTransactionBuilder builder = new ZenTransactionBuilder() {
         @Override
         public SpendDescriptionCapsule generateSpendProof(SpendDescriptionInfo spend,
             Pointer ctx) throws ZksnarkException {
@@ -1474,7 +1474,7 @@ public class SendCoinShieldTest {
   public void TestGeneratesProofWithWrongRcm() throws Exception {
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
     librustzcashInitZksnarkParams();
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     // generate spend proof
     SpendingKey sk = SpendingKey.random();
     ExpandedSpendingKey expsk = sk.expandedSpendingKey();
@@ -1520,7 +1520,7 @@ public class SendCoinShieldTest {
       byte[] fakeAsk = ByteArray
           .fromHexString("0xe7db4ea6533afa906673b0101343b00a6682093ccc81082d0970e5ed6f72cb6");
 
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet) {
+      ZenTransactionBuilder builder = new ZenTransactionBuilder() {
         @Override
         public void createSpendAuth(byte[] dataToBeSigned) throws ZksnarkException {
           for (int i = 0; i < this.getSpends().size(); i++) {
@@ -1617,7 +1617,7 @@ public class SendCoinShieldTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
 
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     TransactionCapsule transactionCapsule = generateDefaultBuilder(builder);
     executeTx(transactionCapsule);
   }
@@ -1628,7 +1628,7 @@ public class SendCoinShieldTest {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
 
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet) {
+      ZenTransactionBuilder builder = new ZenTransactionBuilder() {
         //set wrong rk
         @Override
         public SpendDescriptionCapsule generateSpendProof(SpendDescriptionInfo spend,
@@ -1665,7 +1665,7 @@ public class SendCoinShieldTest {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
 
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet) {
+      ZenTransactionBuilder builder = new ZenTransactionBuilder() {
         //set wrong proof
         @Override
         public SpendDescriptionCapsule generateSpendProof(SpendDescriptionInfo spend,
@@ -1704,7 +1704,7 @@ public class SendCoinShieldTest {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
 
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet) {
+      ZenTransactionBuilder builder = new ZenTransactionBuilder() {
         //set wrong nf
         @Override
         public SpendDescriptionCapsule generateSpendProof(SpendDescriptionInfo spend,
@@ -1744,7 +1744,7 @@ public class SendCoinShieldTest {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
 
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet) {
+      ZenTransactionBuilder builder = new ZenTransactionBuilder() {
         //set wrong anchor
         @Override
         public SpendDescriptionCapsule generateSpendProof(SpendDescriptionInfo spend,
