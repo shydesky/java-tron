@@ -3,6 +3,7 @@ package org.tron.program.zkpressuretest;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -10,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.zksnark.Librustzcash;
@@ -19,6 +21,7 @@ import org.tron.core.Wallet;
 import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.exception.ZksnarkException;
+import org.tron.core.services.http.FullNodeHttpApiService;
 import org.tron.core.zen.ZenTransactionBuilder;
 import org.tron.core.zen.address.DiversifierT;
 import org.tron.core.zen.address.FullViewingKey;
@@ -276,10 +279,16 @@ public class ZkTransactionGenerator {
     logger.info("init zk param done");
   }
 
+
   private String getParamsFile(String fileName) {
-    return ZkTransactionGenerator.class
-        .getClassLoader()
-        .getResource("params" + File.separator + fileName)
-        .getFile();
+    InputStream in = ZkTransactionGenerator.class.getClassLoader()
+        .getResourceAsStream("params" + File.separator + fileName);
+    File fileOut = new File(System.getProperty("java.io.tmpdir") + File.separator + fileName);
+    try {
+      FileUtils.copyToFile(in, fileOut);
+    } catch (IOException e) {
+      logger.error(e.getMessage(), e);
+    }
+    return fileOut.getAbsolutePath();
   }
 }
