@@ -319,11 +319,11 @@ public class SendCoinShieldTest {
       String paymentAddressStr = KeyIo.encodePaymentAddress(
           new PaymentAddress(noteText.d, pk_d));
 
-      GrpcAPI.Note decrypt_note = GrpcAPI.Note.newBuilder()
-          .setPaymentAddress(paymentAddressStr)
-          .setValue(noteText.value)
-          .setRcm(ByteString.copyFrom(noteText.rcm))
-          .build();
+//      GrpcAPI.Note decrypt_note = GrpcAPI.Note.newBuilder()
+//          .setPaymentAddress(paymentAddressStr)
+//          .setValue(noteText.value)
+//          .setRcm(ByteString.copyFrom(noteText.rcm))
+//          .build();
     }
 
     Librustzcash.librustzcashSaplingProvingCtxFree(ctx);
@@ -951,7 +951,7 @@ public class SendCoinShieldTest {
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     //case 1， a public input, no input cm,  an output cm, no public output
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
       String OWNER_ADDRESS =
           Wallet.getAddressPreFixString() + "548794500882809695a8a687866e76d4271a1abc";
       AccountCapsule ownerCapsule =
@@ -986,7 +986,7 @@ public class SendCoinShieldTest {
 
     //case 2， a public input, no input cm,  an output cm, a public output
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
       String OWNER_ADDRESS =
           Wallet.getAddressPreFixString() + "548794500882809695a8a687866e76d4271a1abc";
@@ -1032,7 +1032,7 @@ public class SendCoinShieldTest {
 
     //case 3， no public input, an input cm,  no output cm, a public output
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
       //prepare  cm
       SpendingKey sk1 = SpendingKey.random();
@@ -1081,7 +1081,7 @@ public class SendCoinShieldTest {
 
     //case 4， no public input, an input cm,  an output cm, no public output
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
       //prepare  cm
       SpendingKey sk1 = SpendingKey.random();
@@ -1126,7 +1126,7 @@ public class SendCoinShieldTest {
 
     //case 5， no public input, an input cm,  an output cm, a public output
     {
-      ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+      ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
       //prepare  cm
       SpendingKey sk1 = SpendingKey.random();
