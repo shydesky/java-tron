@@ -247,8 +247,8 @@ public class ZkTransactionGenerator {
 
     long gTime = 0;
     String ref = "" + gTime;
-    transactionCap.setReference(gTime, ByteArray.fromString(ref));
-    transactionCap.setExpiration(gTime);
+//    transactionCap.setReference(gTime, ByteArray.fromString(ref));
+//    transactionCap.setExpiration(gTime);
     return transactionCap;
   }
 
@@ -284,6 +284,8 @@ public class ZkTransactionGenerator {
     InputStream in = ZkTransactionGenerator.class.getClassLoader()
         .getResourceAsStream("params" + File.separator + fileName);
     File fileOut = new File(System.getProperty("java.io.tmpdir") + File.separator + fileName);
+    ///var/folders/0s/_f7hdf5d2cnbcx1qljh_vc040000gn/T/
+    System.out.println("java.io.tmpdir:" + System.getProperty("java.io.tmpdir"));
     try {
       FileUtils.copyToFile(in, fileOut);
     } catch (IOException e) {
