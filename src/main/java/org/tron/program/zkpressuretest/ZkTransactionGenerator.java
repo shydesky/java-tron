@@ -197,7 +197,7 @@ public class ZkTransactionGenerator {
 
         long count = countDownLatch.getCount();
 
-        if (count % 100 == 0 || count  == 1 ) {
+        if (count % 100 == 0 || (zkTransactionNum-count)  == 1 ) {
     fos.flush();
     countDownLatch.countDown();
     //      logger.info(
