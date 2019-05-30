@@ -48,7 +48,6 @@ public class ZenTransactionBuilder {
   @Getter
   private List<ReceiveDescriptionInfo> receives = new ArrayList<>();
 
-  private Wallet wallet;
 
   @Getter
   private long valueBalance = 0;
@@ -56,9 +55,6 @@ public class ZenTransactionBuilder {
   @Getter
   private ShieldedTransferContract.Builder contractBuilder = ShieldedTransferContract.newBuilder();
 
-  public ZenTransactionBuilder(Wallet wallet) {
-    this.wallet = wallet;
-  }
 
   public ZenTransactionBuilder() {
   }
@@ -147,8 +143,7 @@ public class ZenTransactionBuilder {
 
       // Empty output script
       byte[] dataHashToBeSigned; //256
-      transactionCapsule = wallet.createTransactionCapsuleWithoutValidate(
-          contractBuilder.build(), ContractType.ShieldedTransferContract);
+      transactionCapsule =  new TransactionCapsule(contractBuilder.build(), ContractType.ShieldedTransferContract);
 
       dataHashToBeSigned = TransactionCapsule
           .getShieldTransactionHashIgnoreTypeException(transactionCapsule);

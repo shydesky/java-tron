@@ -1680,7 +1680,7 @@ public class Wallet {
     if (!getAllowShieldedTransactionApi()) {
       throw new ZksnarkException("createshieldedtransaction is not allowed");
     }
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(this);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
     byte[] transparentFromAddress = request.getTransparentFromAddress().toByteArray();
     byte[] ask = request.getAsk().toByteArray();
@@ -1755,6 +1755,8 @@ public class Wallet {
     TransactionCapsule transactionCapsule = null;
     try {
       transactionCapsule = builder.build();
+      transactionCapsule = createTransactionCapsuleWithoutValidate(
+          transactionCapsule.getInstance(), ContractType.ShieldedTransferContract);
     } catch (ZksnarkException e) {
       logger.error("createShieldedTransaction except, error is " + e.toString());
     }
@@ -1769,7 +1771,7 @@ public class Wallet {
       throw new ZksnarkException("createshieldedtransactionwithoutspendauthsig is not allowed");
     }
 
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(this);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
     byte[] transparentFromAddress = request.getTransparentFromAddress().toByteArray();
     byte[] ak = request.getAk().toByteArray();

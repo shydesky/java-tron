@@ -1,6 +1,5 @@
 package org.tron.program.zkpressuretest;
 
-import com.google.protobuf.ByteString;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,17 +12,12 @@ import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.common.utils.ByteArray;
-import org.tron.common.utils.Sha256Hash;
 import org.tron.common.zksnark.Librustzcash;
 import org.tron.common.zksnark.LibrustzcashParam.InitZksnarkParams;
 import org.tron.core.Constant;
 import org.tron.core.Wallet;
-import org.tron.core.capsule.AccountCapsule;
-import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.capsule.TransactionCapsule;
-import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
-import org.tron.core.db.Manager;
 import org.tron.core.exception.ZksnarkException;
 import org.tron.core.zen.ZenTransactionBuilder;
 import org.tron.core.zen.address.DiversifierT;
@@ -31,14 +25,13 @@ import org.tron.core.zen.address.FullViewingKey;
 import org.tron.core.zen.address.IncomingViewingKey;
 import org.tron.core.zen.address.PaymentAddress;
 import org.tron.core.zen.address.SpendingKey;
-import org.tron.protos.Protocol.AccountType;
 import org.tron.protos.Protocol.Transaction;
 
 @Slf4j
 public class ZkTransactionGenerator {
   private static TronApplicationContext context;
-  private static Wallet wallet;
-  private static Manager dbManager;
+  //  private static Wallet wallet;
+  //  private static Manager dbManager;
   private String ownerAddress = "TXtrbmfwZ2LxtoCveEhZT86fTss1w8rwJE";
 
   private ConcurrentLinkedQueue<Transaction> transactions = new ConcurrentLinkedQueue<>();
@@ -51,10 +44,10 @@ public class ZkTransactionGenerator {
   private int zkTransactionNum = 0;
 
   public void init() {
-    context = new TronApplicationContext(DefaultConfig.class);
-    wallet = context.getBean(Wallet.class);
-    dbManager = context.getBean(Manager.class);
-    dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
+    //    context = new TronApplicationContext(DefaultConfig.class);
+    //    wallet = context.getBean(Wallet.class);
+    //    dbManager = context.getBean(Manager.class);
+    //    dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
 
     Args cfgArgs = Args.getInstance();
     zkTransactionNum = cfgArgs.getZkTransactionNum();
@@ -87,14 +80,14 @@ public class ZkTransactionGenerator {
 
     System.out.println("availableProcessors:" + availableProcessors);
 
-    AccountCapsule ownerCapsule =
-        new AccountCapsule(
-            ByteString.copyFromUtf8("owner"),
-            ByteString.copyFrom(Wallet.decodeFromBase58Check(ownerAddress)),
-            AccountType.Normal,
-            220_000_000L);
+    //    AccountCapsule ownerCapsule =
+    //        new AccountCapsule(
+    //            ByteString.copyFromUtf8("owner"),
+    //            ByteString.copyFrom(Wallet.decodeFromBase58Check(ownerAddress)),
+    //            AccountType.Normal,
+    //            220_000_000L);
 
-    dbManager.getAccountStore().put(ownerCapsule.getAddress().toByteArray(), ownerCapsule);
+    //    dbManager.getAccountStore().put(ownerCapsule.getAddress().toByteArray(), ownerCapsule);
   }
 
   public void start() {
@@ -111,7 +104,7 @@ public class ZkTransactionGenerator {
         });
 
     try {
-      fos = new FileOutputStream(new File(outputFile),true);
+      fos = new FileOutputStream(new File(outputFile), true);
 
       long startGenerate = System.currentTimeMillis();
       LongStream.range(0L, this.zkTransactionNum)
@@ -175,12 +168,13 @@ public class ZkTransactionGenerator {
 
     Transaction instance = newTransaction.getInstance();
 
-    BlockCapsule blockCapsule =
-        new BlockCapsule(100, Sha256Hash.ZERO_HASH, System.currentTimeMillis(), ByteString.EMPTY);
+    //    BlockCapsule blockCapsule =
+    //        new BlockCapsule(100, Sha256Hash.ZERO_HASH, System.currentTimeMillis(),
+    // ByteString.EMPTY);
 
-    long startVerify = System.currentTimeMillis();
-    dbManager.processTransaction(newTransaction, blockCapsule);
-    System.out.println("Verify cost time:" + (System.currentTimeMillis() - startVerify));
+    //    long startVerify = System.currentTimeMillis();
+    //    dbManager.processTransaction(newTransaction, blockCapsule);
+    //    System.out.println("Verify cost time:" + (System.currentTimeMillis() - startVerify));
 
     transactions.add(instance);
   }
@@ -234,7 +228,7 @@ public class ZkTransactionGenerator {
         "0528dc17428585fc4dece68b79fa7912270a1fe8e85f244372f59eb7e8925e04";
 
     // 20_100_000 +i = 100_000 + 10_000_000 +i +  10_000_000
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     builder.setTransparentInput(Wallet.decodeFromBase58Check(ownerAddress), 20_100_000L);
     // generate output proof
     SpendingKey spendingKey = SpendingKey.random();
@@ -248,10 +242,10 @@ public class ZkTransactionGenerator {
     TransactionCapsule transactionCap = builder.build();
     transactionCap.sign(ByteArray.fromHexString(commonOwnerPrivateKey));
 
-    //    long gTime = count.incrementAndGet() + time;
-    //    String ref = "" + gTime;
-    //    transactionCap.setReference(gTime, ByteArray.fromString(ref));
-    //    transactionCap.setExpiration(gTime);
+    long gTime = 0;
+    String ref = "" + gTime;
+    transactionCap.setReference(gTime, ByteArray.fromString(ref));
+    transactionCap.setExpiration(gTime);
     return transactionCap;
   }
 
