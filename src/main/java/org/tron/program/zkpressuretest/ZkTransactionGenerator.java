@@ -195,8 +195,9 @@ public class ZkTransactionGenerator {
     Transaction transaction = transactions.poll();
     transaction.writeDelimitedTo(fos);
 
-    //    long count = countDownLatch.getCount();
-    //    if (count % 10000 == 0) {
+        long count = countDownLatch.getCount();
+
+        if (count % 100 == 0 || count  == 1 ) {
     fos.flush();
     countDownLatch.countDown();
     //      logger.info(
@@ -205,7 +206,7 @@ public class ZkTransactionGenerator {
             + countDownLatch.getCount()
             + ", Pending size: "
             + transactions.size());
-    //    }
+        }
 
   }
 
