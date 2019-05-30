@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.BytesMessage;
 import org.tron.api.GrpcAPI.TransactionExtention;
 import org.tron.core.Wallet;
+import org.tron.protos.Protocol.Transaction;
 
 
 @Component
@@ -27,13 +28,12 @@ public class GetShieldTransactionHashServlet extends HttpServlet {
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
     try {
       String input = request.getReader().lines()
-          .collect(Collectors.joining(System.lineSeparator()));
+              .collect(Collectors.joining(System.lineSeparator()));
       Util.checkBodySize(input);
+      boolean visible = Util.getVisiblePost(input);
+      Transaction transaction = Util.packTransaction(input, visible);
 
-      TransactionExtention.Builder build = TransactionExtention.newBuilder();
-      JsonFormat.merge(input, build);
-
-      BytesMessage result = wallet.getShieldTransactionHash(build.build());
+      BytesMessage result = wallet.getShieldTransactionHash(transaction);
       response.getWriter().println(JsonFormat.printToString(result));
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());

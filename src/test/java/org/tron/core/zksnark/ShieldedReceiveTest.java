@@ -3,7 +3,6 @@ package org.tron.core.zksnark;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.muquit.libsodiumjna.SodiumLibrary;
 import com.sun.jna.Pointer;
 import java.io.File;
 import java.security.SignatureException;
@@ -25,11 +24,10 @@ import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.FileUtil;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.common.zksnark.Librustzcash;
+import org.tron.common.zksnark.LibrustzcashParam.BindingSigParams;
 import org.tron.common.zksnark.LibrustzcashParam.InitZksnarkParams;
-import org.tron.common.zksnark.LibrustzcashParam.SaplingBindingSigParams;
-import org.tron.common.zksnark.LibrustzcashParam.SaplingOutputProofParams;
-import org.tron.common.zksnark.LibrustzcashParam.SaplingSpendSigParams;
-import org.tron.common.zksnark.LibrustzcashParam.Zip32XskMasterParams;
+import org.tron.common.zksnark.LibrustzcashParam.OutputProofParams;
+import org.tron.common.zksnark.LibrustzcashParam.SpendSigParams;
 import org.tron.core.Wallet;
 import org.tron.core.actuator.Actuator;
 import org.tron.core.actuator.ActuatorFactory;
@@ -43,20 +41,11 @@ import org.tron.core.capsule.TransactionResultCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
-import org.tron.core.exception.AccountResourceInsufficientException;
 import org.tron.core.exception.BadItemException;
 import org.tron.core.exception.ContractExeException;
 import org.tron.core.exception.ContractValidateException;
-import org.tron.core.exception.DupTransactionException;
 import org.tron.core.exception.PermissionException;
-import org.tron.core.exception.ReceiptCheckErrException;
 import org.tron.core.exception.SignatureFormatException;
-import org.tron.core.exception.TaposException;
-import org.tron.core.exception.TooBigTransactionException;
-import org.tron.core.exception.TooBigTransactionResultException;
-import org.tron.core.exception.TransactionExpirationException;
-import org.tron.core.exception.VMIllegalException;
-import org.tron.core.exception.ValidateSignatureException;
 import org.tron.core.exception.ZksnarkException;
 import org.tron.core.zen.ZenTransactionBuilder;
 import org.tron.core.zen.ZenTransactionBuilder.ReceiveDescriptionInfo;
@@ -211,8 +200,12 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testSetShieldedTransactionFee() {
+    long fee = wallet.getShieldedTransactionFee();
+
     dbManager.getDynamicPropertiesStore().saveShieldedTransactionFee(2_000_000);
     Assert.assertEquals(2_000_000, wallet.getShieldedTransactionFee());
+
+    dbManager.getDynamicPropertiesStore().saveShieldedTransactionFee(fee);
   }
 
   /**
@@ -259,7 +252,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testBroadcastBeforeAllowZksnark()
-      throws ZksnarkException, SignatureFormatException, SignatureException, PermissionException, ContractValidateException, TooBigTransactionException, TooBigTransactionResultException, TaposException, TransactionExpirationException, ReceiptCheckErrException, DupTransactionException, VMIllegalException, ValidateSignatureException, ContractExeException, AccountResourceInsufficientException {
+      throws ZksnarkException, SignatureFormatException, SignatureException, PermissionException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(0);// or 1
     createCapsule();
@@ -408,7 +401,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithEmptyCM()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -450,7 +443,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithEmptyEPK()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -491,7 +484,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithEmptyZkproof()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -533,7 +526,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithEmptyCenc()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -575,7 +568,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithEmptyCout()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -639,7 +632,7 @@ public class ShieldedReceiveTest {
     byte[] cv = new byte[32];
     byte[] zkProof = new byte[192];
     if (!Librustzcash.librustzcashSaplingOutputProof(
-        new SaplingOutputProofParams(ctx,
+        new OutputProofParams(ctx,
             encryptor.esk,
             output.getNote().d.data,
             output.getNote().pkD,
@@ -755,7 +748,7 @@ public class ShieldedReceiveTest {
     builder.createSpendAuth(dataToBeSigned);
     byte[] bindingSig = new byte[64];
     Librustzcash.librustzcashSaplingBindingSig(
-        new SaplingBindingSigParams(ctx,
+        new BindingSigParams(ctx,
             builder.getValueBalance(),
             dataToBeSigned,
             bindingSig)
@@ -809,7 +802,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithWrongCv()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -838,7 +831,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithWrongZkproof()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -867,7 +860,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithWrongD()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -896,7 +889,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithWrongPkd()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -925,7 +918,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithWrongValue()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -954,7 +947,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testReceiveDescriptionWithWrongRcm()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -983,7 +976,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testNotMatchAskAndNsk()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1035,7 +1028,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testRandomOvk()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1080,7 +1073,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testSameInputCm()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1130,7 +1123,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testSameOutputCm()
-      throws BadItemException, ContractValidateException, ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1181,8 +1174,8 @@ public class ShieldedReceiveTest {
    * test of transferring insufficient money from shield address to shield address.
    */
   @Test
-  public void testShieldInputInsufficient() throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+  public void testShieldInputInsufficient()
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1229,8 +1222,7 @@ public class ShieldedReceiveTest {
    * test of transferring insufficient money from transparent address to shield address.
    */
   @Test
-  public void testTransparentInputInsufficient() throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+  public void testTransparentInputInsufficient() throws RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     ZenTransactionBuilder builder = new ZenTransactionBuilder();
@@ -1435,7 +1427,7 @@ public class ShieldedReceiveTest {
     for (int i = 0; i < builder.getSpends().size(); i++) {
       byte[] result = new byte[64];
       Librustzcash.librustzcashSaplingSpendSig(
-          new SaplingSpendSigParams(builder.getSpends().get(i).expsk.getAsk(),
+          new SpendSigParams(builder.getSpends().get(i).expsk.getAsk(),
               builder.getSpends().get(i).alpha,
               hashOfTransaction,
               result));
@@ -1446,7 +1438,7 @@ public class ShieldedReceiveTest {
     //create binding signatures
     byte[] bindingSig = new byte[64];
     Librustzcash.librustzcashSaplingBindingSig(
-        new SaplingBindingSigParams(ctx,
+        new BindingSigParams(ctx,
             builder.getValueBalance(),
             hashOfTransaction,
             bindingSig)
@@ -1474,8 +1466,9 @@ public class ShieldedReceiveTest {
    * test signature for shield to shield transaction with some column missing
    */
   @Test
-  public void testSignWithoutFromAddress() throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+  public void testSignWithoutFromAddress()
+      throws BadItemException, ContractValidateException, RuntimeException,
+      ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1513,8 +1506,9 @@ public class ShieldedReceiveTest {
    * test signature for shield to shield transaction with some column missing
    */
   @Test
-  public void testSignWithoutFromAmout() throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+  public void testSignWithoutFromAmout()
+      throws BadItemException, ContractValidateException, RuntimeException,
+      ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1552,8 +1546,8 @@ public class ShieldedReceiveTest {
    * test signature for shield to shield transaction with some column missing
    */
   @Test
-  public void testSignWithoutSpendDescription() throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+  public void testSignWithoutSpendDescription()
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1599,8 +1593,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testSignWithoutReceiveDescription()
-      throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1645,8 +1638,9 @@ public class ShieldedReceiveTest {
    * test signature for shield to shield transaction with some column missing
    */
   @Test
-  public void testSignWithoutToAddress() throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+  public void testSignWithoutToAddress()
+      throws BadItemException, ContractValidateException, RuntimeException,
+      ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1684,8 +1678,9 @@ public class ShieldedReceiveTest {
    * test signature for shield to shield transaction with some column missing
    */
   @Test
-  public void testSignWithoutToAmount() throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+  public void testSignWithoutToAmount()
+      throws BadItemException, ContractValidateException, RuntimeException,
+      ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1724,8 +1719,7 @@ public class ShieldedReceiveTest {
    */
   @Test
   public void testSpendSignatureWithWrongColumn()
-      throws BadItemException, ContractValidateException,
-      ContractExeException, RuntimeException, ZksnarkException {
+      throws BadItemException, RuntimeException, ZksnarkException {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(100 * 1000000l);
@@ -1786,7 +1780,7 @@ public class ShieldedReceiveTest {
     for (int i = 0; i < builder.getSpends().size(); i++) {
       byte[] result = new byte[64];
       Librustzcash.librustzcashSaplingSpendSig(
-          new SaplingSpendSigParams(builder.getSpends().get(i).expsk.getAsk(),
+          new SpendSigParams(builder.getSpends().get(i).expsk.getAsk(),
               Note.generateR(), //builder.getSpends().get(i).alpha,
               hashOfTransaction,
               result));
@@ -1797,7 +1791,7 @@ public class ShieldedReceiveTest {
     //create binding signatures
     byte[] bindingSig = new byte[64];
     Librustzcash.librustzcashSaplingBindingSig(
-        new SaplingBindingSigParams(ctx,
+        new BindingSigParams(ctx,
             builder.getValueBalance(),
             hashOfTransaction,
             bindingSig)
@@ -1832,46 +1826,6 @@ public class ShieldedReceiveTest {
       Assert.assertTrue(e.getMessage().equalsIgnoreCase("librustzcashSaplingCheckSpend error"));
     }
     Librustzcash.librustzcashSaplingVerificationCtxFree(ctx);
-  }
-
-  /*
-  test the zcash algorithm of generating spending key
-   */
-  @Test
-  public void testLibrustzcashZip32XskMaster() throws ZksnarkException {
-
-//    SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed)
-//    {
-//      auto rawSeed = seed.RawSeed();
-//      CSerializeData m_bytes(ZIP32_XSK_SIZE);
-//      librustzcash_zip32_xsk_master(
-//              rawSeed.data(),
-//              rawSeed.size(),
-//              reinterpret_cast<unsigned char*>(m_bytes.data()));
-//
-//      CDataStream ss(m_bytes, SER_NETWORK, PROTOCOL_VERSION);
-//      SaplingExtendedSpendingKey xsk_m;
-//      ss >> xsk_m;
-//      return xsk_m;
-//    }
-
-    SodiumLibrary.setLibraryPath(Librustzcash.getLibraryByName("libsodium"));
-
-    int ZIP32_XSK_SIZE = 169;
-
-    byte[] seed = SodiumLibrary.randomBytes(32); //HDSeed::Random => GetRandBytes => randombytes_buf
-    byte[] xsk_master = new byte[ZIP32_XSK_SIZE];
-    Librustzcash
-        .librustzcashZip32XskMaster(new Zip32XskMasterParams(seed, seed.length, xsk_master));
-
-    byte[] seed2 = SodiumLibrary
-        .randomBytes(32); //HDSeed::Random => GetRandBytes => randombytes_buf
-    byte[] xsk_master2 = new byte[ZIP32_XSK_SIZE];
-    Librustzcash
-        .librustzcashZip32XskMaster(new Zip32XskMasterParams(seed2, seed2.length, xsk_master2));
-
-    Assert.assertNotEquals(ByteArray.toHexString(xsk_master), ByteArray.toHexString(xsk_master2));
-
   }
 
   @AllArgsConstructor
@@ -1944,8 +1898,9 @@ public class ShieldedReceiveTest {
   }
 
   public TransactionCapsule buildShieldedTransactionWithoutSpendAuthSig(PaymentAddress address,
-      byte[] ak, byte[] nsk, byte[] ovk, TransactionHash dataHashToBeSigned,
-      ZenTransactionBuilder builder, Pointer ctx)
+      byte[] ak,
+      byte[] nsk, byte[] ovk, TransactionHash dataHashToBeSigned, ZenTransactionBuilder builder,
+      Pointer ctx)
       throws ZksnarkException, BadItemException, ContractValidateException {
     // generate input
     Note note = new Note(address, 100 * 1000000);
@@ -1988,9 +1943,9 @@ public class ShieldedReceiveTest {
     TransactionCapsule transactionCapsule = wallet.createTransactionCapsuleWithoutValidate(
         builder.getContractBuilder().build(), ContractType.ShieldedTransferContract);
     //replace with interface
-    TransactionExtention transactionExtention = TransactionExtention.newBuilder()
-        .setTransaction(transactionCapsule.getInstance()).build();
-    BytesMessage transactionHash = wallet.getShieldTransactionHash(transactionExtention);
+    //System.out.println(JsonFormat.printToString(transactionCapsule.getInstance()));
+    BytesMessage transactionHash = wallet
+        .getShieldTransactionHash(transactionCapsule.getInstance());
 
     if (transactionHash == null) {
       throw new ZksnarkException("cal transaction hash failed");
@@ -2000,7 +1955,7 @@ public class ShieldedReceiveTest {
     // Create binding signatures
     byte[] bindingSig = new byte[64];
     Librustzcash.librustzcashSaplingBindingSig(
-        new SaplingBindingSigParams(ctx,
+        new BindingSigParams(ctx,
             builder.getValueBalance(),
             dataHashToBeSigned.getHash(),
             bindingSig)
