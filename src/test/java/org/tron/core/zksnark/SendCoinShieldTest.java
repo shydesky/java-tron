@@ -616,7 +616,7 @@ public class SendCoinShieldTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(4010 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
     SpendingKey sk = SpendingKey
         .decode("ff2c06269315333a9207f817d2eca0ac555ca8f90196976324c7756504e7c9ee");
     ExpandedSpendingKey expsk = sk.expandedSpendingKey();
