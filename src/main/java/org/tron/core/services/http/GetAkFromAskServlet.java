@@ -12,10 +12,14 @@ import org.springframework.stereotype.Component;
 import org.tron.api.GrpcAPI.BytesMessage;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Wallet;
+import org.tron.core.WalletShield;
 
 @Component
 @Slf4j(topic = "API")
 public class GetAkFromAskServlet extends HttpServlet {
+
+  @Autowired
+  private WalletShield walletShield;
 
   @Autowired
   private Wallet wallet;
@@ -23,10 +27,10 @@ public class GetAkFromAskServlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
       String input = request.getParameter("value");
-      BytesMessage reply = wallet
+      BytesMessage reply = walletShield
           .getAkFromAsk(ByteString.copyFrom(ByteArray.fromHexString(input)));
 
-      String base58check = Wallet.encode58Check(reply.toByteArray());
+      String base58check = wallet.encode58Check(reply.toByteArray());
       String hexString = ByteArray.toHexString(reply.toByteArray());
       System.out.println("b58 is: " + base58check + ", hex is: " + hexString);
 
@@ -53,7 +57,7 @@ public class GetAkFromAskServlet extends HttpServlet {
       BytesMessage.Builder build = BytesMessage.newBuilder();
       JsonFormat.merge(input, build);
 
-      BytesMessage reply = wallet.getAkFromAsk(build.getValue());
+      BytesMessage reply = walletShield.getAkFromAsk(build.getValue());
       if (reply != null) {
         response.getWriter().println(JsonFormat.printToString(reply));
       } else {

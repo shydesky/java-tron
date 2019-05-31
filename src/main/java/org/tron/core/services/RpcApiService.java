@@ -66,6 +66,7 @@ import org.tron.api.GrpcAPI.TransactionListExtention;
 import org.tron.api.GrpcAPI.TransactionSignWeight;
 import org.tron.api.GrpcAPI.ViewingKeyMessage;
 import org.tron.api.GrpcAPI.WitnessList;
+import org.tron.api.ShieldTransactionServerGrpc.ShieldTransactionServerImplBase;
 import org.tron.api.WalletExtensionGrpc;
 import org.tron.api.WalletGrpc.WalletImplBase;
 import org.tron.api.WalletSolidityGrpc.WalletSolidityImplBase;
@@ -78,6 +79,7 @@ import org.tron.common.utils.Sha256Hash;
 import org.tron.common.utils.StringUtil;
 import org.tron.common.utils.Utils;
 import org.tron.core.Wallet;
+import org.tron.core.WalletShield;
 import org.tron.core.WalletSolidity;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BlockCapsule;
@@ -137,12 +139,17 @@ public class RpcApiService implements Service {
   @Autowired
   private Wallet wallet;
   @Autowired
+  private WalletShield walletShield;
+  @Autowired
   private NodeInfoService nodeInfoService;
   @Getter
   private DatabaseApi databaseApi = new DatabaseApi();
   private WalletApi walletApi = new WalletApi();
   @Getter
   private WalletSolidityApi walletSolidityApi = new WalletSolidityApi();
+
+  @Getter
+  private ShieldTransactionServerApi shieldTransactionServerApi = new ShieldTransactionServerApi();
 
   @Override
   public void init() {
@@ -298,6 +305,268 @@ public class RpcApiService implements Service {
           dbManager.getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
       DynamicProperties dynamicProperties = builder.build();
       responseObserver.onNext(dynamicProperties);
+      responseObserver.onCompleted();
+    }
+  }
+
+  public class ShieldTransactionServerApi extends ShieldTransactionServerImplBase {
+
+
+    @Override
+    public void getMerkleTreeVoucherInfo(OutputPointInfo request,
+        StreamObserver<IncrementalMerkleVoucherInfo> responseObserver) {
+
+      try {
+        IncrementalMerkleVoucherInfo witnessInfo = walletShield
+            .getMerkleTreeVoucherInfo(request);
+        responseObserver.onNext(witnessInfo);
+      } catch (Exception ex) {
+        //todo,return error message
+        responseObserver.onNext(null);
+        responseObserver.onCompleted();
+        return;
+      }
+
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void createShieldedTransaction(PrivateParameters request,
+        StreamObserver<TransactionExtention> responseObserver) {
+
+      TransactionExtention.Builder trxExtBuilder = TransactionExtention.newBuilder();
+      Return.Builder retBuilder = Return.newBuilder();
+
+      try {
+        TransactionCapsule trx = walletShield.createShieldedTransaction(request);
+        trxExtBuilder.setTransaction(trx.getInstance());
+        trxExtBuilder.setTxid(trx.getTransactionId().getByteString());
+        retBuilder.setResult(true).setCode(response_code.SUCCESS);
+      } catch (ContractValidateException e) {
+        retBuilder.setResult(false).setCode(response_code.CONTRACT_VALIDATE_ERROR)
+            .setMessage(ByteString.copyFromUtf8("contract validate error : " + e.getMessage()));
+        logger.debug("ContractValidateException: {}", e.getMessage());
+      } catch (Exception e) {
+        retBuilder.setResult(false).setCode(response_code.OTHER_ERROR)
+            .setMessage(ByteString.copyFromUtf8(e.getClass() + " : " + e.getMessage()));
+        logger.info("exception caught" + e.getMessage());
+      }
+
+      trxExtBuilder.setResult(retBuilder);
+      responseObserver.onNext(trxExtBuilder.build());
+      responseObserver.onCompleted();
+
+    }
+
+    @Override
+    public void createShieldedTransactionWithoutSpendAuthSig(PrivateParametersWithoutAsk request,
+        StreamObserver<TransactionExtention> responseObserver) {
+
+      TransactionExtention.Builder trxExtBuilder = TransactionExtention.newBuilder();
+      Return.Builder retBuilder = Return.newBuilder();
+
+      try {
+        TransactionCapsule trx = walletShield.createShieldedTransactionWithoutSpendAuthSig(request);
+        trxExtBuilder.setTransaction(trx.getInstance());
+        trxExtBuilder.setTxid(trx.getTransactionId().getByteString());
+        retBuilder.setResult(true).setCode(response_code.SUCCESS);
+      } catch (ContractValidateException e) {
+        retBuilder.setResult(false).setCode(response_code.CONTRACT_VALIDATE_ERROR)
+            .setMessage(ByteString.copyFromUtf8("contract validate error : " + e.getMessage()));
+        logger.debug("ContractValidateException: {}", e.getMessage());
+      } catch (Exception e) {
+        retBuilder.setResult(false).setCode(response_code.OTHER_ERROR)
+            .setMessage(ByteString.copyFromUtf8(e.getClass() + " : " + e.getMessage()));
+        logger.info("exception caught" + e.getMessage());
+      }
+
+      trxExtBuilder.setResult(retBuilder);
+      responseObserver.onNext(trxExtBuilder.build());
+      responseObserver.onCompleted();
+
+    }
+
+    @Override
+    public void getSpendingKey(EmptyMessage request,
+        StreamObserver<BytesMessage> responseObserver) {
+      try {
+        responseObserver.onNext(walletShield.getSpendingKey());
+      } catch (Exception e) {
+        responseObserver.onError(e);
+      }
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getExpandedSpendingKey(BytesMessage request,
+        StreamObserver<ExpandedSpendingKeyMessage> responseObserver) {
+      ByteString spendingKey = request.getValue();
+
+      try {
+        ExpandedSpendingKeyMessage response = walletShield.getExpandedSpendingKey(spendingKey);
+      } catch (BadItemException | ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getAkFromAsk(BytesMessage request, StreamObserver<BytesMessage> responseObserver) {
+      ByteString ak = request.getValue();
+
+      try {
+        responseObserver.onNext(walletShield.getAkFromAsk(ak));
+      } catch (BadItemException e) {
+        responseObserver.onError(e);
+      } catch (ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getNkFromNsk(BytesMessage request, StreamObserver<BytesMessage> responseObserver) {
+      ByteString nk = request.getValue();
+
+      try {
+        responseObserver.onNext(walletShield.getNkFromNsk(nk));
+      } catch (BadItemException e) {
+        responseObserver.onError(e);
+      } catch (ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getIncomingViewingKey(ViewingKeyMessage request,
+        StreamObserver<IncomingViewingKeyMessage> responseObserver) {
+      ByteString ak = request.getAk();
+      ByteString nk = request.getNk();
+
+      try {
+        responseObserver.onNext(walletShield.getIncomingViewingKey(ak.toByteArray(), nk.toByteArray()));
+      } catch (ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getDiversifier(EmptyMessage request,
+        StreamObserver<DiversifierMessage> responseObserver) {
+      try {
+        DiversifierMessage d = walletShield.getDiversifier();
+        responseObserver.onNext(d);
+      } catch (ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getZenPaymentAddress(IncomingViewingKeyDiversifierMessage request,
+        StreamObserver<PaymentAddressMessage> responseObserver) {
+      IncomingViewingKeyMessage ivk = request.getIvk();
+      DiversifierMessage d = request.getD();
+
+      try {
+        PaymentAddressMessage saplingPaymentAddressMessage =
+            walletShield.getPaymentAddress(new IncomingViewingKey(ivk.getIvk().toByteArray()),
+                new DiversifierT(d.getD().toByteArray()));
+
+        responseObserver.onNext(saplingPaymentAddressMessage);
+      } catch (BadItemException | ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+
+      responseObserver.onCompleted();
+
+    }
+
+    @Override
+    public void scanNoteByIvk(GrpcAPI.IvkDecryptParameters request,
+        StreamObserver<GrpcAPI.DecryptNotes> responseObserver) {
+
+      long startNum = request.getStartBlockIndex();
+      long endNum = request.getEndBlockIndex();
+
+      try {
+        DecryptNotes decryptNotes = walletShield
+            .scanNoteByIvk(startNum, endNum, request.getIvk().toByteArray());
+        responseObserver.onNext(decryptNotes);
+      } catch (BadItemException | ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+      responseObserver.onCompleted();
+
+    }
+
+    @Override
+    public void scanNoteByOvk(GrpcAPI.OvkDecryptParameters request,
+        StreamObserver<GrpcAPI.DecryptNotes> responseObserver) {
+
+      long startNum = request.getStartBlockIndex();
+      long endNum = request.getEndBlockIndex();
+
+      try {
+        DecryptNotes decryptNotes = walletShield
+            .scanNoteByOvk(startNum, endNum, request.getOvk().toByteArray());
+        responseObserver.onNext(decryptNotes);
+      } catch (BadItemException | ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void isSpend(NoteParameters request, StreamObserver<SpendResult> responseObserver) {
+      try {
+        responseObserver.onNext(walletShield.isSpend(request));
+      } catch (Exception e) {
+        responseObserver.onError(e);
+      }
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void createShieldNullifier(GrpcAPI.NfParameters request,
+        StreamObserver<GrpcAPI.BytesMessage> responseObserver) {
+      try {
+        BytesMessage nf = walletShield
+            .createShieldNullifier(request);
+        responseObserver.onNext(nf);
+      } catch (ZksnarkException e) {
+        responseObserver.onError(e);
+      }
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void createSpendAuthSig(SpendAuthSigParameters request,
+        StreamObserver<GrpcAPI.BytesMessage> responseObserver) {
+      try {
+        BytesMessage spendAuthSig = walletShield.createSpendAuthSig(request);
+        responseObserver.onNext(spendAuthSig);
+      } catch (Exception e) {
+        responseObserver.onError(e);
+      }
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getShieldTransactionHash(Transaction request,
+        StreamObserver<GrpcAPI.BytesMessage> responseObserver) {
+      try {
+        BytesMessage transactionHash = walletShield.getShieldTransactionHash(request);
+        responseObserver.onNext(transactionHash);
+      } catch (Exception e) {
+        responseObserver.onError(e);
+      }
       responseObserver.onCompleted();
     }
   }
@@ -1728,336 +1997,5 @@ public class RpcApiService implements Service {
           responseObserver);
     }
 
-//    @Override
-//    public void getNullifier(BytesMessage request, StreamObserver<BytesMessage> responseObserver) {
-//      ByteString id = request.getValue();
-//      if (null != id) {
-//        BytesMessage trxId = wallet.getNullifier(id);
-//
-//        responseObserver.onNext(trxId);
-//      } else {
-//        responseObserver.onNext(null);
-//      }
-//      responseObserver.onCompleted();
-//    }
-
-//    @Override
-//    public void getMerklePath(BytesMessage request, StreamObserver<MerklePath> responseObserver) {
-//      ByteString rt = request.getValue();
-//      if (null != rt) {
-//        MerklePath merklePath = wallet.getMerklePath(rt);
-//
-//        responseObserver.onNext(merklePath);
-//      } else {
-//        responseObserver.onNext(null);
-//      }
-//      responseObserver.onCompleted();
-//    }
-
-//    @Override
-//    public void getBestMerkleRoot(EmptyMessage request,
-//        StreamObserver<BytesMessage> responseObserver) {
-//      byte[] rt = wallet.getBestMerkleRoot();
-//      if (rt == null) {
-//        responseObserver.onNext(null);
-//      } else {
-//        responseObserver
-//            .onNext(BytesMessage.newBuilder().setValue(ByteString.copyFrom(rt)).build());
-//      }
-//      responseObserver.onCompleted();
-//    }
-
-    @Override
-    public void getMerkleTreeVoucherInfo(OutputPointInfo request,
-        StreamObserver<IncrementalMerkleVoucherInfo> responseObserver) {
-
-      try {
-        IncrementalMerkleVoucherInfo witnessInfo = wallet
-            .getMerkleTreeVoucherInfo(request);
-        responseObserver.onNext(witnessInfo);
-      } catch (Exception ex) {
-        //todo,return error message
-        responseObserver.onNext(null);
-        responseObserver.onCompleted();
-        return;
-      }
-
-      responseObserver.onCompleted();
-    }
-
-//    @Override
-//    public void getZKBlockByLimitNext(BlockLimit request,
-//        StreamObserver<BlockListExtention> responseObserver) {
-//      long startNum = request.getStartNum();
-//      long endNum = request.getEndNum();
-//
-//      if (endNum > 0 && endNum > startNum && endNum - startNum <= BLOCK_LIMIT_NUM) {
-//        responseObserver.onNext(blocklist2Extention(
-//            wallet.getZKBlocksByLimitNext(startNum, endNum - startNum)));
-//      } else {
-//        responseObserver.onNext(null);
-//      }
-//      responseObserver.onCompleted();
-//    }
-//
-//    @Override
-//    public void getMerkleTreeOfBlock(NumberMessage request,
-//        StreamObserver<BlockIncrementalMerkleTree> responseObserver) {
-//      long blockNumber = request.getNum();
-//      if (blockNumber >= 0) {
-//        BlockIncrementalMerkleTree.Builder builder = BlockIncrementalMerkleTree.newBuilder();
-//        builder.setNumber(blockNumber);
-//        IncrementalMerkleTree tree = wallet.getMerkleTreeOfBlock(blockNumber);
-//        if (tree != null) {
-//          builder.setMerkleTree(tree);
-//          responseObserver.onNext(builder.build());
-//        } else {
-//          responseObserver.onNext(null);
-//        }
-//      } else {
-//        responseObserver.onNext(null);
-//      }
-//      responseObserver.onCompleted();
-//    }
-
-    @Override
-    public void createShieldedTransaction(PrivateParameters request,
-        StreamObserver<TransactionExtention> responseObserver) {
-
-      TransactionExtention.Builder trxExtBuilder = TransactionExtention.newBuilder();
-      Return.Builder retBuilder = Return.newBuilder();
-
-      try {
-        TransactionCapsule trx = wallet.createShieldedTransaction(request);
-        trxExtBuilder.setTransaction(trx.getInstance());
-        trxExtBuilder.setTxid(trx.getTransactionId().getByteString());
-        retBuilder.setResult(true).setCode(response_code.SUCCESS);
-      } catch (ContractValidateException e) {
-        retBuilder.setResult(false).setCode(response_code.CONTRACT_VALIDATE_ERROR)
-            .setMessage(ByteString.copyFromUtf8("contract validate error : " + e.getMessage()));
-        logger.debug("ContractValidateException: {}", e.getMessage());
-      } catch (Exception e) {
-        retBuilder.setResult(false).setCode(response_code.OTHER_ERROR)
-            .setMessage(ByteString.copyFromUtf8(e.getClass() + " : " + e.getMessage()));
-        logger.info("exception caught" + e.getMessage());
-      }
-
-      trxExtBuilder.setResult(retBuilder);
-      responseObserver.onNext(trxExtBuilder.build());
-      responseObserver.onCompleted();
-
-    }
-
-    @Override
-    public void createShieldedTransactionWithoutSpendAuthSig(PrivateParametersWithoutAsk request,
-        StreamObserver<TransactionExtention> responseObserver) {
-
-      TransactionExtention.Builder trxExtBuilder = TransactionExtention.newBuilder();
-      Return.Builder retBuilder = Return.newBuilder();
-
-      try {
-        TransactionCapsule trx = wallet.createShieldedTransactionWithoutSpendAuthSig(request);
-        trxExtBuilder.setTransaction(trx.getInstance());
-        trxExtBuilder.setTxid(trx.getTransactionId().getByteString());
-        retBuilder.setResult(true).setCode(response_code.SUCCESS);
-      } catch (ContractValidateException e) {
-        retBuilder.setResult(false).setCode(response_code.CONTRACT_VALIDATE_ERROR)
-            .setMessage(ByteString.copyFromUtf8("contract validate error : " + e.getMessage()));
-        logger.debug("ContractValidateException: {}", e.getMessage());
-      } catch (Exception e) {
-        retBuilder.setResult(false).setCode(response_code.OTHER_ERROR)
-            .setMessage(ByteString.copyFromUtf8(e.getClass() + " : " + e.getMessage()));
-        logger.info("exception caught" + e.getMessage());
-      }
-
-      trxExtBuilder.setResult(retBuilder);
-      responseObserver.onNext(trxExtBuilder.build());
-      responseObserver.onCompleted();
-
-    }
-
-    @Override
-    public void getSpendingKey(EmptyMessage request,
-        StreamObserver<BytesMessage> responseObserver) {
-      try {
-        responseObserver.onNext(wallet.getSpendingKey());
-      } catch (Exception e) {
-        responseObserver.onError(e);
-      }
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void getExpandedSpendingKey(BytesMessage request,
-        StreamObserver<ExpandedSpendingKeyMessage> responseObserver) {
-      ByteString spendingKey = request.getValue();
-
-      try {
-        ExpandedSpendingKeyMessage response = wallet.getExpandedSpendingKey(spendingKey);
-      } catch (BadItemException | ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void getAkFromAsk(BytesMessage request, StreamObserver<BytesMessage> responseObserver) {
-      ByteString ak = request.getValue();
-
-      try {
-        responseObserver.onNext(wallet.getAkFromAsk(ak));
-      } catch (BadItemException e) {
-        responseObserver.onError(e);
-      } catch (ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void getNkFromNsk(BytesMessage request, StreamObserver<BytesMessage> responseObserver) {
-      ByteString nk = request.getValue();
-
-      try {
-        responseObserver.onNext(wallet.getNkFromNsk(nk));
-      } catch (BadItemException e) {
-        responseObserver.onError(e);
-      } catch (ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void getIncomingViewingKey(ViewingKeyMessage request,
-        StreamObserver<IncomingViewingKeyMessage> responseObserver) {
-      ByteString ak = request.getAk();
-      ByteString nk = request.getNk();
-
-      try {
-        responseObserver.onNext(wallet.getIncomingViewingKey(ak.toByteArray(), nk.toByteArray()));
-      } catch (ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void getDiversifier(EmptyMessage request,
-        StreamObserver<DiversifierMessage> responseObserver) {
-      try {
-        DiversifierMessage d = wallet.getDiversifier();
-        responseObserver.onNext(d);
-      } catch (ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void getZenPaymentAddress(IncomingViewingKeyDiversifierMessage request,
-        StreamObserver<PaymentAddressMessage> responseObserver) {
-      IncomingViewingKeyMessage ivk = request.getIvk();
-      DiversifierMessage d = request.getD();
-
-      try {
-        PaymentAddressMessage saplingPaymentAddressMessage =
-            wallet.getPaymentAddress(new IncomingViewingKey(ivk.getIvk().toByteArray()),
-                new DiversifierT(d.getD().toByteArray()));
-
-        responseObserver.onNext(saplingPaymentAddressMessage);
-      } catch (BadItemException | ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-
-      responseObserver.onCompleted();
-
-    }
-
-    @Override
-    public void scanNoteByIvk(GrpcAPI.IvkDecryptParameters request,
-        StreamObserver<GrpcAPI.DecryptNotes> responseObserver) {
-
-      long startNum = request.getStartBlockIndex();
-      long endNum = request.getEndBlockIndex();
-
-      try {
-        DecryptNotes decryptNotes = wallet
-            .scanNoteByIvk(startNum, endNum, request.getIvk().toByteArray());
-        responseObserver.onNext(decryptNotes);
-      } catch (BadItemException | ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-      responseObserver.onCompleted();
-
-    }
-
-    @Override
-    public void scanNoteByOvk(GrpcAPI.OvkDecryptParameters request,
-        StreamObserver<GrpcAPI.DecryptNotes> responseObserver) {
-
-      long startNum = request.getStartBlockIndex();
-      long endNum = request.getEndBlockIndex();
-
-      try {
-        DecryptNotes decryptNotes = wallet
-            .scanNoteByOvk(startNum, endNum, request.getOvk().toByteArray());
-        responseObserver.onNext(decryptNotes);
-      } catch (BadItemException | ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void isSpend(NoteParameters request, StreamObserver<SpendResult> responseObserver) {
-      try {
-        responseObserver.onNext(wallet.isSpend(request));
-      } catch (Exception e) {
-        responseObserver.onError(e);
-      }
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void createShieldNullifier(GrpcAPI.NfParameters request,
-        StreamObserver<GrpcAPI.BytesMessage> responseObserver) {
-      try {
-        BytesMessage nf = wallet
-            .createShieldNullifier(request);
-        responseObserver.onNext(nf);
-      } catch (ZksnarkException e) {
-        responseObserver.onError(e);
-      }
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void createSpendAuthSig(SpendAuthSigParameters request,
-        StreamObserver<GrpcAPI.BytesMessage> responseObserver) {
-      try {
-        BytesMessage spendAuthSig = wallet.createSpendAuthSig(request);
-        responseObserver.onNext(spendAuthSig);
-      } catch (Exception e) {
-        responseObserver.onError(e);
-      }
-      responseObserver.onCompleted();
-    }
-
-    @Override
-    public void getShieldTransactionHash(Transaction request,
-        StreamObserver<GrpcAPI.BytesMessage> responseObserver) {
-      try {
-        BytesMessage transactionHash = wallet.getShieldTransactionHash(request);
-        responseObserver.onNext(transactionHash);
-      } catch (Exception e) {
-        responseObserver.onError(e);
-      }
-      responseObserver.onCompleted();
-    }
   }
 }

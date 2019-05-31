@@ -14,7 +14,7 @@ import org.tron.common.zksnark.LibrustzcashParam.BindingSigParams;
 import org.tron.common.zksnark.LibrustzcashParam.OutputProofParams;
 import org.tron.common.zksnark.LibrustzcashParam.SpendProofParams;
 import org.tron.common.zksnark.LibrustzcashParam.SpendSigParams;
-import org.tron.core.Wallet;
+import org.tron.core.WalletShield;
 import org.tron.core.capsule.ReceiveDescriptionCapsule;
 import org.tron.core.capsule.SpendDescriptionCapsule;
 import org.tron.core.capsule.TransactionCapsule;
@@ -48,7 +48,7 @@ public class ZenTransactionBuilder {
   @Getter
   private List<ReceiveDescriptionInfo> receives = new ArrayList<>();
 
-  private Wallet wallet;
+  private WalletShield walletShield;
 
   @Getter
   private long valueBalance = 0;
@@ -56,8 +56,8 @@ public class ZenTransactionBuilder {
   @Getter
   private ShieldedTransferContract.Builder contractBuilder = ShieldedTransferContract.newBuilder();
 
-  public ZenTransactionBuilder(Wallet wallet) {
-    this.wallet = wallet;
+  public ZenTransactionBuilder(WalletShield walletShield) {
+    this.walletShield = walletShield;
   }
 
   public ZenTransactionBuilder() {
@@ -151,7 +151,7 @@ public class ZenTransactionBuilder {
 
       // Empty output script
       byte[] dataHashToBeSigned; //256
-      transactionCapsule = wallet.createTransactionCapsuleWithoutValidate(
+      transactionCapsule = walletShield.createTransactionCapsuleWithoutValidate(
           contractBuilder.build(), ContractType.ShieldedTransferContract);
 
       dataHashToBeSigned = TransactionCapsule
