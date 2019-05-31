@@ -199,7 +199,6 @@ public class ZkTransactionGenerator {
 
         if (count % 10 == 0 || (zkTransactionNum-count)  == 1 ) {
     fos.flush();
-    countDownLatch.countDown();
           logger.info(
 //    System.out.println(
         "Generate transaction success ------- ------- ------- ------- ------- Remain: "
@@ -208,6 +207,7 @@ public class ZkTransactionGenerator {
             + transactions.size());
         }
 
+    countDownLatch.countDown();
   }
 
   /** Start the FullNode. */
