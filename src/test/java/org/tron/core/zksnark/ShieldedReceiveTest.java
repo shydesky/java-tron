@@ -1965,7 +1965,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(4010 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
     // generate spend proof
     SpendingKey sk = SpendingKey
@@ -2045,7 +2045,7 @@ public class ShieldedReceiveTest {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
     dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(4010 * 1000000l);
-    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
     // generate spend proof
     SpendingKey sk = SpendingKey
