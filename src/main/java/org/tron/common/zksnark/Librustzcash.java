@@ -49,7 +49,9 @@ public class Librustzcash {
   public static void librustzcashInitZksnarkParams(InitZksnarkParams params) {
     INSTANCE.librustzcash_init_zksnark_params(params.getSpend_path(), params.getSpend_path_len(),
         params.getSpend_hash(), params.getOutput_path(), params.getOutput_path_len(),
-        params.getOutput_hash());
+        params.getOutput_hash(), "/home/java-tron/.zcash-params/sprout-groth16.params".getBytes(),
+        "/home/java-tron/.zcash-params/sprout-groth16.params".length(),
+        "e9b238411bd6c0ec4791e9d04245ec350c9c5744f5610dfcce4365d5ca49dfefd5054e371842b3f88fa1b9d7e8e075249b3ebabd167fa8b0f3161292d36c180a");
   }
 
   public static void librustzcashZip32XskDerive(Zip32XskDeriveParams params) {
@@ -246,9 +248,11 @@ public class Librustzcash {
   }
 
   public interface ILibrustzcash extends Library {
-
+//        reinterpret_cast<const codeunit*>(sprout_groth16_str.c_str()),
+//        sprout_groth16_str.length(),
+//        "e9b238411bd6c0ec4791e9d04245ec350c9c5744f5610dfcce4365d5ca49dfefd5054e371842b3f88fa1b9d7e8e075249b3ebabd167fa8b0f3161292d36c180a"
     void librustzcash_init_zksnark_params(byte[] spend_path, int spend_path_len, String spend_hash,
-        byte[] output_path, int output_path_len, String output_hash);
+        byte[] output_path, int output_path_len, String output_hash, byte[] sprout_path, int sprout_path_len, String sprout_hash);
 
     void librustzcash_zip32_xsk_master(byte[] data, int size, byte[] m_bytes);
 
