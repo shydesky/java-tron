@@ -158,7 +158,6 @@ import org.tron.core.zen.merkle.IncrementalMerkleTreeContainer;
 import org.tron.core.zen.merkle.IncrementalMerkleVoucherContainer;
 import org.tron.core.zen.note.Note;
 import org.tron.core.zen.note.NoteEncryption.Encryption;
-import org.tron.core.zen.note.NotePlaintext;
 import org.tron.core.zen.note.OutgoingPlaintext;
 import org.tron.protos.Contract.AssetIssueContract;
 import org.tron.protos.Contract.CreateSmartContract;
@@ -2436,7 +2435,7 @@ public class Wallet {
             index < stContract.getReceiveDescriptionList().size();
             index++) {
           ReceiveDescription r = stContract.getReceiveDescription(index);
-          Optional<NotePlaintext> notePlaintext = NotePlaintext
+          Optional<Note> notePlaintext = Note
               .decrypt(
                   r.getCEnc().toByteArray(),//ciphertext
                   ivk,
@@ -2445,7 +2444,7 @@ public class Wallet {
               );
 
           if (notePlaintext.isPresent()) {
-            NotePlaintext noteText = notePlaintext.get();
+            Note noteText = notePlaintext.get();
 
             byte[] pk_d = new byte[32];
             if (!Librustzcash
@@ -2461,6 +2460,7 @@ public class Wallet {
                 .setPaymentAddress(paymentAddress)
                 .setValue(noteText.value)
                 .setRcm(ByteString.copyFrom(noteText.rcm))
+                .setMemo(ByteString.copyFrom(noteText.memo))
                 .build();
             DecryptNotes.NoteTx noteTx = DecryptNotes.NoteTx.newBuilder()
                 .setNote(note)
@@ -2541,7 +2541,7 @@ public class Wallet {
             //decode c_enc with pkd、esk
             Encryption.EncCiphertext ciphertext = new Encryption.EncCiphertext();
             ciphertext.data = r.getCEnc().toByteArray();
-            Optional<NotePlaintext> foo = NotePlaintext
+            Optional<Note> foo = Note
                 .decrypt(ciphertext,
                     r.getEpk().toByteArray(),
                     decrypted_out_ct_unwrapped.esk,
@@ -2549,13 +2549,14 @@ public class Wallet {
                     r.getNoteCommitment().toByteArray());
 
             if (foo.isPresent()) {
-              NotePlaintext bar = foo.get();
+              Note bar = foo.get();
               String paymentAddress = KeyIo.encodePaymentAddress(
                   new PaymentAddress(bar.d, decrypted_out_ct_unwrapped.pk_d));
               GrpcAPI.Note note = GrpcAPI.Note.newBuilder()
                   .setPaymentAddress(paymentAddress)
                   .setValue(bar.value)
                   .setRcm(ByteString.copyFrom(bar.rcm))
+                  .setMemo(ByteString.copyFrom(bar.memo))
                   .build();
 
               DecryptNotes.NoteTx noteTx = DecryptNotes.NoteTx

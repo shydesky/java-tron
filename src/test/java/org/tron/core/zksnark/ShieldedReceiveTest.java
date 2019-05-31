@@ -24,6 +24,7 @@ import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.FileUtil;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.common.zksnark.Librustzcash;
+import org.tron.common.zksnark.LibrustzcashParam;
 import org.tron.common.zksnark.LibrustzcashParam.BindingSigParams;
 import org.tron.common.zksnark.LibrustzcashParam.InitZksnarkParams;
 import org.tron.common.zksnark.LibrustzcashParam.OutputProofParams;
@@ -41,12 +42,7 @@ import org.tron.core.capsule.TransactionResultCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
-import org.tron.core.exception.BadItemException;
-import org.tron.core.exception.ContractExeException;
-import org.tron.core.exception.ContractValidateException;
-import org.tron.core.exception.PermissionException;
-import org.tron.core.exception.SignatureFormatException;
-import org.tron.core.exception.ZksnarkException;
+import org.tron.core.exception.*;
 import org.tron.core.zen.ZenTransactionBuilder;
 import org.tron.core.zen.ZenTransactionBuilder.ReceiveDescriptionInfo;
 import org.tron.core.zen.ZenTransactionBuilder.SpendDescriptionInfo;
@@ -60,12 +56,13 @@ import org.tron.core.zen.merkle.IncrementalMerkleTreeContainer;
 import org.tron.core.zen.merkle.IncrementalMerkleVoucherContainer;
 import org.tron.core.zen.note.Note;
 import org.tron.core.zen.note.NoteEncryption;
-import org.tron.core.zen.note.NotePlaintext;
-import org.tron.core.zen.note.NotePlaintext.NotePlaintextEncryptionResult;
+import org.tron.core.zen.note.Note.NotePlaintextEncryptionResult;
 import org.tron.core.zen.note.OutgoingPlaintext;
+import org.tron.protos.Contract;
 import org.tron.protos.Contract.PedersenHash;
 import org.tron.protos.Contract.ShieldedTransferContract;
 import org.tron.protos.Contract.SpendDescription;
+import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.AccountType;
 import org.tron.protos.Protocol.Transaction;
 import org.tron.protos.Protocol.Transaction.Contract.ContractType;
@@ -85,17 +82,10 @@ public class ShieldedReceiveTest {
 
   private static Wallet wallet;
 
-  public enum TestColumn {CV, ZKPOOF, D_CM, PKD_CM, VALUE_CM, R_CM}
-
-  ;
-
-  public enum TestSignMissingColumn {FROM_ADDRESS, FROM_AMOUNT, SPEND_DESCRITPION, RECEIVE_DESCRIPTION, TO_ADDRESS, TO_AMOUNT}
-
-  ;
-
-  public enum TestReceiveMissingColumn {CV, CM, EPK, C_ENC, C_OUT, ZKPROOF}
-
-  ;
+  public enum TestColumn {CV, ZKPOOF, D_CM, PKD_CM, VALUE_CM, R_CM};
+  public enum TestSignMissingColumn {FROM_ADDRESS, FROM_AMOUNT, SPEND_DESCRITPION,
+    RECEIVE_DESCRIPTION, TO_ADDRESS, TO_AMOUNT};
+  public enum TestReceiveMissingColumn {CV, CM, EPK, C_ENC, C_OUT, ZKPROOF};
 
   static {
     Args.setParam(new String[]{"--output-directory", dbPath}, "config-localtest.conf");
@@ -617,9 +607,9 @@ public class ShieldedReceiveTest {
       throw new ZksnarkException("Output is invalid");
     }
 
-    NotePlaintext notePlaintext = new NotePlaintext(output.getNote(), output.getMemo());
+//    NotePlaintext notePlaintext = new NotePlaintext(output.getNote(), output.getMemo());
 
-    Optional<NotePlaintextEncryptionResult> res = notePlaintext
+    Optional<NotePlaintextEncryptionResult> res = output.getNote()
         .encrypt(output.getNote().pkD);
     if (!res.isPresent()) {
       Librustzcash.librustzcashSaplingProvingCtxFree(ctx);
@@ -636,7 +626,7 @@ public class ShieldedReceiveTest {
             encryptor.esk,
             output.getNote().d.data,
             output.getNote().pkD,
-            output.getNote().r,
+            output.getNote().rcm,
             output.getNote().value,
             cv,
             zkProof))) {
@@ -695,7 +685,7 @@ public class ShieldedReceiveTest {
         }
         break;
       case R_CM:
-        newNote.r = Note.generateR();
+        newNote.rcm = Note.generateR();
         newCm = newNote.cm();
         if (newCm == null) {
           receiveDescriptionCapsule.setNoteCommitment(ByteString.EMPTY);
@@ -791,7 +781,7 @@ public class ShieldedReceiveTest {
     IncomingViewingKey ivk1 = fullViewingKey1.inViewingKey();
     PaymentAddress paymentAddress1 = ivk1.address(new DiversifierT()).get();
     Note note2 = new Note(address, 90 * 1000000);
-    builder.addOutput(fullViewingKey1.getOvk(), note2.d, note2.pkD, note2.value, note2.r,
+    builder.addOutput(fullViewingKey1.getOvk(), note2.d, note2.pkD, note2.value, note2.rcm,
         new byte[512]);
 
     return builder;
@@ -1150,9 +1140,9 @@ public class ShieldedReceiveTest {
     PaymentAddress paymentAddress1 = ivk1.address(new DiversifierT()).get();
     Note note2 = new Note(address, 45 * 1000000);
     //add two same output note
-    builder.addOutput(fullViewingKey1.getOvk(), note2.d, note2.pkD, note2.value, note2.r,
+    builder.addOutput(fullViewingKey1.getOvk(), note2.d, note2.pkD, note2.value, note2.rcm,
         new byte[512]);
-    builder.addOutput(fullViewingKey1.getOvk(), note2.d, note2.pkD, note2.value, note2.r,
+    builder.addOutput(fullViewingKey1.getOvk(), note2.d, note2.pkD, note2.value, note2.rcm,
         new byte[512]);//same output cm
 
     updateTotalShieldedPoolValue(builder.getValueBalance());
@@ -1913,7 +1903,7 @@ public class ShieldedReceiveTest {
         nsk,
         ovk,
         note,
-        note.r, //?
+        note.rcm, //?
         anchor,
         voucher
     );
@@ -1962,5 +1952,165 @@ public class ShieldedReceiveTest {
     );
     builder.getContractBuilder().setBindingSignature(ByteString.copyFrom(bindingSig));
     return transactionCapsule;
+  }
+
+  @Test
+  public void testMemoTooLong()
+          throws ContractValidateException, TooBigTransactionException, TooBigTransactionResultException,
+          TaposException, TransactionExpirationException, ReceiptCheckErrException,
+          DupTransactionException, VMIllegalException, ValidateSignatureException, BadItemException,
+          ContractExeException, AccountResourceInsufficientException, InvalidProtocolBufferException, ZksnarkException {
+    Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
+
+    librustzcashInitZksnarkParams();
+    dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
+    dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(4010 * 1000000l);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+
+    // generate spend proof
+    SpendingKey sk = SpendingKey
+            .decode("ff2c06269315333a9207f817d2eca0ac555ca8f90196976324c7756504e7c9ee");
+    ExpandedSpendingKey expsk = sk.expandedSpendingKey();
+    PaymentAddress address = sk.defaultAddress();
+    Note note = new Note(address, 4010 * 1000000);
+    IncrementalMerkleVoucherContainer voucher = createSimpleMerkleVoucherContainer(note.cm());
+    byte[] anchor = voucher.root().getContent().toByteArray();
+    dbManager.getMerkleContainer()
+            .putMerkleTreeIntoStore(anchor, voucher.getVoucherCapsule().getTree());
+    builder.addSpend(expsk, note, anchor, voucher);
+
+    // generate output proof
+    SpendingKey spendingKey = SpendingKey.random();
+    FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+    IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+    PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+    byte[] memo = org.tron.keystore.Wallet.generateRandomBytes(1024);
+    builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 4000 * 1000000, memo);
+
+    TransactionCapsule transactionCap = builder.build();
+
+    boolean ok = dbManager.pushTransaction(transactionCap);
+    Assert.assertTrue(ok);
+
+    // add here
+    byte[] ivk = fullViewingKey.inViewingKey().getValue();
+    Protocol.Transaction t = transactionCap.getInstance();
+
+    for (org.tron.protos.Protocol.Transaction.Contract c : t.getRawData().getContractList()) {
+      if (c.getType() != ContractType.ShieldedTransferContract) {
+        continue;
+      }
+      Contract.ShieldedTransferContract stContract = c.getParameter()
+              .unpack(Contract.ShieldedTransferContract.class);
+      Contract.ReceiveDescription receiveDescription = stContract.getReceiveDescription(0);
+
+      Optional<Note> ret1 = Note.decrypt(
+              receiveDescription.getCEnc().toByteArray(),//ciphertext
+              ivk,
+              receiveDescription.getEpk().toByteArray(),//epk
+              receiveDescription.getNoteCommitment().toByteArray() //cm
+      );
+
+      if (ret1.isPresent()) {
+        Note noteText = ret1.get();
+        byte[] pk_d = new byte[32];
+        if (!Librustzcash.librustzcashIvkToPkd(
+                new LibrustzcashParam.IvkToPkdParams(incomingViewingKey.getValue(), noteText.d.getData(), pk_d))) {
+          Librustzcash.librustzcashSaplingProvingCtxFree(ctx);
+          return;
+        }
+        Assert.assertArrayEquals(paymentAddress.getPkD(), pk_d);
+        Assert.assertEquals( 4000 * 1000000,noteText.value);
+
+        byte[] resultMemo = new byte[512];
+        System.arraycopy(memo,0,resultMemo,0,512);
+        Assert.assertArrayEquals(resultMemo, noteText.memo);
+      } else {
+        Assert.assertFalse(true);
+      }
+    }
+    // end here
+    Librustzcash.librustzcashSaplingProvingCtxFree(ctx);
+    Assert.assertTrue(ok);
+  }
+
+  @Test
+  public void testMemoNotEnough()
+          throws ContractValidateException, TooBigTransactionException, TooBigTransactionResultException,
+          TaposException, TransactionExpirationException, ReceiptCheckErrException,
+          DupTransactionException, VMIllegalException, ValidateSignatureException, BadItemException,
+          ContractExeException, AccountResourceInsufficientException, InvalidProtocolBufferException, ZksnarkException {
+    Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
+
+    librustzcashInitZksnarkParams();
+    dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
+    dbManager.getDynamicPropertiesStore().saveTotalShieldedPoolValue(4010 * 1000000l);
+    ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
+
+    // generate spend proof
+    SpendingKey sk = SpendingKey
+            .decode("ff2c06269315333a9207f817d2eca0ac555ca8f90196976324c7756504e7c9ee");
+    ExpandedSpendingKey expsk = sk.expandedSpendingKey();
+    PaymentAddress address = sk.defaultAddress();
+    Note note = new Note(address, 4010 * 1000000);
+    IncrementalMerkleVoucherContainer voucher = createSimpleMerkleVoucherContainer(note.cm());
+    byte[] anchor = voucher.root().getContent().toByteArray();
+    dbManager.getMerkleContainer()
+            .putMerkleTreeIntoStore(anchor, voucher.getVoucherCapsule().getTree());
+    builder.addSpend(expsk, note, anchor, voucher);
+
+    // generate output proof
+    SpendingKey spendingKey = SpendingKey.random();
+    FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+    IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+    PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+    byte[] memo = org.tron.keystore.Wallet.generateRandomBytes(128);
+    builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 4000 * 1000000, memo);
+
+    TransactionCapsule transactionCap = builder.build();
+
+    boolean ok = dbManager.pushTransaction(transactionCap);
+    Assert.assertTrue(ok);
+
+    // add here
+    byte[] ivk = fullViewingKey.inViewingKey().getValue();
+    Protocol.Transaction t = transactionCap.getInstance();
+
+    for (org.tron.protos.Protocol.Transaction.Contract c : t.getRawData().getContractList()) {
+      if (c.getType() != ContractType.ShieldedTransferContract) {
+        continue;
+      }
+      Contract.ShieldedTransferContract stContract = c.getParameter()
+              .unpack(Contract.ShieldedTransferContract.class);
+      Contract.ReceiveDescription receiveDescription = stContract.getReceiveDescription(0);
+
+      Optional<Note> ret1 = Note.decrypt(
+              receiveDescription.getCEnc().toByteArray(),//ciphertext
+              ivk,
+              receiveDescription.getEpk().toByteArray(),//epk
+              receiveDescription.getNoteCommitment().toByteArray() //cm
+      );
+
+      if (ret1.isPresent()) {
+        Note noteText = ret1.get();
+        byte[] pk_d = new byte[32];
+        if (!Librustzcash.librustzcashIvkToPkd(
+                new LibrustzcashParam.IvkToPkdParams(incomingViewingKey.getValue(), noteText.d.getData(), pk_d))) {
+          Librustzcash.librustzcashSaplingProvingCtxFree(ctx);
+          return;
+        }
+        Assert.assertArrayEquals(paymentAddress.getPkD(), pk_d);
+        Assert.assertEquals( 4000 * 1000000,noteText.value);
+
+        byte[] resultMemo = new byte[512];
+        System.arraycopy(memo,0,resultMemo,0,128);
+        Assert.assertArrayEquals(resultMemo, noteText.memo);
+      } else {
+        Assert.assertFalse(true);
+      }
+    }
+    // end here
+    Librustzcash.librustzcashSaplingProvingCtxFree(ctx);
+    Assert.assertTrue(ok);
   }
 }
