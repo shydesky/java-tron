@@ -200,8 +200,8 @@ public class ZkTransactionGenerator {
         if (count % 100 == 0 || (zkTransactionNum-count)  == 1 ) {
     fos.flush();
     countDownLatch.countDown();
-    //      logger.info(
-    System.out.println(
+          logger.info(
+//    System.out.println(
         "Generate transaction success ------- ------- ------- ------- ------- Remain: "
             + countDownLatch.getCount()
             + ", Pending size: "
@@ -222,6 +222,7 @@ public class ZkTransactionGenerator {
     generator.start();
 
     System.out.println("Done.");
+    logger.info("Done.");
     System.exit(0);
   }
 
