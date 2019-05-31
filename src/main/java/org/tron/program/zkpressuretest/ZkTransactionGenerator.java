@@ -239,7 +239,7 @@ public class ZkTransactionGenerator {
     SpendingKey spendingKey = SpendingKey.random();
     FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
     IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
-    PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT().random()).get();
+    PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
     builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 100_000, new byte[512]);
 
     builder.setTransparentOutput(Wallet.decodeFromBase58Check(toAddress), 10_000_000);
