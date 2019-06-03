@@ -518,8 +518,6 @@ public class SendCoinShieldTest {
     IntStream.range(0, 1000).forEach( i -> {
       try {
         System.out.println(i + ": " + ByteArray.toHexString(SpendingKey.random().defaultAddress().getPkD()));
-        Assert.assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000",
-            ByteArray.toHexString(SpendingKey.random().defaultAddress().getPkD()));
       } catch (BadItemException e) {
         e.printStackTrace();
       } catch (ZksnarkException e) {
