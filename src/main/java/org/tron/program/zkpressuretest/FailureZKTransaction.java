@@ -21,26 +21,26 @@ import org.tron.program.ZKtool;
 import org.tron.protos.Contract.PedersenHash;
 
 public class FailureZKTransaction {
-  private static final String OWNER_ADDRESS = "TRGhNNfnmgLegT4zHNjEqDSADjgmnHvubJ";
-  private static final String OWNER_PRIVATE_KEY =
-      "7f7f701e94d4f1dd60ee5205e7ea8ee31121427210417b608a6b2e96433549a7";
+//  private static final String OWNER_ADDRESS = "TRGhNNfnmgLegT4zHNjEqDSADjgmnHvubJ";
+//  private static final String OWNER_PRIVATE_KEY =
+//      "7f7f701e94d4f1dd60ee5205e7ea8ee31121427210417b608a6b2e96433549a7";
 
-  private static final String TO_ADDRESS = "TXtrbmfwZ2LxtoCveEhZT86fTss1w8rwJE";
-  private static final String TO_PRIVATE_KEY =
-      "0528dc17428585fc4dece68b79fa7912270a1fe8e85f244372f59eb7e8925e04";
-
+//  private static final String TO_ADDRESS = "TXtrbmfwZ2LxtoCveEhZT86fTss1w8rwJE";
+//  private static final String TO_PRIVATE_KEY =
+//      "0528dc17428585fc4dece68b79fa7912270a1fe8e85f244372f59eb7e8925e04";
+//
 //  private static final String OWNER_ADDRESS = "TDQE4yb3E7dvDjouvu8u7GgSnMZbxAEumV";
 //  private static final String OWNER_PRIVATE_KEY =
 //      "85a449304487085205d48a402c30877e888fcb34391d65cfdc9cad420127826f";
-//
-//
-////  private static final String OWNER_ADDRESS = "TXtrbmfwZ2LxtoCveEhZT86fTss1w8rwJE";
-////  private static final String OWNER_PRIVATE_KEY =
-////      "0528dc17428585fc4dece68b79fa7912270a1fe8e85f244372f59eb7e8925e04";
-//
-//  private static final String TO_ADDRESS = "TRGhNNfnmgLegT4zHNjEqDSADjgmnHvubJ";
-//  private static final String TO_PRIVATE_KEY =
-//      "7f7f701e94d4f1dd60ee5205e7ea8ee31121427210417b608a6b2e96433549a7";
+
+
+  private static final String OWNER_ADDRESS = "TXtrbmfwZ2LxtoCveEhZT86fTss1w8rwJE";
+  private static final String OWNER_PRIVATE_KEY =
+      "0528dc17428585fc4dece68b79fa7912270a1fe8e85f244372f59eb7e8925e04";
+
+  private static final String TO_ADDRESS = "TRGhNNfnmgLegT4zHNjEqDSADjgmnHvubJ";
+  private static final String TO_PRIVATE_KEY =
+      "7f7f701e94d4f1dd60ee5205e7ea8ee31121427210417b608a6b2e96433549a7";
 
   private static final long SHIELD_FEE = 10_000_000L;
 
