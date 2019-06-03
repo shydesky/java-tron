@@ -1,10 +1,13 @@
 package org.tron.program.zkpressuretest;
 
+import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -19,6 +22,7 @@ import org.tron.common.zksnark.Librustzcash;
 import org.tron.common.zksnark.LibrustzcashParam.InitZksnarkParams;
 import org.tron.core.Constant;
 import org.tron.core.Wallet;
+import org.tron.core.capsule.IncrementalMerkleTreeCapsule;
 import org.tron.core.capsule.PedersenHashCapsule;
 import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.config.DefaultConfig;
@@ -26,13 +30,17 @@ import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
 import org.tron.core.exception.ZksnarkException;
 import org.tron.core.zen.ZenTransactionBuilder;
+import org.tron.core.zen.ZenTransactionBuilder.SpendDescriptionInfo;
 import org.tron.core.zen.address.DiversifierT;
+import org.tron.core.zen.address.ExpandedSpendingKey;
 import org.tron.core.zen.address.FullViewingKey;
 import org.tron.core.zen.address.IncomingViewingKey;
 import org.tron.core.zen.address.PaymentAddress;
 import org.tron.core.zen.address.SpendingKey;
 import org.tron.core.zen.merkle.IncrementalMerkleTreeContainer;
+import org.tron.core.zen.merkle.IncrementalMerkleVoucherContainer;
 import org.tron.core.zen.note.Note;
+import org.tron.core.zen.note.NoteEncryption.Encryption.EncPlaintext;
 import org.tron.protos.Contract.PedersenHash;
 import org.tron.protos.Protocol.Transaction;
 
@@ -52,7 +60,12 @@ public class ZkTransactionGenerator {
   private CountDownLatch countDownLatch = null;
   private int zkTransactionNum = 0;
 
-  public void init() {
+  private Note inputNote = null;
+  private PedersenHash cmHash = null;
+  private byte[] inputMerkleRoot = null;
+  private SpendingKey inputsSendingKey = null;
+
+  public void init() throws ZksnarkException {
     context = new TronApplicationContext(DefaultConfig.class);
     wallet = context.getBean(Wallet.class);
     dbManager = context.getBean(Manager.class);
@@ -97,6 +110,18 @@ public class ZkTransactionGenerator {
     //            220_000_000L);
 
     //    dbManager.getAccountStore().put(ownerCapsule.getAddress().toByteArray(), ownerCapsule);
+
+    EncPlaintext encPlaintext = new EncPlaintext();
+    encPlaintext.data = ByteArray.fromHexString("");
+
+    inputNote = Note.decode(encPlaintext);
+
+    PedersenHashCapsule compressCapsule1 = new PedersenHashCapsule();
+    compressCapsule1.setContent(ByteString.copyFrom(inputNote.cm()));
+    cmHash = compressCapsule1.getInstance();
+
+    inputMerkleRoot = ByteArray.fromHexString("");
+    inputsSendingKey = SpendingKey.decode("");
   }
 
   public void start() {
@@ -216,15 +241,13 @@ public class ZkTransactionGenerator {
     countDownLatch.countDown();
   }
 
+  // public 2 private
   private TransactionCapsule createNewTransaction() throws ZksnarkException {
 
-    String toAddress = "TQjKWNDCLSgqUtg9vrjzZnWhhmsgNgTfmj";
-    String commonOwnerPrivateKey =
-        "0528dc17428585fc4dece68b79fa7912270a1fe8e85f244372f59eb7e8925e04";
-
-    // 20_100_000 +i = 100_000 + 10_000_000 +i +  10_000_000
+    // 20_100_000  +  0 = 10_000_000 + 100_000 + 10_000_000
     ZenTransactionBuilder builder = new ZenTransactionBuilder();
     builder.setTransparentInput(Wallet.decodeFromBase58Check(ownerAddress), 20_100_000L);
+
     // generate output proof
     SpendingKey spendingKey = SpendingKey.random();
     FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
@@ -232,15 +255,55 @@ public class ZkTransactionGenerator {
     PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
     builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 100_000, new byte[512]);
 
+    String toAddress = "TQjKWNDCLSgqUtg9vrjzZnWhhmsgNgTfmj";
     builder.setTransparentOutput(Wallet.decodeFromBase58Check(toAddress), 10_000_000);
 
     TransactionCapsule transactionCap = builder.build();
+
+    String commonOwnerPrivateKey =
+        "0528dc17428585fc4dece68b79fa7912270a1fe8e85f244372f59eb7e8925e04";
     transactionCap.sign(ByteArray.fromHexString(commonOwnerPrivateKey));
 
-    long gTime = 0;
-    String ref = "" + gTime;
-    //    transactionCap.setReference(gTime, ByteArray.fromString(ref));
-    //    transactionCap.setExpiration(gTime);
+    return transactionCap;
+  }
+
+  private List<TransactionCapsule> createNewTransaction2List(int count) throws ZksnarkException {
+    List<TransactionCapsule> result = Lists.newArrayList();
+    IncrementalMerkleTreeContainer container =
+        (new IncrementalMerkleTreeCapsule()).toMerkleTreeContainer();
+
+    for (int i = 0; i < count; i++) {
+      TransactionCapsule transactionCapsule = createNewTransaction2(i + 1, count, container);
+      result.add(transactionCapsule);
+      container.append(cmHash);
+    }
+    return result;
+  }
+  // private 2 public
+  private TransactionCapsule createNewTransaction2(
+      int index, int count, IncrementalMerkleTreeContainer container) throws ZksnarkException {
+
+    //  0 + 20_100_000=  10_100_000 + 0 + 10_000_000
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
+
+    ExpandedSpendingKey expsk = inputsSendingKey.expandedSpendingKey();
+    Note note = inputNote;
+    byte[] anchor = inputMerkleRoot;
+    IncrementalMerkleVoucherContainer voucher = container.toVoucher();
+    for (int i = index; i < count; i++) {
+      voucher.append(cmHash);
+    }
+
+    SpendDescriptionInfo spendDescriptionInfo =
+        new SpendDescriptionInfo(expsk, note, anchor, voucher);
+
+    builder.addSpend(spendDescriptionInfo);
+
+    String toAddress = "TQjKWNDCLSgqUtg9vrjzZnWhhmsgNgTfmj";
+    builder.setTransparentOutput(Wallet.decodeFromBase58Check(toAddress), 10_100_000);
+
+    TransactionCapsule transactionCap = builder.build();
+
     return transactionCap;
   }
 
@@ -287,20 +350,38 @@ public class ZkTransactionGenerator {
     return fileOut.getAbsolutePath();
   }
 
-  private void prepareShieldEnvironment() throws Exception {
-
-    long cmNum = 100_000;
-    logger.info("Start to prepare shield env");
-    long start = System.currentTimeMillis();
-
+  private Note generateRandomNoteCm() throws ZksnarkException {
     // generate cm
     SpendingKey spendingKey = SpendingKey.random();
     FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
     IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
     PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
-    Note note = new Note(paymentAddress, 20_100_000L);
+
+    logger.info("SendingKey:" + spendingKey.encode());
+    return new Note(paymentAddress, 20_100_000L);
+  }
+
+  private void prepareShieldEnvironment() throws Exception {
+
+    long cmNum = 100_000;
+    logger.info("Start to prepare shield env");
+    long start = System.currentTimeMillis();
+    Note note = generateRandomNoteCm();
+    logger.info("Note:" + ByteArray.toHexString(note.encode().data));
+
+    EncPlaintext encPlaintext = new EncPlaintext();
+    encPlaintext.data = ByteArray.fromHexString("");
+
+    Note decode = Note.decode(encPlaintext);
+    boolean equals = Arrays.equals(decode.cm(), note.cm());
+    System.out.println("equals:" + equals);
+
+    byte[] cm =
+        ByteArray.fromHexString("7a3f10234af80cbc08b8f841157bc6ec50563b29678774a7cc73e566eab8820a");
+
     PedersenHashCapsule compressCapsule1 = new PedersenHashCapsule();
-    compressCapsule1.setContent(ByteString.copyFrom(note.cm()));
+    compressCapsule1.setContent(ByteString.copyFrom(cm));
+
     PedersenHash cmHash = compressCapsule1.getInstance();
 
     // update merkleStore
@@ -312,21 +393,25 @@ public class ZkTransactionGenerator {
     }
     dbManager.getMerkleContainer().setBestMerkle(0, bestMerkle);
 
+    String merkleRoot = ByteArray.toHexString(bestMerkle.getMerkleTreeKey());
+    logger.info("merkleRoot:" + merkleRoot);
 
     logger.info("End");
     logger.info("Preparing shield env costs :" + (System.currentTimeMillis() - start));
   }
 
   /** Start the FullNode. */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
 
     System.out.println("Begin.");
     logger.info("Full node running.");
     Args.setParam(args, Constant.TESTNET_CONF);
 
     ZkTransactionGenerator generator = new ZkTransactionGenerator();
-    generator.init();
-    generator.start();
+    generator.prepareShieldEnvironment();
+
+    //    generator.init();
+    //    generator.start();
 
     System.out.println("Done.");
     logger.info("Done.");
