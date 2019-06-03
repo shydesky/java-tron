@@ -131,7 +131,7 @@ public class Librustzcash {
    * @param d: 11 bytes
    */
   public static boolean librustzcashCheckDiversifier(byte[] d) throws ZksnarkException {
-    d = ByteBuffer.wrap(d).order(ByteOrder.LITTLE_ENDIAN).array();
+    d = ByteBuffer.wrap(d).order(ByteOrder.BIG_ENDIAN).array();
     LibrustzcashParam.valid11Params(d);
     return INSTANCE.librustzcash_check_diversifier(d);
   }
