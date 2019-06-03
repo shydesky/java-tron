@@ -124,12 +124,15 @@ public class Libsodium {
       @ToString
       public static class sizeT extends IntegerType {
 
+        private long value1;
+
         public sizeT() {
           this(0);
         }
 
         public sizeT(long value) {
           super(Native.POINTER_SIZE, value);
+          this.value1 = value;
         }
       }
     }
