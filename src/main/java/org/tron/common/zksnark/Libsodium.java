@@ -4,6 +4,9 @@ import com.sun.jna.IntegerType;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Structure;
+import java.util.Arrays;
+import lombok.ToString;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.tron.common.zksnark.Libsodium.ILibsodium.crypto_generichash_blake2b_state.sizeT;
 
 public class Libsodium {
@@ -95,6 +98,19 @@ public class Libsodium {
       public sizeT buflen = new sizeT();
       public byte last_node;
 
+
+      @Override
+      public String toString() {
+        return new ToStringBuilder(this)
+            .append("h", Arrays.toString(h))
+            .append("t", Arrays.toString(t))
+            .append("f", Arrays.toString(f))
+            .append("buf", Arrays.toString(buf))
+            .append("buflen", buflen)
+            .append("last_node", last_node)
+            .toString();
+      }
+
       public static class ByReference extends crypto_generichash_blake2b_state implements
           Structure.ByReference {
 
@@ -105,6 +121,7 @@ public class Libsodium {
 
       }
 
+      @ToString
       public static class sizeT extends IntegerType {
 
         public sizeT() {

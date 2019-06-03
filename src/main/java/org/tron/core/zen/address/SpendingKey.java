@@ -1,5 +1,6 @@
 package org.tron.core.zen.address;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
 import lombok.AllArgsConstructor;
@@ -98,10 +99,14 @@ public class SpendingKey {
     blob[33] = 0;
     while (true) {
       ILibsodium.crypto_generichash_blake2b_state.ByReference state = new ILibsodium.crypto_generichash_blake2b_state.ByReference();
+      System.out.println("1---------" + state.toString());
       Libsodium.cryptoGenerichashBlake2bInitSaltPersonal(
           state, null, 0, 64, null, Constant.ZTRON_EXPANDSEED_PERSONALIZATION);
+      System.out.println("2---------" + state.toString());
       Libsodium.cryptoGenerichashBlake2bUpdate(state, blob, 34);
+      System.out.println("3---------" + state.toString());
       Libsodium.cryptoGenerichashBlake2bFinal(state, res, 11);
+      System.out.println("4---------" + state.toString());
       if (Librustzcash.librustzcashCheckDiversifier(res)) {
         System.out.println("blob[33]:" + blob[33]);
         break;
@@ -111,6 +116,7 @@ public class SpendingKey {
       }
       blob[33] += 1;
     }
+    System.out.println("res-------" + Arrays.toString(res));
     DiversifierT diversifierT = new DiversifierT();
     diversifierT.setData(res);
     return diversifierT;
