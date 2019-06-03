@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.tron.common.crypto.zksnark.ZksnarkUtils;
 import org.tron.common.zksnark.LibrustzcashParam.BindingSigParams;
 import org.tron.common.zksnark.LibrustzcashParam.CheckOutputParams;
 import org.tron.common.zksnark.LibrustzcashParam.CheckSpendParams;
@@ -131,7 +132,7 @@ public class Librustzcash {
    * @param d: 11 bytes
    */
   public static boolean librustzcashCheckDiversifier(byte[] d) throws ZksnarkException {
-    d = ByteBuffer.wrap(d).order(ByteOrder.BIG_ENDIAN).array();
+    ZksnarkUtils.sort(d);
     LibrustzcashParam.valid11Params(d);
     return INSTANCE.librustzcash_check_diversifier(d);
   }
