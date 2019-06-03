@@ -1,5 +1,6 @@
 package org.tron.core.zen.address;
 
+import java.util.Arrays;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,6 +20,7 @@ public class IncomingViewingKey {
   public byte[] value; // 256
 
   public Optional<PaymentAddress> address(DiversifierT d) throws ZksnarkException {
+    System.out.println("test----------------value:" + Arrays.toString(value));
     byte[] pkD = new byte[32]; // 32
     if (Librustzcash.librustzcashCheckDiversifier(d.data)) {
       if (!Librustzcash.librustzcashIvkToPkd(new IvkToPkdParams(value, d.data, pkD))) {

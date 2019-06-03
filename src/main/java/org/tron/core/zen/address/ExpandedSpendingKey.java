@@ -1,5 +1,6 @@
 package org.tron.core.zen.address;
 
+import java.util.Arrays;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -51,6 +52,8 @@ public class ExpandedSpendingKey {
     byte[] ak = Librustzcash.librustzcashAskToAk(ask); // 256
     byte[] nk = Librustzcash.librustzcashNskToNk(nsk); // 256
 
+    System.out.println("test-------ask:" + Arrays.toString(ask) + ", nsk:" + Arrays.toString(nsk));
+    System.out.println("test-------ak:" + Arrays.toString(ak) + ", nk:" + Arrays.toString(nk) + ", ovk:" + Arrays.toString(ovk));
     return new FullViewingKey(ak, nk, ovk);
   }
 
