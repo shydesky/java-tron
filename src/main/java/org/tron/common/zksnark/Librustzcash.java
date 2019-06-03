@@ -7,6 +7,8 @@ import com.sun.jna.Pointer;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
@@ -129,6 +131,7 @@ public class Librustzcash {
    * @param d: 11 bytes
    */
   public static boolean librustzcashCheckDiversifier(byte[] d) throws ZksnarkException {
+    d = ByteBuffer.wrap(d).order(ByteOrder.LITTLE_ENDIAN).array();
     LibrustzcashParam.valid11Params(d);
     return INSTANCE.librustzcash_check_diversifier(d);
   }
