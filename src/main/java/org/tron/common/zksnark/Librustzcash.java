@@ -64,7 +64,7 @@ public class Librustzcash {
         params.getJ_ret(), params.getAddr_ret());
   }
 
-  public static void librustzcashCrhIvk(CrhIvkParams params) {
+  public static void  librustzcashCrhIvk(CrhIvkParams params) {
     INSTANCE.librustzcash_crh_ivk(params.getAk(), params.getNk(), params.getIvk());
   }
 

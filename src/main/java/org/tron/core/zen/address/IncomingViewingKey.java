@@ -22,7 +22,7 @@ public class IncomingViewingKey {
     byte[] pkD = new byte[32]; // 32
     if (Librustzcash.librustzcashCheckDiversifier(d.data)) {
       if (!Librustzcash.librustzcashIvkToPkd(new IvkToPkdParams(value, d.data, pkD))) {
-        throw new ZksnarkException("librustzcashIvkToPkd error");
+//        throw new ZksnarkException("librustzcashIvkToPkd error");
       }
       return Optional.of(new PaymentAddress(d, pkD));
     } else {
