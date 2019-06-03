@@ -22,8 +22,16 @@ public class IncomingViewingKey {
   public Optional<PaymentAddress> address(DiversifierT d) throws ZksnarkException {
     System.out.println("test----------------value:" + Arrays.toString(value));
     byte[] pkD = new byte[32]; // 32
-    if (Librustzcash.librustzcashCheckDiversifier(d.data)) {
-      if (!Librustzcash.librustzcashIvkToPkd(new IvkToPkdParams(value, d.data, pkD))) {
+    byte[] dd = new byte[]{
+        25, 106, -89, 91, -73, -38, 84, -12, -8, 63, -122
+    };
+    byte[] res = new byte[]{
+        85, -19, 83, -16, -42, 85, 11, 71, 44, -33, 56, -26, 12, 2, -53, 4, 42, -52, -60, -90, 61, 16, 7, -100, 75, 127, -16, -41, 106, -17, -97, 7
+    };
+    if (Librustzcash.librustzcashCheckDiversifier(dd)) {
+      if (!Librustzcash.librustzcashIvkToPkd(new IvkToPkdParams(
+          res,
+          dd, pkD))) {
 //        throw new ZksnarkException("librustzcashIvkToPkd error");
       }
       return Optional.of(new PaymentAddress(d, pkD));
