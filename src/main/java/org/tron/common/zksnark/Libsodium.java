@@ -4,6 +4,7 @@ import com.sun.jna.IntegerType;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Structure;
+import org.tron.common.zksnark.Libsodium.ILibsodium.crypto_generichash_blake2b_state.sizeT;
 
 public class Libsodium {
 
@@ -55,6 +56,10 @@ public class Libsodium {
         .crypto_aead_chacha20poly1305_ietf_encrypt(c, clen_p, m, mlen, ad, adlen, nsec, npub, k);
   }
 
+  public static void randombytes_buf(byte[] buf) {
+    INSTANCE.randombytes_buf(buf, new sizeT(buf.length));
+  }
+
   public interface ILibsodium extends Library {
 
     int crypto_generichash_blake2b_init(crypto_generichash_blake2b_state.ByReference state,
@@ -78,6 +83,8 @@ public class Libsodium {
 
     int crypto_aead_chacha20poly1305_ietf_encrypt(byte[] c, long[] clen_p, byte[] m,
         long mlen, byte[] ad, long adlen, byte[] nsec, byte[] npub, byte[] k);
+
+    void randombytes_buf(byte[] buf, sizeT size);
 
     class crypto_generichash_blake2b_state extends Structure {
 

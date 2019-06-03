@@ -39,15 +39,21 @@ public class SpendingKey {
     return generatePrivateKey(0l);
   }
 
+//  public static byte[] generatePrivateKey(long seed) {
+//    byte[] result = new byte[32];
+//    if (seed != 0L) {
+//      new Random(seed).nextBytes(result);
+//    } else {
+//      new Random().nextBytes(result);
+//    }
+//    Integer i = result[0] & 0x0F;
+//    result[0] = i.byteValue();
+//    return result;
+//  }
+
   public static byte[] generatePrivateKey(long seed) {
     byte[] result = new byte[32];
-    if (seed != 0L) {
-      new Random(seed).nextBytes(result);
-    } else {
-      new Random().nextBytes(result);
-    }
-    Integer i = result[0] & 0x0F;
-    result[0] = i.byteValue();
+    Libsodium.randombytes_buf(result);
     return result;
   }
 
