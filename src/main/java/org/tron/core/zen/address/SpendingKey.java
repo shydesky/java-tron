@@ -119,6 +119,7 @@ public class SpendingKey {
     System.out.println("res-------" + Arrays.toString(res));
     DiversifierT diversifierT = new DiversifierT();
     diversifierT.setData(res);
+    System.out.println("test--------check:" + Librustzcash.librustzcashCheckDiversifier(res));
     return diversifierT;
   }
 
