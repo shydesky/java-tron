@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -19,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.zksnark.Librustzcash;
+import org.tron.common.zksnark.LibrustzcashParam;
 import org.tron.common.zksnark.LibrustzcashParam.InitZksnarkParams;
 import org.tron.core.Constant;
 import org.tron.core.Wallet;
@@ -115,6 +117,10 @@ public class ZkTransactionGenerator {
     encPlaintext.data = ByteArray.fromHexString("");
 
     inputNote = Note.decode(encPlaintext);
+
+    byte[] pk_d = new byte[32];
+    byte[] ivk = inputsSendingKey.fullViewingKey().inViewingKey().value;
+    Librustzcash.librustzcashIvkToPkd(new LibrustzcashParam.IvkToPkdParams(ivk, inputNote.d.getData(), pk_d));
 
     PedersenHashCapsule compressCapsule1 = new PedersenHashCapsule();
     compressCapsule1.setContent(ByteString.copyFrom(inputNote.cm()));
