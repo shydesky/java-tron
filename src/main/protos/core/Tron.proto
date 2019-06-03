@@ -671,16 +671,19 @@ message NodeInfo {
 
 message PbftMessage {
   enum Type {
-    CV = 0;
-    REQ = 1;
-    PP = 2;
-    PA = 3;
-    CM = 4;
+    VIEW_CHANGE = 0;
+    REQUEST = 1;
+    PREPREPARE = 2;
+    PREPARE = 3;
+    COMMIT = 4;
   }
-  Type pbftMsgType = 1;
-  int64 blockNum = 2;
-  int64 time = 3;
-  bytes publicKey = 4;
-  bytes data = 5;
-  bytes sign = 6;
+  message Raw {
+    Type pbftMsgType = 1;
+    int64 blockNum = 2;
+    int64 time = 3;
+    bytes publicKey = 4;
+    bytes data = 5;
+  }
+  Raw raw_data = 1;
+  bytes sign = 2;
 }

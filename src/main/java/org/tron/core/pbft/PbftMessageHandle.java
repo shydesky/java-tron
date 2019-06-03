@@ -26,7 +26,6 @@ import org.tron.core.exception.BadItemException;
 import org.tron.core.exception.ItemNotFoundException;
 import org.tron.core.exception.P2pException;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
-import org.tron.core.witness.WitnessController;
 
 @Slf4j
 @Component
@@ -57,8 +56,6 @@ public class PbftMessageHandle {
   private Manager manager;
   @Autowired
   private SyncPool syncPool;
-  @Autowired
-  private WitnessController witnessController;
   @Autowired
   private PbftMessageAction pbftMessageAction;
 
@@ -149,7 +146,8 @@ public class PbftMessageHandle {
 
   public boolean checkMsg(PbftBlockMessageCapsule msg)
       throws SignatureException {
-    return (msg.getPbftMessage().getBlockNum() == blockNum) && msg.validateSignature(msg);
+    return (msg.getPbftMessage().getRawData().getBlockNum() == blockNum) && msg
+        .validateSignature(msg);
   }
 
   public boolean checkIsCanSendPrePrepareMsg() {
@@ -157,9 +155,8 @@ public class PbftMessageHandle {
     if (!Args.getInstance().isWitness()) {
       return !result.get();
     }
-    witnessController.getActiveWitnesses().forEach(bytes -> {
+    //todo:check current node is witness node
 
-    });
     syncPool.getActivePeers().forEach(peerConnection -> {
       if (peerConnection.isNeedSyncFromPeer()) {
         result.set(false);

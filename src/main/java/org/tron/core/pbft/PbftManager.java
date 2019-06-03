@@ -48,22 +48,22 @@ public class PbftManager {
     }
     if (msg != null) {
       logger.info("收到消息:{}", msg);
-      switch (msg.getPbftMessage().getPbftMsgType()) {
-        case PP:
+      switch (msg.getPbftMessage().getRawData().getPbftMsgType()) {
+        case PREPREPARE:
           pbftMessageHandle.onPrePrepare(msg);
           break;
-        case PA:
+        case PREPARE:
           // prepare
           pbftMessageHandle.onPrepare(msg);
           break;
-        case CM:
+        case COMMIT:
           // commit
           pbftMessageHandle.onCommit(msg);
           break;
-        case REQ:
+        case REQUEST:
           pbftMessageHandle.onRequestData(msg);
           break;
-        case CV:
+        case VIEW_CHANGE:
           pbftMessageHandle.onChangeView(msg);
           break;
         default:
