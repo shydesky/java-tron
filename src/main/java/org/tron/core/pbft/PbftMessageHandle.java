@@ -24,7 +24,7 @@ import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
 import org.tron.core.exception.BadItemException;
 import org.tron.core.exception.ItemNotFoundException;
-import org.tron.core.exception.P2pException;
+import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
 @Slf4j
@@ -43,12 +43,12 @@ public class PbftMessageHandle {
   private AtomicLongMap<String> agreeCommit = AtomicLongMap.create();
 
   // pbft超时
-  private Map<String, Long> timeOuts = Maps.newHashMap();
+  private Map<String, Long> timeOuts = Maps.newConcurrentMap();
   // 请求超时，view加1，重试
   private Map<String, Long> timeOutsReq = Maps.newHashMap();
 
   // 成功处理过的请求
-  private Map<String, PbftBlockMessageCapsule> doneMsg = Maps.newConcurrentMap();
+  private Map<String, PbftBaseMessage> doneMsg = Maps.newConcurrentMap();
 
   private Timer timer;
 
@@ -59,7 +59,7 @@ public class PbftMessageHandle {
   @Autowired
   private PbftMessageAction pbftMessageAction;
 
-  public void onPrePrepare(PbftBlockMessageCapsule message) throws P2pException {
+  public void onPrePrepare(PbftBaseMessage message) {
     if (!checkIsCanSendPrePrepareMsg()) {
       return;
     }
@@ -72,14 +72,13 @@ public class PbftMessageHandle {
     // 启动超时控制
     timeOuts.put(key, System.currentTimeMillis());
     // 进入准备阶段
-    PbftBlockMessageCapsule paMessage = PbftBlockMessageCapsule.buildPrePareMessage(message);
+    PbftBaseMessage paMessage = PbftBlockMessageCapsule.buildPrePareMessage(message);
     syncPool.getActivePeers().forEach(peerConnection -> {
       peerConnection.sendMessage(paMessage);
     });
   }
 
-  public void onPrepare(PbftBlockMessageCapsule message)
-      throws SignatureException, P2pException {
+  public void onPrepare(PbftBaseMessage message) throws SignatureException {
     if (!checkMsg(message)) {
       logger.info("异常消息:{}", message);
       return;
@@ -99,10 +98,10 @@ public class PbftMessageHandle {
 
     // 票数 +1
     long agCou = agreePare.incrementAndGet(message.getDataKey());
-    if (agCou >= 2 * PbftManager.maxf + 1) {
+    if (agCou >= PbftManager.agreeNodeCount) {
       pareVotes.remove(key);
       // 进入提交阶段
-      PbftBlockMessageCapsule cmMessage = PbftBlockMessageCapsule.buildCommitMessage(message);
+      PbftBaseMessage cmMessage = PbftBlockMessageCapsule.buildCommitMessage(message);
       doneMsg.put(message.getNo(), cmMessage);
       syncPool.getActivePeers().forEach(peerConnection -> {
         peerConnection.sendMessage(cmMessage);
@@ -111,8 +110,7 @@ public class PbftMessageHandle {
     // 后续的票数肯定凑不满，超时自动清除
   }
 
-  public void onCommit(PbftBlockMessageCapsule message)
-      throws SignatureException, P2pException {
+  public void onCommit(PbftBaseMessage message) throws SignatureException {
     if (!checkMsg(message)) {
       return;
     }
@@ -129,22 +127,22 @@ public class PbftMessageHandle {
     commitVotes.add(key);
     // 票数 +1
     long agCou = agreeCommit.incrementAndGet(message.getDataKey());
-    if (agCou >= 2 * PbftManager.maxf + 1) {
+    if (agCou >= PbftManager.agreeNodeCount) {
       remove(message.getNo());
       //commit,
       pbftMessageAction.action(message);
     }
   }
 
-  public void onRequestData(PbftBlockMessageCapsule message) {
+  public void onRequestData(PbftBaseMessage message) {
 
   }
 
-  public void onChangeView(PbftBlockMessageCapsule message) {
+  public void onChangeView(PbftBaseMessage message) {
 
   }
 
-  public boolean checkMsg(PbftBlockMessageCapsule msg)
+  public boolean checkMsg(PbftBaseMessage msg)
       throws SignatureException {
     return (msg.getPbftMessage().getRawData().getBlockNum() == blockNum) && msg
         .validateSignature(msg);

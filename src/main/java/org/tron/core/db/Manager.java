@@ -74,9 +74,9 @@ import org.tron.core.config.Parameter.ChainConstant;
 import org.tron.core.config.args.Args;
 import org.tron.core.config.args.GenesisBlock;
 import org.tron.core.db.KhaosDatabase.KhaosBlock;
-import org.tron.core.db.api.AssetUpdateHelper;
 import org.tron.core.db.accountstate.TrieService;
 import org.tron.core.db.accountstate.callback.AccountStateCallBack;
+import org.tron.core.db.api.AssetUpdateHelper;
 import org.tron.core.db2.core.ISession;
 import org.tron.core.db2.core.ITronChainBase;
 import org.tron.core.db2.core.SnapshotManager;
@@ -101,7 +101,8 @@ import org.tron.core.exception.UnLinkedBlockException;
 import org.tron.core.exception.VMIllegalException;
 import org.tron.core.exception.ValidateScheduleException;
 import org.tron.core.exception.ValidateSignatureException;
-import org.tron.core.pbft.PbftMessageHandle;
+import org.tron.core.pbft.PbftManager;
+import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 import org.tron.core.services.WitnessService;
 import org.tron.core.witness.ProposalController;
 import org.tron.core.witness.WitnessController;
@@ -229,7 +230,7 @@ public class Manager {
   private Set<String> ownerAddressSet = new HashSet<>();
 
   @Autowired
-  private PbftMessageHandle pbftMessageHandle;
+  private PbftManager pbftManager;
 
   public WitnessStore getWitnessStore() {
     return this.witnessStore;
@@ -853,6 +854,10 @@ public class Manager {
     } else {
       revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MIN_FLUSH_COUNT);
     }
+    //pbft
+    if (block.generatedByMyself) {
+      pbftManager.doAction(PbftBlockMessageCapsule.buildPrePrepareMessage(block));
+    }
   }
 
   private void switchFork(BlockCapsule newHead)
@@ -1073,8 +1078,6 @@ public class Manager {
         ownerAddressSet.addAll(result);
       }
     }
-    //pbft
-//    pbftMessageHandle.onPrePrepare(block);
     logger.info("pushBlock block number:{}, cost/txs:{}/{}",
         block.getNum(),
         System.currentTimeMillis() - start,

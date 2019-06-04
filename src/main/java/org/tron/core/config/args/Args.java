@@ -2,6 +2,7 @@ package org.tron.core.config.args;
 
 import static java.lang.Math.max;
 import static java.lang.System.exit;
+import static org.tron.core.config.Parameter.ChainConstant.MAX_ACTIVE_WITNESS_NUM;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -470,6 +471,14 @@ public class Args {
   @Setter
   private int validContractProtoThreadNum;
 
+  @Getter
+  @Setter
+  private int agreeNodeCount;
+
+  @Getter
+  @Setter
+  private int checkMsgCount;
+
   public static void clearParam() {
     INSTANCE.outputDirectory = "output-directory";
     INSTANCE.help = false;
@@ -547,6 +556,8 @@ public class Args {
     INSTANCE.allowProtoFilterNum = 0;
     INSTANCE.allowAccountStateRoot = 0;
     INSTANCE.validContractProtoThreadNum = 1;
+    INSTANCE.agreeNodeCount = MAX_ACTIVE_WITNESS_NUM * 2 / 3 + 1;
+    INSTANCE.checkMsgCount = 2;
   }
 
   /**
@@ -950,6 +961,13 @@ public class Args {
         config.hasPath("node.validContractProto.threads") ? config
             .getInt("node.validContractProto.threads")
             : Runtime.getRuntime().availableProcessors();
+
+    INSTANCE.agreeNodeCount = config.hasPath("node.agreeNodeCount") ? config
+        .getInt("node.agreeNodeCount") : MAX_ACTIVE_WITNESS_NUM * 2 / 3 + 1;
+    INSTANCE.agreeNodeCount = INSTANCE.agreeNodeCount > MAX_ACTIVE_WITNESS_NUM
+        ? MAX_ACTIVE_WITNESS_NUM : INSTANCE.agreeNodeCount;
+    INSTANCE.checkMsgCount = config.hasPath("node.checkMsgCount") ? config
+        .getInt("node.checkMsgCount") : 2;
 
     initBackupProperty(config);
     if ("ROCKSDB".equals(Args.getInstance().getStorage().getDbEngine().toUpperCase())) {

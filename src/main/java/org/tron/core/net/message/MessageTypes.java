@@ -87,6 +87,10 @@ public enum MessageTypes {
     return code <= TRX_INVENTORY.asByte() && code >= FIRST.asByte();
   }
 
+  public static boolean inPbftRange(byte code) {
+    return code == PBFT_BLOCK_MSG.asByte();
+  }
+
   @Override
   public String toString() {
     switch (type) {
