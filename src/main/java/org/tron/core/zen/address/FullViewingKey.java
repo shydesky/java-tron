@@ -38,7 +38,7 @@ public class FullViewingKey {
   public IncomingViewingKey inViewingKey() throws ZksnarkException {
     byte[] ivk = new byte[32]; // the incoming viewing key
     Librustzcash.librustzcashCrhIvk(new CrhIvkParams(ak, nk, ivk));
-    System.out.println("test-------ak:" + Arrays.toString(ak) + ", nk:" + Arrays.toString(nk) + ", ivk:" + Arrays.toString(ivk));
+//    System.out.println("test-------ak:" + Arrays.toString(ak) + ", nk:" + Arrays.toString(nk) + ", ivk:" + Arrays.toString(ivk));
     return new IncomingViewingKey(ivk);
   }
 

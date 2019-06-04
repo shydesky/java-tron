@@ -21,7 +21,7 @@ public class IncomingViewingKey {
   public byte[] value; // 256
 
   public Optional<PaymentAddress> address(DiversifierT d) throws ZksnarkException {
-    System.out.println("test----------------value:" + Arrays.toString(value));
+//    System.out.println("test----------------value:" + Arrays.toString(value));
     byte[] pkD = new byte[32]; // 32
     byte[] dd = new byte[]{
         85, -19, 83, -16, -42, 85, 11,71, 44, -33, 56
