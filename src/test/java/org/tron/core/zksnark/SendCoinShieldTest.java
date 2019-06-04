@@ -132,7 +132,7 @@ public class SendCoinShieldTest {
   }
 
 
-  @Test
+  //@Test
   public void testPathMock() throws ZksnarkException {
     List<List<Boolean>> authenticationPath = Lists.newArrayList();
     Boolean[] authenticationArray = {true, false, true, false, true, false};
@@ -206,7 +206,7 @@ public class SendCoinShieldTest {
             outputPath.getBytes(), outputPath.length(), outputHash));
   }
 
-  @Test
+  //@Test
   public void testStringRevert() throws Exception {
     byte[] bytes = ByteArray
         .fromHexString("6c030e6d7460f91668cc842ceb78cdb54470469e78cd59cf903d3a6e1aa03e7c");
@@ -214,7 +214,7 @@ public class SendCoinShieldTest {
     System.out.println("testStringRevert------" + ByteArray.toHexString(bytes));
   }
 
-  @Test
+  //@Test
   public void testGenerateSpendProof() throws Exception {
     librustzcashInitZksnarkParams();
     ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
@@ -250,7 +250,7 @@ public class SendCoinShieldTest {
     SpendDescriptionCapsule sdesc = builder.generateSpendProof(spend, ctx);
   }
 
-  @Test
+  //@Test
   public void generateOutputProof() throws ZksnarkException {
     librustzcashInitZksnarkParams();
     ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
@@ -265,7 +265,7 @@ public class SendCoinShieldTest {
     Librustzcash.librustzcashSaplingProvingCtxFree(ctx);
   }
 
-  @Test
+  //@Test
   public void verifyOutputProof() throws ZksnarkException {
     librustzcashInitZksnarkParams();
     ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
@@ -295,7 +295,7 @@ public class SendCoinShieldTest {
   }
 
 
-  @Test
+  //@Test
   public void testDecryptReceiveWithIvk() throws ZksnarkException {
     //verify c_enc
     librustzcashInitZksnarkParams();
@@ -358,7 +358,7 @@ public class SendCoinShieldTest {
     return sb.toString();
   }
 
-  @Test
+  //@Test
   public void testDecryptReceiveWithOvk() throws Exception {
     //decode c_out with ovk.
     librustzcashInitZksnarkParams();
@@ -436,7 +436,7 @@ public class SendCoinShieldTest {
     Librustzcash.librustzcashSaplingProvingCtxFree(ctx);
   }
 
-  @Test
+  //@Test
   public void pushShieldedTransactionAndDecryptWithIvk()
       throws ContractValidateException, TooBigTransactionException, TooBigTransactionResultException,
       TaposException, TransactionExpirationException, ReceiptCheckErrException,
@@ -529,7 +529,7 @@ public class SendCoinShieldTest {
         ByteArray.toHexString(paymentAddress.getPkD()));
   }
 
-  @Test
+//  //@Test
   public void pushShieldedTransactionAndDecryptWithOvk()
       throws ContractValidateException, TooBigTransactionException, TooBigTransactionResultException,
       TaposException, TransactionExpirationException, ReceiptCheckErrException,
@@ -653,7 +653,7 @@ public class SendCoinShieldTest {
     Assert.assertTrue(ret);
   }
 
-  @Test
+  //@Test
   public void testVerifySpendProof() throws BadItemException, ZksnarkException {
     librustzcashInitZksnarkParams();
     ZenTransactionBuilder builder = new ZenTransactionBuilder(wallet);
@@ -696,7 +696,7 @@ public class SendCoinShieldTest {
     Assert.assertEquals(ok, true);
   }
 
-  @Test
+  //@Test
   public void saplingBindingSig() throws BadItemException, ZksnarkException {
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
     // generate spend proof
@@ -732,7 +732,7 @@ public class SendCoinShieldTest {
     Assert.assertTrue(ret);
   }
 
-  @Test
+  //@Test
   public void pushShieldedTransaction()
       throws ContractValidateException, TooBigTransactionException, TooBigTransactionResultException,
       TaposException, TransactionExpirationException, ReceiptCheckErrException,
@@ -767,7 +767,7 @@ public class SendCoinShieldTest {
     Assert.assertTrue(ok);
   }
 
-  @Test
+  //@Test
   public void finalCheck() throws BadItemException, ZksnarkException {
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
     librustzcashInitZksnarkParams();
@@ -847,7 +847,7 @@ public class SendCoinShieldTest {
     Librustzcash.librustzcashSaplingVerificationCtxFree(ctx);
   }
 
-  @Test
+  //@Test
   public void testEmptyRoot() {
     byte[] bytes = IncrementalMerkleTreeContainer.emptyRoot().getContent().toByteArray();
     ZksnarkUtils.sort(bytes);
@@ -855,7 +855,7 @@ public class SendCoinShieldTest {
         ByteArray.toHexString(bytes));
   }
 
-  @Test
+  //@Test
   public void testEmptyRoots() throws Exception {
     JSONArray array = readFile("merkle_roots_empty_sapling.json");
     for (int i = 0; i < 32; i++) {
@@ -877,7 +877,7 @@ public class SendCoinShieldTest {
   }
 
 
-  @Test
+  //@Test
   public void testComputeCm() throws Exception {
     byte[] result = new byte[32];
     if (!Librustzcash.librustzcashComputeCm(new ComputeCmParams(
@@ -895,7 +895,7 @@ public class SendCoinShieldTest {
     }
   }
 
-  @Test
+  //@Test
   public void getSpendingKey() throws Exception {
     SpendingKey sk = SpendingKey
         .decode("0b862f0e70048551c08518ff49a19db027d62cdeeb2fa974db91c10e6ebcdc16");
@@ -968,7 +968,7 @@ public class SendCoinShieldTest {
     }
   }
 
-  @Test
+  //@Test
   public void testTwoCMWithDiffSkInOneTx() throws Exception {
     // generate spend proof
     librustzcashInitZksnarkParams();
@@ -1028,7 +1028,7 @@ public class SendCoinShieldTest {
     actuator.get(0).execute(resultCapsule);
   }
 
-  // @Test
+  // //@Test
   public void testValueBalance() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1264,7 +1264,7 @@ public class SendCoinShieldTest {
     }
   }
 
-  //  @Test
+  //  //@Test
   public void TestCreateMultipleTxAtTheSameTime() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1393,7 +1393,7 @@ public class SendCoinShieldTest {
     });
   }
 
-  //  @Test
+  //  //@Test
   public void TestCtxGeneratesTooMuchProof() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1473,7 +1473,7 @@ public class SendCoinShieldTest {
     }
   }
 
-  //  @Test
+  //  //@Test
   public void TestGeneratesProofWithDiffCtx() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1536,7 +1536,7 @@ public class SendCoinShieldTest {
     }
   }
 
-  //  @Test
+  //  //@Test
   public void TestGeneratesProofWithWrongAlpha() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1574,7 +1574,7 @@ public class SendCoinShieldTest {
   }
 
 
-  //  @Test
+  //  //@Test
   public void TestGeneratesProofWithWrongRcm() throws Exception {
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
     librustzcashInitZksnarkParams();
@@ -1596,7 +1596,7 @@ public class SendCoinShieldTest {
 
   }
 
-  //  @Test
+  //  //@Test
   public void TestWrongAsk() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1716,7 +1716,7 @@ public class SendCoinShieldTest {
     return transactionCap;
   }
 
-  //  @Test
+  //  //@Test
   public void TesDefaultBuilder() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1726,7 +1726,7 @@ public class SendCoinShieldTest {
     executeTx(transactionCapsule);
   }
 
-  //  @Test
+  //  //@Test
   public void TestWrongSpendRk() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1763,7 +1763,7 @@ public class SendCoinShieldTest {
     }
   }
 
-  //  @Test
+  //  //@Test
   public void TestWrongSpendProof() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1802,7 +1802,7 @@ public class SendCoinShieldTest {
     }
   }
 
-  //  @Test
+  //  //@Test
   public void TestWrongNf() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);
@@ -1842,7 +1842,7 @@ public class SendCoinShieldTest {
     }
   }
 
-  //  @Test
+  //  //@Test
   public void TestWrongAnchor() throws Exception {
     librustzcashInitZksnarkParams();
     dbManager.getDynamicPropertiesStore().saveAllowZksnarkTransaction(1);

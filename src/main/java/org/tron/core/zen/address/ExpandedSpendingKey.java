@@ -52,8 +52,8 @@ public class ExpandedSpendingKey {
     byte[] ak = Librustzcash.librustzcashAskToAk(ask); // 256
     byte[] nk = Librustzcash.librustzcashNskToNk(nsk); // 256
 
-    System.out.println("test-------ask:" + Arrays.toString(ask) + ", nsk:" + Arrays.toString(nsk));
-    System.out.println("test-------ak:" + Arrays.toString(ak) + ", nk:" + Arrays.toString(nk) + ", ovk:" + Arrays.toString(ovk));
+//    System.out.println("test-------ask:" + Arrays.toString(ask) + ", nsk:" + Arrays.toString(nsk));
+//    System.out.println("test-------ak:" + Arrays.toString(ak) + ", nk:" + Arrays.toString(nk) + ", ovk:" + Arrays.toString(ovk));
     return new FullViewingKey(ak, nk, ovk);
   }
 
