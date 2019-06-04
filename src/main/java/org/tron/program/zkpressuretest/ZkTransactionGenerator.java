@@ -211,6 +211,12 @@ public class ZkTransactionGenerator {
         }
         newTransaction = createTransactionType2((int) l, count, null);
         break;
+      case 3:
+        if (l == 0) {
+          return;
+        }
+        newTransaction = createTransactionType3((int) l, count, null);
+        break;
       default:
         throw new RuntimeException("Wrong testType:" + testType);
     }
@@ -297,18 +303,6 @@ public class ZkTransactionGenerator {
     }
   }
 
-  private List<TransactionCapsule> createNewTransaction2List(int count) throws ZksnarkException {
-    List<TransactionCapsule> result = Lists.newArrayList();
-    IncrementalMerkleTreeContainer container =
-        (new IncrementalMerkleTreeCapsule()).toMerkleTreeContainer();
-
-    for (int i = 0; i < count; i++) {
-      TransactionCapsule transactionCapsule = createTransactionType2(i + 1, count, container);
-      result.add(transactionCapsule);
-      container.append(cmHash);
-    }
-    return result;
-  }
   // private 2 public
   private TransactionCapsule createTransactionType2(
       int index, int count, IncrementalMerkleTreeContainer container) throws ZksnarkException {
@@ -358,6 +352,66 @@ public class ZkTransactionGenerator {
 
     String toAddress = "TQjKWNDCLSgqUtg9vrjzZnWhhmsgNgTfmj";
     builder.setTransparentOutput(Wallet.decodeFromBase58Check(toAddress), 10_100_000);
+
+    TransactionCapsule transactionCap = builder.build();
+
+    return transactionCap;
+  }
+
+
+  // private 2 private
+  private TransactionCapsule createTransactionType3(
+      int index, int count, IncrementalMerkleTreeContainer container) throws ZksnarkException {
+
+    //    long start = System.currentTimeMillis();
+    if (index == 0) {
+      return null;
+    }
+    if (container == null) {
+      container = (new IncrementalMerkleTreeCapsule()).toMerkleTreeContainer();
+      for (int i = 0; i < index; i++) {
+        container.append(cmHash);
+      }
+    }
+    //  0 + 20_100_000=   0 + 10_100_000 + 10_000_000
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
+
+    ExpandedSpendingKey expsk = inputsSendingKey.expandedSpendingKey();
+    Note note = inputNote;
+    IncrementalMerkleVoucherContainer voucher = container.toVoucher();
+    for (int i = index; i < count; i++) {
+      voucher.append(cmHash);
+    }
+
+    // 10ms
+    //    logger.info("Creating voucher costs:" + (System.currentTimeMillis() - start));
+
+    synchronized (this) {
+      if (inputMerkleRoot == null) {
+        inputMerkleRoot = voucher.root().getContent().toByteArray();
+      } else {
+        if (!Arrays.equals(voucher.root().getContent().toByteArray(), inputMerkleRoot)) {
+          throw new RuntimeException("root is not equal");
+        }
+      }
+    }
+
+    byte[] anchor = inputMerkleRoot;
+    if (!Arrays.equals(cmHash.getContent().toByteArray(), note.cm())) {
+      throw new RuntimeException("cmHash is not equal");
+    }
+
+    SpendDescriptionInfo spendDescriptionInfo =
+        new SpendDescriptionInfo(expsk, note, anchor, voucher);
+
+    builder.addSpend(spendDescriptionInfo);
+
+    // generate output proof
+    SpendingKey spendingKey = SpendingKey.random();
+    FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+    IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+    PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+    builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 10_100_000, new byte[512]);
 
     TransactionCapsule transactionCap = builder.build();
 
@@ -424,9 +478,8 @@ public class ZkTransactionGenerator {
 
     String merkleRoot = ByteArray.toHexString(bestMerkle.getMerkleTreeKey());
     logger.info("merkleRoot:" + merkleRoot);
-
-    logger.info("End");
     logger.info("Preparing shield env costs :" + (System.currentTimeMillis() - start));
+    logger.info("End");
   }
 
   /** Start the FullNode. */
@@ -438,7 +491,7 @@ public class ZkTransactionGenerator {
 
     ZkTransactionGenerator generator = new ZkTransactionGenerator();
     generator.init();
-    //    generator.prepareShieldEnvironment();
+//    generator.prepareShieldEnvironment();
 
     generator.start();
 
