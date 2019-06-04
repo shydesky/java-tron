@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -514,6 +515,17 @@ public class SendCoinShieldTest {
 
   @Test
   public void testDefaultAddress() throws ZksnarkException, BadItemException {
+
+    IntStream.range(0, 1000).forEach(i -> {
+      try {
+        System.out.println(ByteArray.toHexString(SpendingKey.random().defaultAddress().getPkD()));
+      } catch (BadItemException e) {
+        e.printStackTrace();
+      } catch (ZksnarkException e) {
+        e.printStackTrace();
+      }
+    });
+
     PaymentAddress paymentAddress = SpendingKey.random().defaultAddress();
     Assert.assertNotEquals("0000000000000000000000000000000000000000000000000000000000000000",
         ByteArray.toHexString(paymentAddress.getPkD()));

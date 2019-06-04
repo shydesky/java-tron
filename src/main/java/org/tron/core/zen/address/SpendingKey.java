@@ -104,9 +104,10 @@ public class SpendingKey {
         throw new BadItemException(
             "librustzcash_check_diversifier did not return valid diversifier");
       }
-      blob[33] += 1;
+      blob[0] += 1;
     }
     System.out.println("res1 = " + ByteArray.toHexString(res));
+    System.out.println("blob[0] = " + blob[0]);
     DiversifierT diversifierT = new DiversifierT();
     diversifierT.setData(res);
     return diversifierT;
