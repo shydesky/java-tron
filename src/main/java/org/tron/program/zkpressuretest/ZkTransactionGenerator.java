@@ -247,7 +247,7 @@ public class ZkTransactionGenerator {
 
     long count = countDownLatch.getCount();
 
-    if (count % logRange == 0 || (zkTransactionNum - count) == 1) {
+    if (count % logRange == 0) {
       fos.flush();
       logger.info(
           "Generate transaction success ------- ------- ------- ------- ------- Remain: "
