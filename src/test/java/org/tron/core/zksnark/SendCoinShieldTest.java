@@ -514,6 +514,16 @@ public class SendCoinShieldTest {
   }
 
   @Test
+  public void test_librustzcashCheckDiversifier() throws ZksnarkException {
+    byte[] dd = new byte[]{
+        85, -19, 83, -16, -42, 85, 11,71, 44, -33, 56
+    };
+
+    boolean ret = Librustzcash.librustzcashCheckDiversifier(dd);
+    System.out.println("test--------------dd:" + ByteUtil.toHexString(dd) + ", " + ret);
+  }
+
+//  @Test
   public void testDefaultAddress() throws ZksnarkException, BadItemException {
     IntStream.range(0, 1).forEach( i -> {
       try {
