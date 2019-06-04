@@ -107,7 +107,7 @@ public class SpendingKey {
 //      System.out.println("3---------" + state.toString());
       Libsodium.cryptoGenerichashBlake2bFinal(state, res, 11);
 //      System.out.println("4---------" + state.toString());
-      if (Librustzcash.librustzcashCheckDiversifier(res)) {
+      if (true || Librustzcash.librustzcashCheckDiversifier(res)) {
 //        System.out.println("blob[33]:" + blob[33]);
         break;
       } else if (blob[33] == (byte) 255) {
