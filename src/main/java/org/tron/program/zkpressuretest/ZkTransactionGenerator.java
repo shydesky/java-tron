@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -66,6 +67,8 @@ public class ZkTransactionGenerator {
   private PedersenHash cmHash = null;
   private volatile byte[] inputMerkleRoot = null;
   private SpendingKey inputsSendingKey = null;
+
+  private ConcurrentHashMap<Integer, byte[]> treeMap = new ConcurrentHashMap();
 
   public void init() throws ZksnarkException {
     context = new TronApplicationContext(DefaultConfig.class);
@@ -128,6 +131,15 @@ public class ZkTransactionGenerator {
         compressCapsule1.setContent(ByteString.copyFrom(inputNote.cm()));
         cmHash = compressCapsule1.getInstance();
         logger.info("cm:" + ByteArray.toHexString(inputNote.cm()));
+
+        IncrementalMerkleTreeCapsule treeCapsule = new IncrementalMerkleTreeCapsule();
+        for (Integer i = 0; i < zkTransactionNum; i++) {
+          IncrementalMerkleTreeContainer container = treeCapsule.toMerkleTreeContainer();
+          container.append(cmHash);
+          treeMap.put(i, container.getTreeCapsule().getData());
+        }
+        logger.info("Init merkleMap done");
+
         break;
       default:
         break;
@@ -215,13 +227,13 @@ public class ZkTransactionGenerator {
         if (l == 0) {
           return;
         }
-        newTransaction = createTransactionType2((int) l, count, null);
+        newTransaction = createTransactionType2((int) l, count);
         break;
       case 3:
         if (l == 0) {
           return;
         }
-        newTransaction = createTransactionType3((int) l, count, null);
+        newTransaction = createTransactionType3((int) l, count);
         break;
       default:
         throw new RuntimeException("Wrong testType:" + testType);
@@ -310,19 +322,20 @@ public class ZkTransactionGenerator {
   }
 
   // private 2 public
-  private TransactionCapsule createTransactionType2(
-      int index, int count, IncrementalMerkleTreeContainer container) throws ZksnarkException {
+  private TransactionCapsule createTransactionType2(int index, int count) throws ZksnarkException {
 
     //    long start = System.currentTimeMillis();
     if (index == 0) {
       return null;
     }
-    if (container == null) {
-      container = (new IncrementalMerkleTreeCapsule()).toMerkleTreeContainer();
-      for (int i = 0; i < index; i++) {
-        container.append(cmHash);
-      }
+    byte[] bytes = treeMap.get(index);
+    if (bytes == null) {
+      throw new RuntimeException("merkleMap is not initial,index:" + index);
     }
+
+    IncrementalMerkleTreeContainer container =
+        new IncrementalMerkleTreeCapsule(bytes).toMerkleTreeContainer();
+
     //  0 + 20_100_000=  10_100_000 + 0 + 10_000_000
     ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
@@ -365,19 +378,20 @@ public class ZkTransactionGenerator {
   }
 
   // private 2 private
-  private TransactionCapsule createTransactionType3(
-      int index, int count, IncrementalMerkleTreeContainer container) throws ZksnarkException {
+  private TransactionCapsule createTransactionType3(int index, int count) throws ZksnarkException {
 
     //    long start = System.currentTimeMillis();
     if (index == 0) {
       return null;
     }
-    if (container == null) {
-      container = (new IncrementalMerkleTreeCapsule()).toMerkleTreeContainer();
-      for (int i = 0; i < index; i++) {
-        container.append(cmHash);
-      }
+    byte[] bytes = treeMap.get(index);
+    if (bytes == null) {
+      throw new RuntimeException("merkleMap is not initial,index:" + index);
     }
+
+    IncrementalMerkleTreeContainer container =
+        new IncrementalMerkleTreeCapsule(bytes).toMerkleTreeContainer();
+
     //  0 + 20_100_000=   0 + 10_100_000 + 10_000_000
     ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
