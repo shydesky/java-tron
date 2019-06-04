@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -270,6 +272,26 @@ public class ZkTransactionGenerator {
     transactionCap.sign(ByteArray.fromHexString(commonOwnerPrivateKey));
 
     return transactionCap;
+  }
+
+  private void generateExceptionTransaction() {
+    FailureZKTransaction testClass = new FailureZKTransaction();
+    Random random = new Random();
+    int i = random.nextInt(20)%20 + 1;
+    String methodName = "FailureTest" + i;
+
+    //System.out.println(methodName);
+
+    try {
+      TransactionCapsule transactionCapsule = (TransactionCapsule) testClass.getClass().
+          getMethod(methodName, new Class[]{}).invoke(null, new Object[]{});
+      if (transactionCapsule != null) {
+        transactions.add(transactionCapsule.getInstance());
+        //System.out.println(ByteArray.toHexString(transactionCapsule.getTransactionId().getBytes()));
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   private List<TransactionCapsule> createNewTransaction2List(int count) throws ZksnarkException {
