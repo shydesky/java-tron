@@ -43,6 +43,7 @@ import org.tron.common.overlay.discover.node.NodeManager;
 import org.tron.common.overlay.discover.node.statistics.NodeStatistics;
 import org.tron.core.config.args.Args;
 import org.tron.core.net.peer.PeerConnection;
+import org.tron.core.pbft.PbftMessageHandle;
 
 @Slf4j(topic = "net")
 @Component
@@ -65,6 +66,9 @@ public class SyncPool {
   @Autowired
   private ApplicationContext ctx;
 
+  @Autowired
+  private PbftMessageHandle pbftMessageHandle;
+
   private ChannelManager channelManager;
 
   private Args args = Args.getInstance();
@@ -80,7 +84,7 @@ public class SyncPool {
   private PeerClient peerClient;
 
   public void init() {
-
+    pbftMessageHandle.init();
     channelManager = ctx.getBean(ChannelManager.class);
 
     peerClient = ctx.getBean(PeerClient.class);

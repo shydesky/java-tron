@@ -855,9 +855,7 @@ public class Manager {
       revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MIN_FLUSH_COUNT);
     }
     //pbft
-    if (block.generatedByMyself) {
-      pbftManager.doAction(PbftBlockMessageCapsule.buildPrePrepareMessage(block));
-    }
+    pbftManager.doAction(PbftBlockMessageCapsule.buildPrePrepareMessage(block));
   }
 
   private void switchFork(BlockCapsule newHead)

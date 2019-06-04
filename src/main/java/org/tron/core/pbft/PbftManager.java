@@ -18,7 +18,7 @@ public class PbftManager {
 
   public final static int agreeNodeCount = Args.getInstance().getAgreeNodeCount();
 
-  private volatile boolean isRun = false;
+  private volatile boolean isRun = true;
 
   // 消息队列
   private BlockingQueue<PbftBlockMessageCapsule> messageQueue = Queues.newLinkedBlockingQueue();

@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.crypto.ECKey.ECDSASignature;
 import org.tron.common.utils.ByteArray;
+import org.tron.common.utils.Sha256Hash;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.config.args.LocalWitnesses;
@@ -37,7 +38,8 @@ public class PbftBlockMessageCapsule extends PbftBaseMessage {
         .setPublicKey(ByteString.copyFrom(localWitnesses.getPublicKey()))
         .setData(blockCapsule.getBlockId().getByteString());
     Raw raw = rawBuilder.build();
-    ECDSASignature signature = ecKey.sign(raw.toByteArray());
+    byte[] hash = Sha256Hash.hash(raw.toByteArray());
+    ECDSASignature signature = ecKey.sign(hash);
     builder.setRawData(raw).setSign(ByteString.copyFrom(signature.toByteArray()));
     PbftMessage message = builder.build();
     pbftMessageCapsule.setType(MessageTypes.PBFT_BLOCK_MSG.asByte())
@@ -66,7 +68,8 @@ public class PbftBlockMessageCapsule extends PbftBaseMessage {
         .setPublicKey(ByteString.copyFrom(localWitnesses.getPublicKey()))
         .setData(paMessage.getPbftMessage().getRawData().getData());
     Raw raw = rawBuilder.build();
-    ECDSASignature signature = ecKey.sign(raw.toByteArray());
+    byte[] hash = Sha256Hash.hash(raw.toByteArray());
+    ECDSASignature signature = ecKey.sign(hash);
     builder.setRawData(raw).setSign(ByteString.copyFrom(signature.toByteArray()));
     PbftMessage message = builder.build();
     pbftMessageCapsule.setType(MessageTypes.PBFT_BLOCK_MSG.asByte())

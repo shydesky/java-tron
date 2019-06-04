@@ -69,4 +69,11 @@ public abstract class PbftBaseMessage extends Message {
         .toByteArray();
     return Arrays.equals(sigAddress, witnessAccountAddress);
   }
+
+  @Override
+  public String toString() {
+    return "PbftMsgType:" + pbftMessage.getRawData().getPbftMsgType()
+        + ", data:" + Hex.toHexString(pbftMessage.getRawData().getData().toByteArray())
+        + ", " + super.toString();
+  }
 }

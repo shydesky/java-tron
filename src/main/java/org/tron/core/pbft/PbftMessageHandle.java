@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AtomicLongMap;
-import com.google.protobuf.ByteString;
 import java.security.SignatureException;
 import java.util.List;
 import java.util.Map;
@@ -16,14 +15,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.tron.common.overlay.server.SyncPool;
-import org.tron.common.utils.Sha256Hash;
-import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.args.Args;
-import org.tron.core.db.Manager;
-import org.tron.core.exception.BadItemException;
-import org.tron.core.exception.ItemNotFoundException;
 import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
@@ -52,12 +47,16 @@ public class PbftMessageHandle {
 
   private Timer timer;
 
-  @Autowired
-  private Manager manager;
-  @Autowired
   private SyncPool syncPool;
   @Autowired
   private PbftMessageAction pbftMessageAction;
+  @Autowired
+  private ApplicationContext ctx;
+
+  public void init() {
+    syncPool = ctx.getBean(SyncPool.class);
+    start();
+  }
 
   public void onPrePrepare(PbftBaseMessage message) {
     if (!checkIsCanSendPrePrepareMsg()) {
@@ -164,19 +163,23 @@ public class PbftMessageHandle {
     return result.get();
   }
 
-  public BlockCapsule getBlockByHash(ByteString blockId)
-      throws BadItemException, ItemNotFoundException {
-    return manager.getBlockById(Sha256Hash.of((blockId.toByteArray())));
-  }
-
   // 清理请求相关状态
   private void remove(String no) {
     String pre = String.valueOf(no) + "_";
     preVotes.remove(no);
     pareVotes.removeIf((vp) -> StringUtils.startsWith(vp, pre));
     commitVotes.removeIf((vp) -> StringUtils.startsWith(vp, pre));
-    agreePare.asMap().keySet().removeIf((vp) -> StringUtils.startsWith(vp, pre));
-    agreeCommit.asMap().keySet().removeIf((vp) -> StringUtils.startsWith(vp, pre));
+
+    agreePare.asMap().keySet().forEach(s -> {
+      if (StringUtils.startsWith(s, pre)) {
+        agreePare.remove(s);
+      }
+    });
+    agreeCommit.asMap().keySet().forEach(s -> {
+      if (StringUtils.startsWith(s, pre)) {
+        agreeCommit.remove(s);
+      }
+    });
     timeOuts.remove(no);
   }
 
@@ -186,7 +189,7 @@ public class PbftMessageHandle {
   private void checkTimer() {
     List<String> remo = Lists.newArrayList();
     for (Entry<String, Long> item : timeOuts.entrySet()) {
-      if (System.currentTimeMillis() - item.getValue() > 300) {
+      if (System.currentTimeMillis() - item.getValue() > 3000) {
         // 超时还没达成一致，则本次投票无效
         logger.info("投票无效:{}", item.getKey());
         remo.add(item.getKey());
@@ -198,11 +201,12 @@ public class PbftMessageHandle {
   }
 
   public void start() {
+    timer = new Timer("pbft-timer");
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
         checkTimer();
       }
-    }, 10, 100);
+    }, 10, 1000);
   }
 }

@@ -1,17 +1,14 @@
 package org.tron.program;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
-import org.tron.core.Constant;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.services.RpcApiService;
@@ -44,9 +41,9 @@ public class FullNode {
    */
   public static void main(String[] args) {
     logger.info("Full node running.");
-    Args.setParam(args, Constant.TESTNET_CONF);
+    Args.setParam(args, "config-localtest.conf");
     Args cfgArgs = Args.getInstance();
-
+    cfgArgs.setWitness(true);
     load(cfgArgs.getLogbackPath());
 
     if (cfgArgs.isHelp()) {
