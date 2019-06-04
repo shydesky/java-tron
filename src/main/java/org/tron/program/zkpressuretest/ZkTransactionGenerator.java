@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -61,10 +60,12 @@ public class ZkTransactionGenerator {
   private ExecutorService generatePool;
   private CountDownLatch countDownLatch = null;
   private int zkTransactionNum = 0;
+  private int testType = 0;
+  private int logRange = 0;
 
   private Note inputNote = null;
   private PedersenHash cmHash = null;
-  private byte[] inputMerkleRoot = null;
+  private volatile byte[] inputMerkleRoot = null;
   private SpendingKey inputsSendingKey = null;
 
   public void init() throws ZksnarkException {
@@ -75,14 +76,19 @@ public class ZkTransactionGenerator {
 
     Args cfgArgs = Args.getInstance();
     zkTransactionNum = cfgArgs.getZkTransactionNum();
-    //    long zkConcurrentNum = cfgArgs.getZkConcurrentNum();
+    logger.info("zkTransactionNum:" + zkTransactionNum);
+    testType = cfgArgs.getTestType();
+    logger.info("testType:" + testType);
+    logRange = cfgArgs.getLogRange();
+    logger.info("logRange:" + logRange);
+
     countDownLatch = new CountDownLatch(zkTransactionNum);
-    //    logger.info("zkTransactionNum:" + zkTransactionNum);
-    System.out.println("zkTransactionNum:" + zkTransactionNum);
 
     librustzcashInitZksnarkParams();
 
     int availableProcessors = Runtime.getRuntime().availableProcessors();
+    logger.info("availableProcessors:" + availableProcessors);
+
     generatePool =
         Executors.newFixedThreadPool(
             availableProcessors,
@@ -102,32 +108,23 @@ public class ZkTransactionGenerator {
               }
             });
 
-    System.out.println("availableProcessors:" + availableProcessors);
-
-    //    AccountCapsule ownerCapsule =
-    //        new AccountCapsule(
-    //            ByteString.copyFromUtf8("owner"),
-    //            ByteString.copyFrom(Wallet.decodeFromBase58Check(ownerAddress)),
-    //            AccountType.Normal,
-    //            220_000_000L);
-
-    //    dbManager.getAccountStore().put(ownerCapsule.getAddress().toByteArray(), ownerCapsule);
+    inputsSendingKey =
+        SpendingKey.decode("0ac83cc796b4258f09bee0617a02c8ab77b86c16d1c40f689b11cd69db9827a0");
 
     EncPlaintext encPlaintext = new EncPlaintext();
-    encPlaintext.data = ByteArray.fromHexString("");
-
+    encPlaintext.data =
+        ByteArray.fromHexString(
+            "010000000000000000000000a0b332010000000089ccb81384fe7eb45eba425f26dee2e27f5cc18de0a18905e5c3bb0551b1680b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
     inputNote = Note.decode(encPlaintext);
-
     byte[] pk_d = new byte[32];
     byte[] ivk = inputsSendingKey.fullViewingKey().inViewingKey().value;
-    Librustzcash.librustzcashIvkToPkd(new LibrustzcashParam.IvkToPkdParams(ivk, inputNote.d.getData(), pk_d));
+    Librustzcash.librustzcashIvkToPkd(
+        new LibrustzcashParam.IvkToPkdParams(ivk, inputNote.d.getData(), pk_d));
+    inputNote.pkD = pk_d;
 
     PedersenHashCapsule compressCapsule1 = new PedersenHashCapsule();
     compressCapsule1.setContent(ByteString.copyFrom(inputNote.cm()));
     cmHash = compressCapsule1.getInstance();
-
-    inputMerkleRoot = ByteArray.fromHexString("");
-    inputsSendingKey = SpendingKey.decode("");
   }
 
   public void start() {
@@ -153,7 +150,7 @@ public class ZkTransactionGenerator {
                 generatePool.execute(
                     () -> {
                       try {
-                        generateTransaction();
+                        generateTransaction(l, zkTransactionNum);
                       } catch (Exception ex) {
                         ex.printStackTrace();
                         logger.error("", ex);
@@ -163,7 +160,6 @@ public class ZkTransactionGenerator {
 
       countDownLatch.await();
 
-      System.out.println("generate cost time:" + (System.currentTimeMillis() - startGenerate));
       logger.info("generate cost time:" + (System.currentTimeMillis() - startGenerate));
       fos.flush();
       fos.close();
@@ -202,19 +198,23 @@ public class ZkTransactionGenerator {
     System.exit(0);
   }
 
-  private void generateTransaction() throws Exception {
-    TransactionCapsule newTransaction = createNewTransaction();
-    //    logger.info("generate cost time:" + (System.currentTimeMillis() - startGenerate));
+  private void generateTransaction(long l, int count) throws Exception {
+    TransactionCapsule newTransaction = null;
+    switch (testType) {
+      case 1:
+        newTransaction = createTransactionType1();
+        break;
+      case 2:
+        if (l == 0) {
+          return;
+        }
+        newTransaction = createTransactionType2((int) l, count, null);
+        break;
+      default:
+        throw new RuntimeException("Wrong testType:" + testType);
+    }
 
     Transaction instance = newTransaction.getInstance();
-
-    //    BlockCapsule blockCapsule =
-    //        new BlockCapsule(100, Sha256Hash.ZERO_HASH, System.currentTimeMillis(),
-    // ByteString.EMPTY);
-
-    //    long startVerify = System.currentTimeMillis();
-    //    dbManager.processTransaction(newTransaction, blockCapsule);
-    //    System.out.println("Verify cost time:" + (System.currentTimeMillis() - startVerify));
 
     transactions.add(instance);
   }
@@ -225,7 +225,7 @@ public class ZkTransactionGenerator {
         Thread.sleep(100);
         return;
       } catch (InterruptedException e) {
-        System.out.println(e);
+        e.printStackTrace();
       }
     }
 
@@ -234,10 +234,9 @@ public class ZkTransactionGenerator {
 
     long count = countDownLatch.getCount();
 
-    if (count % 100 == 0 || (zkTransactionNum - count) == 1) {
+    if (count % logRange == 0 || (zkTransactionNum - count) == 1) {
       fos.flush();
       logger.info(
-          //    System.out.println(
           "Generate transaction success ------- ------- ------- ------- ------- Remain: "
               + countDownLatch.getCount()
               + ", Pending size: "
@@ -248,7 +247,7 @@ public class ZkTransactionGenerator {
   }
 
   // public 2 private
-  private TransactionCapsule createNewTransaction() throws ZksnarkException {
+  private TransactionCapsule createTransactionType1() throws ZksnarkException {
 
     // 20_100_000  +  0 = 10_000_000 + 100_000 + 10_000_000
     ZenTransactionBuilder builder = new ZenTransactionBuilder();
@@ -279,25 +278,52 @@ public class ZkTransactionGenerator {
         (new IncrementalMerkleTreeCapsule()).toMerkleTreeContainer();
 
     for (int i = 0; i < count; i++) {
-      TransactionCapsule transactionCapsule = createNewTransaction2(i + 1, count, container);
+      TransactionCapsule transactionCapsule = createTransactionType2(i + 1, count, container);
       result.add(transactionCapsule);
       container.append(cmHash);
     }
     return result;
   }
   // private 2 public
-  private TransactionCapsule createNewTransaction2(
+  private TransactionCapsule createTransactionType2(
       int index, int count, IncrementalMerkleTreeContainer container) throws ZksnarkException {
 
+    //    long start = System.currentTimeMillis();
+    if (index == 0) {
+      return null;
+    }
+    if (container == null) {
+      container = (new IncrementalMerkleTreeCapsule()).toMerkleTreeContainer();
+      for (int i = 0; i < index; i++) {
+        container.append(cmHash);
+      }
+    }
     //  0 + 20_100_000=  10_100_000 + 0 + 10_000_000
     ZenTransactionBuilder builder = new ZenTransactionBuilder();
 
     ExpandedSpendingKey expsk = inputsSendingKey.expandedSpendingKey();
     Note note = inputNote;
-    byte[] anchor = inputMerkleRoot;
     IncrementalMerkleVoucherContainer voucher = container.toVoucher();
     for (int i = index; i < count; i++) {
       voucher.append(cmHash);
+    }
+
+    // 10ms
+    //    logger.info("Creating voucher costs:" + (System.currentTimeMillis() - start));
+
+    synchronized (this) {
+      if (inputMerkleRoot == null) {
+        inputMerkleRoot = voucher.root().getContent().toByteArray();
+      } else {
+        if (!Arrays.equals(voucher.root().getContent().toByteArray(), inputMerkleRoot)) {
+          throw new RuntimeException("root is not equal");
+        }
+      }
+    }
+
+    byte[] anchor = inputMerkleRoot;
+    if (!Arrays.equals(cmHash.getContent().toByteArray(), note.cm())) {
+      throw new RuntimeException("cmHash is not equal");
     }
 
     SpendDescriptionInfo spendDescriptionInfo =
@@ -317,7 +343,7 @@ public class ZkTransactionGenerator {
     logger.info("init zk param begin");
 
     String spendPath = getParamsFile("sapling-spend.params");
-    System.out.println("spendPath:" + spendPath);
+    logger.info("spendPath:" + spendPath);
     String spendHash =
         "8270785a1a0d0bc77196f000ee6d221c9c9894f55307bd9357c3f0105d31ca63991ab91324160d8f53e2bbd3c2633a6eb8bdf5205d822e7f3f73edac51b2b70c";
 
@@ -347,7 +373,7 @@ public class ZkTransactionGenerator {
             .getResourceAsStream("params" + File.separator + fileName);
     File fileOut = new File(System.getProperty("java.io.tmpdir") + File.separator + fileName);
     /// var/folders/0s/_f7hdf5d2cnbcx1qljh_vc040000gn/T/
-    System.out.println("java.io.tmpdir:" + System.getProperty("java.io.tmpdir"));
+    logger.info("java.io.tmpdir:" + System.getProperty("java.io.tmpdir"));
     try {
       FileUtils.copyToFile(in, fileOut);
     } catch (IOException e) {
@@ -356,39 +382,11 @@ public class ZkTransactionGenerator {
     return fileOut.getAbsolutePath();
   }
 
-  private Note generateRandomNoteCm() throws ZksnarkException {
-    // generate cm
-    SpendingKey spendingKey = SpendingKey.random();
-    FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
-    IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
-    PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
-
-    logger.info("SendingKey:" + spendingKey.encode());
-    return new Note(paymentAddress, 20_100_000L);
-  }
-
   private void prepareShieldEnvironment() throws Exception {
 
-    long cmNum = 100_000;
+    long cmNum = zkTransactionNum;
     logger.info("Start to prepare shield env");
     long start = System.currentTimeMillis();
-    Note note = generateRandomNoteCm();
-    logger.info("Note:" + ByteArray.toHexString(note.encode().data));
-
-    EncPlaintext encPlaintext = new EncPlaintext();
-    encPlaintext.data = ByteArray.fromHexString("");
-
-    Note decode = Note.decode(encPlaintext);
-    boolean equals = Arrays.equals(decode.cm(), note.cm());
-    System.out.println("equals:" + equals);
-
-    byte[] cm =
-        ByteArray.fromHexString("7a3f10234af80cbc08b8f841157bc6ec50563b29678774a7cc73e566eab8820a");
-
-    PedersenHashCapsule compressCapsule1 = new PedersenHashCapsule();
-    compressCapsule1.setContent(ByteString.copyFrom(cm));
-
-    PedersenHash cmHash = compressCapsule1.getInstance();
 
     // update merkleStore
     IncrementalMerkleTreeContainer bestMerkle = dbManager.getMerkleContainer().getBestMerkle();
@@ -409,17 +407,16 @@ public class ZkTransactionGenerator {
   /** Start the FullNode. */
   public static void main(String[] args) throws Exception {
 
-    System.out.println("Begin.");
+    logger.info("Begin.");
     logger.info("Full node running.");
     Args.setParam(args, Constant.TESTNET_CONF);
 
     ZkTransactionGenerator generator = new ZkTransactionGenerator();
-    generator.prepareShieldEnvironment();
+    generator.init();
+    //    generator.prepareShieldEnvironment();
 
-    //    generator.init();
-    //    generator.start();
+    generator.start();
 
-    System.out.println("Done.");
     logger.info("Done.");
     System.exit(0);
   }

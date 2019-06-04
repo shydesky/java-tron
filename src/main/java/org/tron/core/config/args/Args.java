@@ -152,7 +152,15 @@ public class Args {
 
   @Getter
   @Parameter(names = {"--zk-transaction-number"})
-  private int zkTransactionNum = 1000;
+  private int zkTransactionNum = 1;
+
+  @Getter
+  @Parameter(names = {"--testType"})
+  private int testType = 1;
+
+  @Getter
+  @Parameter(names = {"--logRange"})
+  private int logRange = 100;
 
   @Getter
   @Parameter(names = {"--zk-concurrent-number"})
