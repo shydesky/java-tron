@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.exception.BadBlockException;
+import org.tron.core.exception.BadItemException;
+import org.tron.core.exception.ItemNotFoundException;
 import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
@@ -33,6 +35,15 @@ public class PbftManager {
     if (!pbftMessageHandle.isSyncing()) {
       doAction(PbftBlockMessageCapsule.buildPrePrepareMessage(block));
     }
+  }
+
+  public void forwardMessage(PbftBaseMessage message) {
+    pbftMessageHandle.forwardMessage(message);
+  }
+
+  public boolean checkIsWitnessMsg(PbftBaseMessage msg)
+      throws BadItemException, ItemNotFoundException {
+    return pbftMessageHandle.checkIsWitnessMsg(msg);
   }
 
   public boolean doAction(PbftBaseMessage msg) throws BadBlockException {

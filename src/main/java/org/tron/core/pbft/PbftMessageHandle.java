@@ -98,8 +98,6 @@ public class PbftMessageHandle {
       return;
     }
     pareVotes.add(key);
-    //转发
-    forwardMessage(message);
     if (!checkIsCanSendMsg(message)) {
       return;
     }
@@ -132,8 +130,6 @@ public class PbftMessageHandle {
       return;
     }
     commitVotes.add(key);
-    //todo：
-    forwardMessage(message);
     // 票数 +1
     long agCou = agreeCommit.incrementAndGet(message.getDataKey());
     if (agCou >= PbftManager.agreeNodeCount) {
@@ -153,7 +149,7 @@ public class PbftMessageHandle {
 
   }
 
-  private void forwardMessage(PbftBaseMessage message) {
+  public void forwardMessage(PbftBaseMessage message) {
     if (syncPool == null) {
       return;
     }
@@ -163,28 +159,37 @@ public class PbftMessageHandle {
   }
 
   public boolean checkMsg(PbftBaseMessage msg) throws SignatureException {
-    return msg.validateSignature(msg);
+    return msg.validateSignature();
   }
 
   public boolean checkIsCanSendMsg(PbftBaseMessage msg)
       throws BadItemException, ItemNotFoundException {
-    if (!Args.getInstance().isWitness() || manager == null) {
+    if (!Args.getInstance().isWitness()) {
       return false;
     }
+    if (!checkIsWitnessMsg(msg)) {
+      return false;
+    }
+
+    return !isSyncing();
+  }
+
+  public boolean checkIsWitnessMsg(PbftBaseMessage msg)
+      throws ItemNotFoundException, BadItemException {
     //check current node is witness node
+    if (manager == null) {
+      return false;
+    }
     long blockNum = msg.getPbftMessage().getRawData().getBlockNum();
     List<ByteString> witnessList;
     BlockCapsule blockCapsule = manager.getBlockByNum(blockNum);
-    if (manager.getBlockByNum(blockNum).getTimeStamp() > manager.getBeforeMaintenanceTime()) {
+    if (blockCapsule.getTimeStamp() > manager.getBeforeMaintenanceTime()) {
       witnessList = manager.getCurrentWitness();
     } else {
       witnessList = manager.getBeforeWitness();
     }
-    if (!witnessList.stream()
-        .anyMatch(witness -> witness.equals(msg.getPbftMessage().getRawData().getPublicKey()))) {
-      return false;
-    }
-    return !isSyncing();
+    return witnessList.stream()
+        .anyMatch(witness -> witness.equals(msg.getPbftMessage().getRawData().getPublicKey()));
   }
 
   public boolean isSyncing() {
@@ -218,6 +223,7 @@ public class PbftMessageHandle {
         agreeCommit.remove(s);
       }
     });
+    doneMsg.remove(no);
     timeOuts.remove(no);
   }
 

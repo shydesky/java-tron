@@ -60,13 +60,12 @@ public abstract class PbftBaseMessage extends Message {
 
   public abstract String getNo();
 
-  public boolean validateSignature(PbftBaseMessage pbftBaseMessage)
+  public boolean validateSignature()
       throws SignatureException {
-    byte[] hash = Sha256Hash.hash(pbftBaseMessage.getPbftMessage().getRawData().toByteArray());
+    byte[] hash = Sha256Hash.hash(getPbftMessage().getRawData().toByteArray());
     byte[] sigAddress = ECKey.signatureToAddress(hash, TransactionCapsule
-        .getBase64FromByteString(pbftBaseMessage.getPbftMessage().getSign()));
-    byte[] witnessAccountAddress = pbftBaseMessage.getPbftMessage().getRawData().getPublicKey()
-        .toByteArray();
+        .getBase64FromByteString(getPbftMessage().getSign()));
+    byte[] witnessAccountAddress = getPbftMessage().getRawData().getPublicKey().toByteArray();
     return Arrays.equals(sigAddress, witnessAccountAddress);
   }
 
