@@ -232,6 +232,13 @@ public class Manager {
   @Autowired
   private PbftManager pbftManager;
 
+  @Getter
+  private final List<ByteString> beforeWitness = new ArrayList<>();
+  @Getter
+  private final List<ByteString> currentWitness = new ArrayList<>();
+  @Getter
+  private long beforeMaintenanceTime;
+
   public WitnessStore getWitnessStore() {
     return this.witnessStore;
   }
@@ -1638,10 +1645,13 @@ public class Manager {
    * Perform maintenance.
    */
   private void processMaintenance(BlockCapsule block) {
+    beforeWitness.addAll(witnessController.getActiveWitnesses());
+    beforeMaintenanceTime = dynamicPropertiesStore.getNextMaintenanceTime();
     proposalController.processProposals();
     witnessController.updateWitness();
     this.dynamicPropertiesStore.updateNextMaintenanceTime(block.getTimeStamp());
     forkController.reset();
+    currentWitness.addAll(witnessController.getActiveWitnesses());
   }
 
   /**

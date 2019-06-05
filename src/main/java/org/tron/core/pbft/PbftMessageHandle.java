@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AtomicLongMap;
+import com.google.protobuf.ByteString;
 import java.security.SignatureException;
 import java.util.List;
 import java.util.Map;
@@ -19,14 +20,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.tron.common.overlay.server.SyncPool;
 import org.tron.core.config.args.Args;
+import org.tron.core.db.Manager;
+import org.tron.core.exception.BadItemException;
+import org.tron.core.exception.ItemNotFoundException;
 import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
 @Slf4j
 @Component
 public class PbftMessageHandle {
-
-  private long blockNum;
 
   // 预准备阶段投票信息
   private Set<String> preVotes = Sets.newConcurrentHashSet();
@@ -48,6 +50,7 @@ public class PbftMessageHandle {
   private Timer timer;
 
   private SyncPool syncPool;
+  private Manager manager;
   @Autowired
   private PbftMessageAction pbftMessageAction;
   @Autowired
@@ -55,13 +58,11 @@ public class PbftMessageHandle {
 
   public void init() {
     syncPool = ctx.getBean(SyncPool.class);
+    manager = ctx.getBean(Manager.class);
     start();
   }
 
-  public void onPrePrepare(PbftBaseMessage message) {
-    if (!checkIsCanSendPrePrepareMsg()) {
-      return;
-    }
+  public void onPrePrepare(PbftBaseMessage message) throws BadItemException, ItemNotFoundException {
     String key = message.getNo();
     if (preVotes.contains(key)) {
       // 说明已经发起过，不能重复发起，同一高度只能发起一次投票
@@ -70,14 +71,16 @@ public class PbftMessageHandle {
     preVotes.add(key);
     // 启动超时控制
     timeOuts.put(key, System.currentTimeMillis());
-    // 进入准备阶段
+    // 进入准备阶段,如果不是sr节点不需要准备
+    if (!checkIsCanSendMsg(message)) {
+      return;
+    }
     PbftBaseMessage paMessage = PbftBlockMessageCapsule.buildPrePareMessage(message);
-    syncPool.getActivePeers().forEach(peerConnection -> {
-      peerConnection.sendMessage(paMessage);
-    });
+    forwardMessage(paMessage);
   }
 
-  public void onPrepare(PbftBaseMessage message) throws SignatureException {
+  public void onPrepare(PbftBaseMessage message)
+      throws SignatureException, BadItemException, ItemNotFoundException {
     if (!checkMsg(message)) {
       logger.info("异常消息:{}", message);
       return;
@@ -94,17 +97,21 @@ public class PbftMessageHandle {
       return;
     }
     pareVotes.add(key);
-
+    //转发
+    forwardMessage(message);
+    if (!checkIsCanSendMsg(message)) {
+      return;
+    }
     // 票数 +1
-    long agCou = agreePare.incrementAndGet(message.getDataKey());
-    if (agCou >= PbftManager.agreeNodeCount) {
-      pareVotes.remove(key);
-      // 进入提交阶段
-      PbftBaseMessage cmMessage = PbftBlockMessageCapsule.buildCommitMessage(message);
-      doneMsg.put(message.getNo(), cmMessage);
-      syncPool.getActivePeers().forEach(peerConnection -> {
-        peerConnection.sendMessage(cmMessage);
-      });
+    if (!doneMsg.containsKey(message.getNo())) {
+      long agCou = agreePare.incrementAndGet(message.getDataKey());
+      if (agCou >= PbftManager.agreeNodeCount) {
+        agreePare.remove(message.getDataKey());
+        // 进入提交阶段
+        PbftBaseMessage cmMessage = PbftBlockMessageCapsule.buildCommitMessage(message);
+        doneMsg.put(message.getNo(), cmMessage);
+        forwardMessage(cmMessage);
+      }
     }
     // 后续的票数肯定凑不满，超时自动清除
   }
@@ -124,12 +131,16 @@ public class PbftMessageHandle {
       return;
     }
     commitVotes.add(key);
+    //todo：
+    forwardMessage(message);
     // 票数 +1
     long agCou = agreeCommit.incrementAndGet(message.getDataKey());
     if (agCou >= PbftManager.agreeNodeCount) {
       remove(message.getNo());
       //commit,
-      pbftMessageAction.action(message);
+      if (!isSyncing()) {
+        pbftMessageAction.action(message);
+      }
     }
   }
 
@@ -141,22 +152,41 @@ public class PbftMessageHandle {
 
   }
 
-  public boolean checkMsg(PbftBaseMessage msg)
-      throws SignatureException {
-    return (msg.getPbftMessage().getRawData().getBlockNum() == blockNum) && msg
-        .validateSignature(msg);
+  private void forwardMessage(PbftBaseMessage message) {
+    syncPool.getActivePeers().forEach(peerConnection -> {
+      peerConnection.sendMessage(message);
+    });
   }
 
-  public boolean checkIsCanSendPrePrepareMsg() {
-    AtomicBoolean result = new AtomicBoolean(true);
-    if (!Args.getInstance().isWitness()) {
-      return !result.get();
-    }
-    //todo:check current node is witness node
+  public boolean checkMsg(PbftBaseMessage msg) throws SignatureException {
+    return msg.validateSignature(msg);
+  }
 
+  public boolean checkIsCanSendMsg(PbftBaseMessage msg)
+      throws BadItemException, ItemNotFoundException {
+    if (!Args.getInstance().isWitness()) {
+      return false;
+    }
+    //check current node is witness node
+    long blockNum = msg.getPbftMessage().getRawData().getBlockNum();
+    List<ByteString> witnessList;
+    if (manager.getBlockByNum(blockNum).getTimeStamp() > manager.getBeforeMaintenanceTime()) {
+      witnessList = manager.getCurrentWitness();
+    } else {
+      witnessList = manager.getBeforeWitness();
+    }
+    if (!witnessList.stream()
+        .anyMatch(witness -> witness.equals(msg.getPbftMessage().getRawData().getPublicKey()))) {
+      return false;
+    }
+    return !isSyncing();
+  }
+
+  private boolean isSyncing() {
+    AtomicBoolean result = new AtomicBoolean(false);
     syncPool.getActivePeers().forEach(peerConnection -> {
       if (peerConnection.isNeedSyncFromPeer()) {
-        result.set(false);
+        result.set(true);
         return;
       }
     });
@@ -192,12 +222,9 @@ public class PbftMessageHandle {
       if (System.currentTimeMillis() - item.getValue() > 3000) {
         // 超时还没达成一致，则本次投票无效
         logger.info("投票无效:{}", item.getKey());
-        remo.add(item.getKey());
+        remove(item.getKey());
       }
     }
-    remo.forEach((it) -> {
-      remove(it);
-    });
   }
 
   public void start() {
