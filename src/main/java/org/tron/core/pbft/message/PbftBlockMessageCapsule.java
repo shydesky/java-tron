@@ -32,10 +32,11 @@ public class PbftBlockMessageCapsule extends PbftBaseMessage {
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     Raw.Builder rawBuilder = PbftMessage.Raw.newBuilder();
     PbftMessage.Builder builder = PbftMessage.newBuilder();
+    byte[] publicKey = localWitnesses.getPublicKey();
     rawBuilder.setBlockNum(blockCapsule.getNum())
         .setPbftMsgType(Type.PREPREPARE)
         .setTime(System.currentTimeMillis())
-        .setPublicKey(ByteString.copyFrom(localWitnesses.getPublicKey()))
+        .setPublicKey(ByteString.copyFrom(publicKey == null ? new byte[0] : publicKey))
         .setData(blockCapsule.getBlockId().getByteString());
     Raw raw = rawBuilder.build();
     byte[] hash = Sha256Hash.hash(raw.toByteArray());
@@ -62,10 +63,11 @@ public class PbftBlockMessageCapsule extends PbftBaseMessage {
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     PbftMessage.Builder builder = PbftMessage.newBuilder();
     Raw.Builder rawBuilder = PbftMessage.Raw.newBuilder();
+    byte[] publicKey = localWitnesses.getPublicKey();
     rawBuilder.setBlockNum(paMessage.getPbftMessage().getRawData().getBlockNum())
         .setPbftMsgType(type)
         .setTime(System.currentTimeMillis())
-        .setPublicKey(ByteString.copyFrom(localWitnesses.getPublicKey()))
+        .setPublicKey(ByteString.copyFrom(publicKey == null ? new byte[0] : publicKey))
         .setData(paMessage.getPbftMessage().getRawData().getData());
     Raw raw = rawBuilder.build();
     byte[] hash = Sha256Hash.hash(raw.toByteArray());
