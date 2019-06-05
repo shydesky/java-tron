@@ -59,6 +59,7 @@ public class PbftManager {
         return true;
       }
     } catch (Exception e) {
+      logger.error("", e);
       throw new BadBlockException(e.getMessage());
     }
     return false;

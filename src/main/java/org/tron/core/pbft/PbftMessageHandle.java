@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.tron.common.overlay.server.SyncPool;
+import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
 import org.tron.core.exception.BadItemException;
@@ -153,6 +154,9 @@ public class PbftMessageHandle {
   }
 
   private void forwardMessage(PbftBaseMessage message) {
+    if (syncPool == null) {
+      return;
+    }
     syncPool.getActivePeers().forEach(peerConnection -> {
       peerConnection.sendMessage(message);
     });
@@ -164,12 +168,13 @@ public class PbftMessageHandle {
 
   public boolean checkIsCanSendMsg(PbftBaseMessage msg)
       throws BadItemException, ItemNotFoundException {
-    if (!Args.getInstance().isWitness()) {
+    if (!Args.getInstance().isWitness() || manager == null) {
       return false;
     }
     //check current node is witness node
     long blockNum = msg.getPbftMessage().getRawData().getBlockNum();
     List<ByteString> witnessList;
+    BlockCapsule blockCapsule = manager.getBlockByNum(blockNum);
     if (manager.getBlockByNum(blockNum).getTimeStamp() > manager.getBeforeMaintenanceTime()) {
       witnessList = manager.getCurrentWitness();
     } else {
@@ -183,6 +188,9 @@ public class PbftMessageHandle {
   }
 
   private boolean isSyncing() {
+    if (syncPool == null) {
+      return true;
+    }
     AtomicBoolean result = new AtomicBoolean(false);
     syncPool.getActivePeers().forEach(peerConnection -> {
       if (peerConnection.isNeedSyncFromPeer()) {
