@@ -187,7 +187,7 @@ public class PbftMessageHandle {
     return !isSyncing();
   }
 
-  private boolean isSyncing() {
+  public boolean isSyncing() {
     if (syncPool == null) {
       return true;
     }

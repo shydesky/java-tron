@@ -7,6 +7,7 @@ import java.util.concurrent.BlockingQueue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.exception.BadBlockException;
 import org.tron.core.pbft.message.PbftBaseMessage;
@@ -27,6 +28,12 @@ public class PbftManager {
 
   @Autowired
   private PbftMessageHandle pbftMessageHandle;
+
+  public void prePrepare(BlockCapsule block) throws BadBlockException {
+    if (!pbftMessageHandle.isSyncing()) {
+      doAction(PbftBlockMessageCapsule.buildPrePrepareMessage(block));
+    }
+  }
 
   public boolean doAction(PbftBaseMessage msg) throws BadBlockException {
     if (!isRun) {

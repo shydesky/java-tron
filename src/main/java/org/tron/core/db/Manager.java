@@ -102,7 +102,6 @@ import org.tron.core.exception.VMIllegalException;
 import org.tron.core.exception.ValidateScheduleException;
 import org.tron.core.exception.ValidateSignatureException;
 import org.tron.core.pbft.PbftManager;
-import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 import org.tron.core.services.WitnessService;
 import org.tron.core.witness.ProposalController;
 import org.tron.core.witness.WitnessController;
@@ -862,7 +861,7 @@ public class Manager {
       revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MIN_FLUSH_COUNT);
     }
     //pbft
-    pbftManager.doAction(PbftBlockMessageCapsule.buildPrePrepareMessage(block));
+    pbftManager.prePrepare(block);
   }
 
   private void switchFork(BlockCapsule newHead)

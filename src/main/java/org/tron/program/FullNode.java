@@ -9,6 +9,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
+import org.tron.core.Constant;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.services.RpcApiService;
@@ -41,9 +42,8 @@ public class FullNode {
    */
   public static void main(String[] args) {
     logger.info("Full node running.");
-    Args.setParam(args, "config-localtest.conf");
+    Args.setParam(args, Constant.TESTNET_CONF);
     Args cfgArgs = Args.getInstance();
-    cfgArgs.setWitness(true);
     load(cfgArgs.getLogbackPath());
 
     if (cfgArgs.isHelp()) {
