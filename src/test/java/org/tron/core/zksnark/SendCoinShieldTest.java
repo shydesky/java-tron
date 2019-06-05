@@ -515,7 +515,7 @@ public class SendCoinShieldTest {
     Assert.assertTrue(ok);
   }
 
-  //@Test
+  @Test
   public void test_librustzcashCheckDiversifier() throws ZksnarkException {
     byte[] dd = new byte[]{
         85, -19, 83, -16, -42, 85, 11,71, 44, -33, 56
