@@ -238,8 +238,7 @@ public class Librustzcash {
     InputStream in = Librustzcash.class.getClassLoader().getResourceAsStream(
         "native-package" + File.separator + platform + File.separator + name + extension);
     File fileOut = new File(
-        System.getProperty("java.io.tmpdir") + File.separator + name + "-" + System
-            .currentTimeMillis() + extension);
+        System.getProperty("java.io.tmpdir") + File.separator + name + extension);
     try {
       FileUtils.copyToFile(in, fileOut);
     } catch (IOException e) {

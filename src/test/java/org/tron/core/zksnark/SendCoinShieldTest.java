@@ -25,6 +25,8 @@ import org.tron.common.utils.ByteUtil;
 import org.tron.common.utils.FileUtil;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.common.zksnark.Librustzcash;
+import org.tron.common.zksnark.LibrustzcashJni;
+import org.tron.common.zksnark.LibrustzcashJni.LibrustzcashWraper;
 import org.tron.common.zksnark.LibrustzcashParam.BindingSigParams;
 import org.tron.common.zksnark.LibrustzcashParam.CheckOutputParams;
 import org.tron.common.zksnark.LibrustzcashParam.CheckSpendParams;
@@ -519,7 +521,7 @@ public class SendCoinShieldTest {
         85, -19, 83, -16, -42, 85, 11,71, 44, -33, 56
     };
 
-    boolean ret = Librustzcash.librustzcashCheckDiversifier(dd);
+    boolean ret = LibrustzcashWraper.run(dd);
     System.out.println("test--------------dd:" + ByteUtil.toHexString(dd) + ", " + ret);
   }
 
