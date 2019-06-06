@@ -180,10 +180,6 @@ public class PbftMessageHandle {
     }
   }
 
-  public boolean checkMsg(PbftBaseMessage msg) throws SignatureException {
-    return msg.validateSignature() && checkIsWitnessMsg(msg);
-  }
-
   public boolean checkIsCanSendMsg(PbftBaseMessage msg) {
     if (!Args.getInstance().isWitness()) {
       return false;
