@@ -72,6 +72,8 @@ public abstract class PbftBaseMessage extends Message {
   @Override
   public String toString() {
     return "PbftMsgType:" + pbftMessage.getRawData().getPbftMsgType()
+        + ", node address:" + Hex.toHexString(pbftMessage.getRawData().getPublicKey().toByteArray())
+        + ", block num:" + pbftMessage.getRawData().getBlockNum()
         + ", data:" + Hex.toHexString(pbftMessage.getRawData().getData().toByteArray())
         + ", " + super.toString();
   }

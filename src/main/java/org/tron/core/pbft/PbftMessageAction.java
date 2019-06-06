@@ -6,7 +6,7 @@ import org.tron.common.overlay.message.Message;
 import org.tron.core.config.args.Args;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
-@Slf4j
+@Slf4j(topic = "pbft")
 @Component
 public class PbftMessageAction {
 

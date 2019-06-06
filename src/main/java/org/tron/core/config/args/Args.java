@@ -557,7 +557,7 @@ public class Args {
     INSTANCE.allowAccountStateRoot = 0;
     INSTANCE.validContractProtoThreadNum = 1;
     INSTANCE.agreeNodeCount = MAX_ACTIVE_WITNESS_NUM * 2 / 3 + 1;
-    INSTANCE.checkMsgCount = 2;
+    INSTANCE.checkMsgCount = 1;
   }
 
   /**
@@ -967,7 +967,7 @@ public class Args {
     INSTANCE.agreeNodeCount = INSTANCE.agreeNodeCount > MAX_ACTIVE_WITNESS_NUM
         ? MAX_ACTIVE_WITNESS_NUM : INSTANCE.agreeNodeCount;
     INSTANCE.checkMsgCount = config.hasPath("node.checkMsgCount") ? config
-        .getInt("node.checkMsgCount") : 2;
+        .getInt("node.checkMsgCount") : 1;
 
     initBackupProperty(config);
     if ("ROCKSDB".equals(Args.getInstance().getStorage().getDbEngine().toUpperCase())) {

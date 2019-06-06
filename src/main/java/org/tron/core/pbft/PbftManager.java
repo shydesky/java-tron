@@ -10,12 +10,10 @@ import org.springframework.stereotype.Component;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.exception.BadBlockException;
-import org.tron.core.exception.BadItemException;
-import org.tron.core.exception.ItemNotFoundException;
 import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
-@Slf4j
+@Slf4j(topic = "pbft")
 @Component
 public class PbftManager {
 
@@ -41,8 +39,7 @@ public class PbftManager {
     pbftMessageHandle.forwardMessage(message);
   }
 
-  public boolean checkIsWitnessMsg(PbftBaseMessage msg)
-      throws BadItemException, ItemNotFoundException {
+  public boolean checkIsWitnessMsg(PbftBaseMessage msg) {
     return pbftMessageHandle.checkIsWitnessMsg(msg);
   }
 

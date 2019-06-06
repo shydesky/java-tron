@@ -1,17 +1,21 @@
 package org.tron.core.pbft;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AtomicLongMap;
 import com.google.protobuf.ByteString;
 import java.security.SignatureException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -22,12 +26,10 @@ import org.tron.common.overlay.server.SyncPool;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
-import org.tron.core.exception.BadItemException;
-import org.tron.core.exception.ItemNotFoundException;
 import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
-@Slf4j
+@Slf4j(topic = "pbft")
 @Component
 public class PbftMessageHandle {
 
@@ -36,10 +38,13 @@ public class PbftMessageHandle {
   // 准备阶段投票信息
   private Set<String> pareVotes = Sets.newConcurrentHashSet();
   private AtomicLongMap<String> agreePare = AtomicLongMap.create();
+  private Cache<String, PbftBaseMessage> pareMsgCache = CacheBuilder.newBuilder()
+      .initialCapacity(1000).maximumSize(10000).expireAfterWrite(10, TimeUnit.MINUTES).build();
   // 提交阶段投票信息
   private Set<String> commitVotes = Sets.newConcurrentHashSet();
   private AtomicLongMap<String> agreeCommit = AtomicLongMap.create();
-
+  private Cache<String, PbftBaseMessage> commitMsgCache = CacheBuilder.newBuilder()
+      .initialCapacity(1000).maximumSize(10000).expireAfterWrite(10, TimeUnit.MINUTES).build();
   // pbft超时
   private Map<String, Long> timeOuts = Maps.newConcurrentMap();
   // 请求超时，view加1，重试
@@ -47,6 +52,8 @@ public class PbftMessageHandle {
 
   // 成功处理过的请求
   private Map<String, PbftBaseMessage> doneMsg = Maps.newConcurrentMap();
+
+  private byte[] witnessAddress = Args.getInstance().getLocalWitnesses().getWitnessAccountAddress();
 
   private Timer timer;
 
@@ -63,7 +70,7 @@ public class PbftMessageHandle {
     start();
   }
 
-  public void onPrePrepare(PbftBaseMessage message) throws BadItemException, ItemNotFoundException {
+  public void onPrePrepare(PbftBaseMessage message) {
     String key = message.getNo();
     if (preVotes.contains(key)) {
       // 说明已经发起过，不能重复发起，同一高度只能发起一次投票
@@ -72,6 +79,8 @@ public class PbftMessageHandle {
     preVotes.add(key);
     // 启动超时控制
     timeOuts.put(key, System.currentTimeMillis());
+    //
+    checkPrepareMsgCache(key);
     // 进入准备阶段,如果不是sr节点不需要准备
     if (!checkIsCanSendMsg(message)) {
       return;
@@ -80,17 +89,12 @@ public class PbftMessageHandle {
     forwardMessage(paMessage);
   }
 
-  public void onPrepare(PbftBaseMessage message)
-      throws SignatureException, BadItemException, ItemNotFoundException {
-    if (!checkMsg(message)) {
-      logger.info("异常消息:{}", message);
-      return;
-    }
-
+  public void onPrepare(PbftBaseMessage message) {
     String key = message.getKey();
 
     if (!preVotes.contains(message.getNo())) {
       // 必须先过预准备
+      pareMsgCache.put(key, message);
       return;
     }
     if (pareVotes.contains(key)) {
@@ -98,6 +102,8 @@ public class PbftMessageHandle {
       return;
     }
     pareVotes.add(key);
+    //
+    checkCommitMsgCache(message.getNo());
     if (!checkIsCanSendMsg(message)) {
       return;
     }
@@ -115,14 +121,12 @@ public class PbftMessageHandle {
     // 后续的票数肯定凑不满，超时自动清除
   }
 
-  public void onCommit(PbftBaseMessage message) throws SignatureException {
-    if (!checkMsg(message)) {
-      return;
-    }
+  public void onCommit(PbftBaseMessage message) {
     // data模拟数据摘要
     String key = message.getKey();
     if (!pareVotes.contains(key)) {
       // 必须先过准备
+      commitMsgCache.put(key, message);
       return;
     }
     if (commitVotes.contains(key)) {
@@ -158,32 +162,55 @@ public class PbftMessageHandle {
     });
   }
 
-  public boolean checkMsg(PbftBaseMessage msg) throws SignatureException {
-    return msg.validateSignature();
+  private void checkPrepareMsgCache(String key) {
+    for (Entry<String, PbftBaseMessage> entry : pareMsgCache.asMap().entrySet()) {
+      if (StringUtils.startsWith(entry.getKey(), key)) {
+        onPrepare(entry.getValue());
+        pareMsgCache.invalidate(entry.getKey());
+      }
+    }
   }
 
-  public boolean checkIsCanSendMsg(PbftBaseMessage msg)
-      throws BadItemException, ItemNotFoundException {
+  private void checkCommitMsgCache(String key) {
+    for (Entry<String, PbftBaseMessage> entry : commitMsgCache.asMap().entrySet()) {
+      if (StringUtils.startsWith(entry.getKey(), key)) {
+        onCommit(entry.getValue());
+        commitMsgCache.invalidate(entry.getKey());
+      }
+    }
+  }
+
+  public boolean checkMsg(PbftBaseMessage msg) throws SignatureException {
+    return msg.validateSignature() && checkIsWitnessMsg(msg);
+  }
+
+  public boolean checkIsCanSendMsg(PbftBaseMessage msg) {
     if (!Args.getInstance().isWitness()) {
       return false;
     }
-    if (!checkIsWitnessMsg(msg)) {
+    if (!manager.getWitnessScheduleStore().getActiveWitnesses().stream().anyMatch(witness -> {
+      return Arrays.equals(witness.toByteArray(), witnessAddress);
+    })) {
       return false;
     }
-
     return !isSyncing();
   }
 
-  public boolean checkIsWitnessMsg(PbftBaseMessage msg)
-      throws ItemNotFoundException, BadItemException {
+  public boolean checkIsWitnessMsg(PbftBaseMessage msg) {
     //check current node is witness node
     if (manager == null) {
       return false;
     }
     long blockNum = msg.getPbftMessage().getRawData().getBlockNum();
     List<ByteString> witnessList;
-    BlockCapsule blockCapsule = manager.getBlockByNum(blockNum);
-    if (blockCapsule.getTimeStamp() > manager.getBeforeMaintenanceTime()) {
+    BlockCapsule blockCapsule = null;
+    try {
+      blockCapsule = manager.getBlockByNum(blockNum);
+    } catch (Exception e) {
+      logger.error("can not find the block,num is: {}, error reason: {}", blockNum, e.getMessage());
+    }
+    if (blockCapsule == null || blockCapsule.getTimeStamp() > manager
+        .getBeforeMaintenanceTime()) {
       witnessList = manager.getCurrentWitness();
     } else {
       witnessList = manager.getBeforeWitness();

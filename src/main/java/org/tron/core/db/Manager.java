@@ -494,6 +494,8 @@ public class Manager {
       Thread triggerCapsuleProcessThread = new Thread(triggerCapsuleProcessLoop);
       triggerCapsuleProcessThread.start();
     }
+    //
+    currentWitness.addAll(witnessController.getActiveWitnesses());
   }
 
   public BlockId getGenesisBlockId() {
