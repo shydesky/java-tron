@@ -19,8 +19,6 @@ public class PbftManager {
 
   public final static int agreeNodeCount = Args.getInstance().getAgreeNodeCount();
 
-  private volatile boolean isRun = true;
-
   // 消息队列
   private BlockingQueue<PbftBlockMessageCapsule> messageQueue = Queues.newLinkedBlockingQueue();
   // 作为主节点受理过的请求
@@ -29,7 +27,7 @@ public class PbftManager {
   @Autowired
   private PbftMessageHandle pbftMessageHandle;
 
-  public void prePrepare(BlockCapsule block) throws BadBlockException {
+  public void prePrepare(BlockCapsule block) {
     if (!pbftMessageHandle.isSyncing()) {
       doAction(PbftBlockMessageCapsule.buildPrePrepareMessage(block));
     }
@@ -43,41 +41,30 @@ public class PbftManager {
     return pbftMessageHandle.checkIsWitnessMsg(msg);
   }
 
-  public boolean doAction(PbftBaseMessage msg) throws BadBlockException {
-    if (!isRun) {
-      return false;
+  public boolean doAction(PbftBaseMessage msg) {
+    logger.info("收到消息:{}", msg);
+    switch (msg.getPbftMessage().getRawData().getPbftMsgType()) {
+      case PREPREPARE:
+        pbftMessageHandle.onPrePrepare(msg);
+        break;
+      case PREPARE:
+        // prepare
+        pbftMessageHandle.onPrepare(msg);
+        break;
+      case COMMIT:
+        // commit
+        pbftMessageHandle.onCommit(msg);
+        break;
+      case REQUEST:
+        pbftMessageHandle.onRequestData(msg);
+        break;
+      case VIEW_CHANGE:
+        pbftMessageHandle.onChangeView(msg);
+        break;
+      default:
+        break;
     }
-    try {
-      if (msg != null) {
-        logger.info("收到消息:{}", msg);
-        switch (msg.getPbftMessage().getRawData().getPbftMsgType()) {
-          case PREPREPARE:
-            pbftMessageHandle.onPrePrepare(msg);
-            break;
-          case PREPARE:
-            // prepare
-            pbftMessageHandle.onPrepare(msg);
-            break;
-          case COMMIT:
-            // commit
-            pbftMessageHandle.onCommit(msg);
-            break;
-          case REQUEST:
-            pbftMessageHandle.onRequestData(msg);
-            break;
-          case VIEW_CHANGE:
-            pbftMessageHandle.onChangeView(msg);
-            break;
-          default:
-            break;
-        }
-        return true;
-      }
-    } catch (Exception e) {
-      logger.error("", e);
-      throw new BadBlockException(e.getMessage());
-    }
-    return false;
+    return true;
   }
 
 }
