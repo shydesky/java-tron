@@ -7,7 +7,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AtomicLongMap;
 import com.google.protobuf.ByteString;
-import java.security.SignatureException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -33,24 +32,24 @@ import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 @Component
 public class PbftMessageHandle {
 
-  // 预准备阶段投票信息
+  //Pre-preparation stage voting information
   private Set<String> preVotes = Sets.newConcurrentHashSet();
-  // 准备阶段投票信息
+  //Preparation stage voting information
   private Set<String> pareVotes = Sets.newConcurrentHashSet();
   private AtomicLongMap<String> agreePare = AtomicLongMap.create();
   private Cache<String, PbftBaseMessage> pareMsgCache = CacheBuilder.newBuilder()
       .initialCapacity(1000).maximumSize(10000).expireAfterWrite(10, TimeUnit.MINUTES).build();
-  // 提交阶段投票信息
+  //Submit stage voting information
   private Set<String> commitVotes = Sets.newConcurrentHashSet();
   private AtomicLongMap<String> agreeCommit = AtomicLongMap.create();
   private Cache<String, PbftBaseMessage> commitMsgCache = CacheBuilder.newBuilder()
       .initialCapacity(1000).maximumSize(10000).expireAfterWrite(10, TimeUnit.MINUTES).build();
-  // pbft超时
+  //pbft timeout
   private Map<String, Long> timeOuts = Maps.newConcurrentMap();
-  // 请求超时，view加1，重试
+  //
   private Map<String, Long> timeOutsReq = Maps.newHashMap();
 
-  // 成功处理过的请求
+  //Successfully processed request
   private Map<String, PbftBaseMessage> doneMsg = Maps.newConcurrentMap();
 
   private byte[] witnessAddress = Args.getInstance().getLocalWitnesses().getWitnessAccountAddress();
@@ -73,15 +72,15 @@ public class PbftMessageHandle {
   public void onPrePrepare(PbftBaseMessage message) {
     String key = message.getNo();
     if (preVotes.contains(key)) {
-      // 说明已经发起过，不能重复发起，同一高度只能发起一次投票
+      //The description has been initiated, can not be repeated, can only initiate a vote at the same height
       return;
     }
     preVotes.add(key);
-    // 启动超时控制
+    //Start timeout control
     timeOuts.put(key, System.currentTimeMillis());
     //
     checkPrepareMsgCache(key);
-    // 进入准备阶段,如果不是sr节点不需要准备
+    //Into the preparation phase, if not the sr node does not need to be prepared
     if (!checkIsCanSendMsg(message)) {
       return;
     }
@@ -93,12 +92,12 @@ public class PbftMessageHandle {
     String key = message.getKey();
 
     if (!preVotes.contains(message.getNo())) {
-      // 必须先过预准备
+      //Must be prepared in advance
       pareMsgCache.put(key, message);
       return;
     }
     if (pareVotes.contains(key)) {
-      // 说明已经投过票，不能重复投
+      //Explain that the vote has been voted and cannot be repeated
       return;
     }
     pareVotes.add(key);
@@ -107,34 +106,33 @@ public class PbftMessageHandle {
     if (!checkIsCanSendMsg(message)) {
       return;
     }
-    // 票数 +1
+    //The number of votes plus 1
     if (!doneMsg.containsKey(message.getNo())) {
       long agCou = agreePare.incrementAndGet(message.getDataKey());
       if (agCou >= PbftManager.agreeNodeCount) {
         agreePare.remove(message.getDataKey());
-        // 进入提交阶段
+        //Entering the submission stage
         PbftBaseMessage cmMessage = PbftBlockMessageCapsule.buildCommitMessage(message);
         doneMsg.put(message.getNo(), cmMessage);
         forwardMessage(cmMessage);
       }
     }
-    // 后续的票数肯定凑不满，超时自动清除
+    //Subsequent votes will definitely not be satisfied, timeout will be automatically cleared.
   }
 
   public void onCommit(PbftBaseMessage message) {
-    // data模拟数据摘要
     String key = message.getKey();
     if (!pareVotes.contains(key)) {
-      // 必须先过准备
+      //Must be prepared
       commitMsgCache.put(key, message);
       return;
     }
     if (commitVotes.contains(key)) {
-      // 说明该节点对该项数据已经投过票，不能重复投
+      //Explain that the node has voted on the data and cannot vote repeatedly.
       return;
     }
     commitVotes.add(key);
-    // 票数 +1
+    //The number of votes plus 1
     long agCou = agreeCommit.incrementAndGet(message.getDataKey());
     if (agCou >= PbftManager.agreeNodeCount) {
       remove(message.getNo());
@@ -229,7 +227,7 @@ public class PbftMessageHandle {
     return result.get();
   }
 
-  // 清理请求相关状态
+  //Cleanup related status
   private void remove(String no) {
     String pre = String.valueOf(no) + "_";
     preVotes.remove(no);
@@ -251,14 +249,14 @@ public class PbftMessageHandle {
   }
 
   /**
-   * 检测超时情况
+   * Detect timeout
    */
   private void checkTimer() {
     List<String> remo = Lists.newArrayList();
     for (Entry<String, Long> item : timeOuts.entrySet()) {
       if (System.currentTimeMillis() - item.getValue() > 3000) {
-        // 超时还没达成一致，则本次投票无效
-        logger.info("投票无效:{}", item.getKey());
+        //If the timeout has not been agreed, the vote will be invalid.
+        logger.info("vote will be invalid:{}", item.getKey());
         remove(item.getKey());
       }
     }
