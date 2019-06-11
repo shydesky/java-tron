@@ -568,7 +568,7 @@ public class ZkTransactionGenerator {
 
     long time = (System.currentTimeMillis() - start);
 
-    System.out.println("--- time is: " + time + ",ok," + ret);
+    logger.info("--- time is: " + time + ",ok," + ret);
     return time;
 
   }
