@@ -567,7 +567,7 @@ public class ZkTransactionGenerator {
         zkproof));
 
     long time = (System.currentTimeMillis() - start);
-
+    countDownLatch.countDown();
     logger.info("--- time is: " + time + ",ok," + ret);
     return time;
 
