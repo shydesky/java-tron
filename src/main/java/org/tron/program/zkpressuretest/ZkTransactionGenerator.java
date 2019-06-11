@@ -314,7 +314,7 @@ public class ZkTransactionGenerator {
 
       case 4:
         createSpendProofOnly();
-
+        break;
       default:
         throw new RuntimeException("Wrong testType:" + testType);
     }
