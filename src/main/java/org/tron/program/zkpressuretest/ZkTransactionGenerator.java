@@ -170,7 +170,7 @@ public class ZkTransactionGenerator {
         });
 
     try {
-      fos = new FileOutputStream(new File(outputFile), true);
+      fos = new FileOutputStream(new File(outputFile));
 
       long startGenerate = System.currentTimeMillis();
       LongStream.range(0L, this.zkTransactionNum)
