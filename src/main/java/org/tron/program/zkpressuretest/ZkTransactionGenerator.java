@@ -555,4 +555,22 @@ public class ZkTransactionGenerator {
     logger.info("End");
   }
 
+  /**
+   * Start the FullNode.
+   */
+  public static void main(String[] args) throws Exception {
+
+    logger.info("Begin.");
+    logger.info("Full node running.");
+    Args.setParam(args, Constant.TESTNET_CONF);
+
+    ZkTransactionGenerator generator = new ZkTransactionGenerator();
+    generator.init();
+    //    generator.prepareShieldEnvironment();
+
+    generator.start();
+
+    logger.info("Done.");
+    System.exit(0);
+  }
 }
