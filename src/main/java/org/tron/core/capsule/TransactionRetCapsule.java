@@ -10,6 +10,7 @@ import org.tron.protos.Protocol.TransactionRet;
 @Slf4j(topic = "capsule")
 public class TransactionRetCapsule implements ProtoCapsule<TransactionRet> {
   private TransactionRet transactionRet;
+  private TransactionRet.Builder retBuilder;
 
   public TransactionRetCapsule(BlockCapsule blockCapsule) {
     transactionRet = TransactionRet.newBuilder().build();
@@ -19,6 +20,7 @@ public class TransactionRetCapsule implements ProtoCapsule<TransactionRet> {
     TransactionRet.Builder build = transactionRet.toBuilder()
         .setBlockNumber(blockCapsule.getNum()).setBlockTimeStamp(blockCapsule.getTimeStamp());
     transactionRet = build.build();
+    retBuilder =  build;
   }
 
   // only for test
@@ -35,11 +37,15 @@ public class TransactionRetCapsule implements ProtoCapsule<TransactionRet> {
   }
 
   public void addTransactionInfo(TransactionInfo result) {
-    this.transactionRet = this.transactionRet.toBuilder().addTransactioninfo(result).build();
+    retBuilder.addTransactioninfo(result);
   }
 
   @Override
   public byte[] getData() {
+    if (Objects.nonNull(retBuilder)) {
+      transactionRet = retBuilder.build();
+    }
+
     return transactionRet.toByteArray();
   }
 
