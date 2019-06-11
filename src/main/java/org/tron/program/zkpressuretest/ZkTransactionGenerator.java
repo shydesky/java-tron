@@ -530,7 +530,7 @@ public class ZkTransactionGenerator {
     logger.info("End");
   }
 
-  public long createSpendProofOnly() throws ZksnarkException {
+  public void createSpendProofOnly() throws ZksnarkException {
 
     Pointer ctx = Librustzcash.librustzcashSaplingProvingCtxInit();
 
@@ -552,7 +552,7 @@ public class ZkTransactionGenerator {
     byte[] rk = new byte[32];
     byte[] zkproof = new byte[192];
 
-    long start = System.currentTimeMillis();
+//    long start = System.currentTimeMillis();
     boolean ret;
     ret = Librustzcash.librustzcashSaplingSpendProof(new SpendProofParams(ctx, ak,
         nsk,
@@ -566,10 +566,10 @@ public class ZkTransactionGenerator {
         rk,
         zkproof));
 
-    long time = (System.currentTimeMillis() - start);
+//    long time = (System.currentTimeMillis() - start);
     countDownLatch.countDown();
-    logger.info("--- time is: " + time + ",ok," + ret);
-    return time;
+//    logger.info("--- time is: " + time + ",ok," + ret);
+//    return time;
 
   }
 }
