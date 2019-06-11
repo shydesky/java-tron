@@ -97,7 +97,7 @@ public class ZkTransactionGenerator {
 
     generatePool =
         Executors.newFixedThreadPool(
-            availableProcessors,
+            1,
             new ThreadFactory() {
               @Override
               public Thread newThread(Runnable r) {
@@ -314,7 +314,7 @@ public class ZkTransactionGenerator {
 
       case 4:
         createSpendProofOnly();
-        break;
+        return;
       default:
         throw new RuntimeException("Wrong testType:" + testType);
     }
