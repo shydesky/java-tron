@@ -117,6 +117,9 @@ public class ZkTransactionGenerator {
     switch (testType) {
       case 2:
       case 3:
+      case 4:
+      case 5:
+      case 6:
         inputsSendingKey =
             SpendingKey.decode("0ac83cc796b4258f09bee0617a02c8ab77b86c16d1c40f689b11cd69db9827a0");
 
