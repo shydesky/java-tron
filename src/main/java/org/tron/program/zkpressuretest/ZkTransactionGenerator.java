@@ -295,6 +295,24 @@ public class ZkTransactionGenerator {
         break;
 
       case 4:
+        if (l == 0) {
+          return;
+        }
+        newTransaction = createTransactionType4((int) l, count);
+        break;
+      case 5:
+        if (l == 0) {
+          return;
+        }
+        newTransaction = createTransactionType5((int) l, count);
+        break;
+      case 6:
+        if (l == 0) {
+          return;
+        }
+        newTransaction = createTransactionType6((int) l, count);
+        break;
+      case 10:
         createSpendProofOnly();
         return;
       default:
@@ -423,6 +441,178 @@ public class ZkTransactionGenerator {
     return transactionCap;
   }
 
+  // private 2 private + private
+  private TransactionCapsule createTransactionType4(int index, int count) throws ZksnarkException {
+
+    //    long start = System.currentTimeMillis();
+    if (index == 0) {
+      return null;
+    }
+    byte[] bytes = treeMap.get(index);
+    if (bytes == null) {
+      throw new RuntimeException("merkleMap is not initial,index:" + index);
+    }
+
+    IncrementalMerkleTreeContainer container =
+        new IncrementalMerkleTreeCapsule(bytes).toMerkleTreeContainer();
+
+    //  0 + 20_100_000=   0 + 10_100_000 + 10_000_000
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
+
+    ExpandedSpendingKey expsk = inputsSendingKey.expandedSpendingKey();
+    Note note = inputNote;
+    IncrementalMerkleVoucherContainer voucher = container.toVoucher();
+    for (int i = index; i < count; i++) {
+      voucher.append(cmHash);
+    }
+
+    // 10ms
+    //    logger.info("Creating voucher costs:" + (System.currentTimeMillis() - start));
+
+    synchronized (this) {
+      if (inputMerkleRoot == null) {
+        inputMerkleRoot = voucher.root().getContent().toByteArray();
+      } else {
+        if (!Arrays.equals(voucher.root().getContent().toByteArray(), inputMerkleRoot)) {
+          throw new RuntimeException("root is not equal");
+        }
+      }
+    }
+
+    byte[] anchor = inputMerkleRoot;
+    if (!Arrays.equals(cmHash.getContent().toByteArray(), note.cm())) {
+      throw new RuntimeException("cmHash is not equal");
+    }
+
+    SpendDescriptionInfo spendDescriptionInfo =
+        new SpendDescriptionInfo(expsk, note, anchor, voucher);
+
+    builder.addSpend(spendDescriptionInfo);
+
+    // generate output proof
+    {
+      SpendingKey spendingKey = SpendingKey.random();
+      FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+      IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+      PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 10_100_000, new byte[512]);
+    }
+    {
+      SpendingKey spendingKey = SpendingKey.random();
+      FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+      IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+      PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 100_000, new byte[512]);
+    }
+
+    TransactionCapsule transactionCap = builder.build();
+
+    return transactionCap;
+  }
+
+  // public 2 private + private
+  private TransactionCapsule createTransactionType5(int index, int count) throws ZksnarkException {
+
+
+    //  0 + 20_100_000=   0 + 10_100_000 + 10_000_000
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
+
+    builder.setTransparentInput(Wallet.decodeFromBase58Check(ownerAddress), 20_100_000L);
+
+
+    // generate output proof
+    {
+      SpendingKey spendingKey = SpendingKey.random();
+      FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+      IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+      PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 10_100_000, new byte[512]);
+    }
+    {
+      SpendingKey spendingKey = SpendingKey.random();
+      FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+      IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+      PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 100_000, new byte[512]);
+    }
+
+    TransactionCapsule transactionCap = builder.build();
+
+    return transactionCap;
+  }
+
+  // private 2 private + private + public
+  private TransactionCapsule createTransactionType6(int index, int count) throws ZksnarkException {
+
+    //    long start = System.currentTimeMillis();
+    if (index == 0) {
+      return null;
+    }
+    byte[] bytes = treeMap.get(index);
+    if (bytes == null) {
+      throw new RuntimeException("merkleMap is not initial,index:" + index);
+    }
+
+    IncrementalMerkleTreeContainer container =
+        new IncrementalMerkleTreeCapsule(bytes).toMerkleTreeContainer();
+
+    //  0 + 20_100_000=   0 + 10_100_000 + 10_000_000
+    ZenTransactionBuilder builder = new ZenTransactionBuilder();
+
+    ExpandedSpendingKey expsk = inputsSendingKey.expandedSpendingKey();
+    Note note = inputNote;
+    IncrementalMerkleVoucherContainer voucher = container.toVoucher();
+    for (int i = index; i < count; i++) {
+      voucher.append(cmHash);
+    }
+
+    // 10ms
+    //    logger.info("Creating voucher costs:" + (System.currentTimeMillis() - start));
+
+    synchronized (this) {
+      if (inputMerkleRoot == null) {
+        inputMerkleRoot = voucher.root().getContent().toByteArray();
+      } else {
+        if (!Arrays.equals(voucher.root().getContent().toByteArray(), inputMerkleRoot)) {
+          throw new RuntimeException("root is not equal");
+        }
+      }
+    }
+
+    byte[] anchor = inputMerkleRoot;
+    if (!Arrays.equals(cmHash.getContent().toByteArray(), note.cm())) {
+      throw new RuntimeException("cmHash is not equal");
+    }
+
+    SpendDescriptionInfo spendDescriptionInfo =
+        new SpendDescriptionInfo(expsk, note, anchor, voucher);
+
+    builder.addSpend(spendDescriptionInfo);
+
+    // generate output proof
+    {
+      SpendingKey spendingKey = SpendingKey.random();
+      FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+      IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+      PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 5_000_000, new byte[512]);
+    }
+    {
+      SpendingKey spendingKey = SpendingKey.random();
+      FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
+      IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
+      PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
+      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 5_000_000, new byte[512]);
+    }
+
+    String toAddress = "TQjKWNDCLSgqUtg9vrjzZnWhhmsgNgTfmj";
+    builder.setTransparentOutput(Wallet.decodeFromBase58Check(toAddress), 100_000);
+
+
+    TransactionCapsule transactionCap = builder.build();
+
+    return transactionCap;
+  }
 
   public void createSpendProofOnly() throws ZksnarkException {
 
