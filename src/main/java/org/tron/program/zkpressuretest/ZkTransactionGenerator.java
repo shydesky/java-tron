@@ -97,7 +97,7 @@ public class ZkTransactionGenerator {
 
     generatePool =
         Executors.newFixedThreadPool(
-            1,
+            availableProcessors,
             new ThreadFactory() {
               @Override
               public Thread newThread(Runnable r) {
