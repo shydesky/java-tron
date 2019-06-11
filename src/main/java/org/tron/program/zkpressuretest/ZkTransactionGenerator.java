@@ -138,6 +138,7 @@ public class ZkTransactionGenerator {
           container.append(cmHash);
           treeMap.put(i, container.getTreeCapsule().getData());
         }
+        inputMerkleRoot = treeMap.get(zkTransactionNum-1);
         logger.info("Init merkleMap done");
 
         break;
