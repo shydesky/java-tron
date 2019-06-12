@@ -853,10 +853,6 @@ public class Manager {
     processBlock(block);
     this.blockStore.put(block.getBlockId().getBytes(), block);
     this.blockIndexStore.put(block.getBlockId());
-    if (block.getTransactions().size() != 0) {
-      this.transactionRetStore.put(ByteArray.fromLong(block.getNum()), block.getResult());
-    }
-
     updateFork(block);
     if (System.currentTimeMillis() - block.getTimeStamp() >= 60_000) {
       revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MAX_FLUSH_COUNT);
@@ -1203,12 +1199,12 @@ public class Manager {
   /**
    * Process transaction.
    */
-  public TransactionInfo processTransaction(final TransactionCapsule trxCap, BlockCapsule blockCap)
+  public boolean processTransaction(final TransactionCapsule trxCap, BlockCapsule blockCap)
       throws ValidateSignatureException, ContractValidateException, ContractExeException,
       AccountResourceInsufficientException, TransactionExpirationException, TooBigTransactionException, TooBigTransactionResultException,
       DupTransactionException, TaposException, ReceiptCheckErrException, VMIllegalException {
     if (trxCap == null) {
-      return null;
+      return false;
     }
 
     validateTapos(trxCap);
@@ -1269,6 +1265,8 @@ public class Manager {
     TransactionInfoCapsule transactionInfo = TransactionInfoCapsule
         .buildInstance(trxCap, blockCap, trace);
 
+    transactionHistoryStore.put(trxCap.getTransactionId().getBytes(), transactionInfo);
+
     // if event subscribe is enabled, post contract triggers to queue
     postContractTrigger(trace, false);
     Contract contract = trxCap.getInstance().getRawData().getContract(0);
@@ -1276,7 +1274,7 @@ public class Manager {
       ownerAddressSet.add(ByteArray.toHexString(TransactionCapsule.getOwner(contract)));
     }
 
-    return transactionInfo.getInstance();
+    return true;
   }
 
 
@@ -1337,8 +1335,6 @@ public class Manager {
       logger.warn("Witness permission is wrong");
       return null;
     }
-    TransactionRetCapsule transationRetCapsule =
-        new TransactionRetCapsule(blockCapsule);
 
     Set<String> accountSet = new HashSet<>();
     Iterator<TransactionCapsule> iterator = pendingTransactions.iterator();
@@ -1384,12 +1380,11 @@ public class Manager {
       // apply transaction
       try (ISession tmpSeesion = revokingStore.buildSession()) {
         accountStateCallBack.preExeTrans();
-        TransactionInfo result = processTransaction(trx, blockCapsule);
+        processTransaction(trx, blockCapsule);
         accountStateCallBack.exeTransFinish();
         tmpSeesion.merge();
         // push into block
         blockCapsule.addTransaction(trx);
-        transationRetCapsule.addTransactionInfo(result);
         if (fromPending) {
           iterator.remove();
         }
@@ -1441,7 +1436,6 @@ public class Manager {
 
     blockCapsule.setMerkleRoot();
     blockCapsule.sign(privateKey);
-    blockCapsule.setResult(transationRetCapsule);
 
     if (tronNetService != null) {
       tronNetService.fastForward(new BlockMessage(blockCapsule));
@@ -1535,9 +1529,6 @@ public class Manager {
       }
     }
 
-    TransactionRetCapsule transationRetCapsule =
-        new TransactionRetCapsule(block);
-
     try {
       accountStateCallBack.preExecute(block);
       for (TransactionCapsule transactionCapsule : block.getTransactions()) {
@@ -1546,18 +1537,14 @@ public class Manager {
           transactionCapsule.setVerified(true);
         }
         accountStateCallBack.preExeTrans();
-        TransactionInfo result = processTransaction(transactionCapsule, block);
+        processTransaction(transactionCapsule, block);
         accountStateCallBack.exeTransFinish();
-        if (Objects.nonNull(result)) {
-          transationRetCapsule.addTransactionInfo(result);
-        }
       }
       accountStateCallBack.executePushFinish();
     } finally {
       accountStateCallBack.exceptionFinish();
     }
 
-    block.setResult(transationRetCapsule);
     boolean needMaint = needMaintenance(block.getTimeStamp());
     if (needMaint) {
       if (block.getNum() == 1) {
