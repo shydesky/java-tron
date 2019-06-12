@@ -1239,12 +1239,7 @@ public class Wallet {
     if (transactionInfoCapsule != null) {
       return transactionInfoCapsule.getInstance();
     }
-    try {
-      transactionInfoCapsule = dbManager.getTransactionRetStore()
-          .getTransactionInfo(transactionId.toByteArray());
-    } catch (BadItemException e) {
-      return null;
-    }
+
 
     return transactionInfoCapsule == null ? null : transactionInfoCapsule.getInstance();
   }

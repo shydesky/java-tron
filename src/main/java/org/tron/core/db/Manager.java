@@ -68,7 +68,6 @@ import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.capsule.ExchangeCapsule;
 import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.capsule.TransactionInfoCapsule;
-import org.tron.core.capsule.TransactionRetCapsule;
 import org.tron.core.capsule.WitnessCapsule;
 import org.tron.core.capsule.utils.BlockUtil;
 import org.tron.core.config.Parameter.ChainConstant;
@@ -137,9 +136,6 @@ public class Manager {
   @Autowired
   @Getter
   private BlockIndexStore blockIndexStore;
-  @Autowired
-  @Getter
-  private TransactionRetStore transactionRetStore;
   @Autowired
   private AccountIdIndexStore accountIdIndexStore;
   @Autowired
@@ -1772,7 +1768,6 @@ public class Manager {
     closeOneStore(delegatedResourceAccountIndexStore);
     closeOneStore(assetIssueV2Store);
     closeOneStore(exchangeV2Store);
-    closeOneStore(transactionRetStore);
     logger.info("******** end to close db ********");
   }
 
