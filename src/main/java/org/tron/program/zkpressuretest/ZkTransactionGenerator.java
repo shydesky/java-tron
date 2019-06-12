@@ -499,7 +499,7 @@ public class ZkTransactionGenerator {
       FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
       IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
       PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
-      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 10_100_000, new byte[512]);
+      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 10_000_000, new byte[512]);
     }
     {
       SpendingKey spendingKey = SpendingKey.random();
@@ -528,7 +528,7 @@ public class ZkTransactionGenerator {
       FullViewingKey fullViewingKey = spendingKey.fullViewingKey();
       IncomingViewingKey incomingViewingKey = fullViewingKey.inViewingKey();
       PaymentAddress paymentAddress = incomingViewingKey.address(new DiversifierT()).get();
-      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 10_100_000, new byte[512]);
+      builder.addOutput(fullViewingKey.getOvk(), paymentAddress, 10_000_000, new byte[512]);
     }
     {
       SpendingKey spendingKey = SpendingKey.random();
@@ -539,6 +539,9 @@ public class ZkTransactionGenerator {
     }
 
     TransactionCapsule transactionCap = builder.build();
+    String commonOwnerPrivateKey =
+        "0528dc17428585fc4dece68b79fa7912270a1fe8e85f244372f59eb7e8925e04";
+    transactionCap.sign(ByteArray.fromHexString(commonOwnerPrivateKey));
 
     return transactionCap;
   }
