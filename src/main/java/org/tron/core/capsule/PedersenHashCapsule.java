@@ -37,7 +37,7 @@ public class PedersenHashCapsule implements ProtoCapsule<PedersenHash> {
 
     JLibrustzcash.librustzcashMerkleHash(new MerkleHashParams(depth, a.getContent().toByteArray(),
         b.getContent().toByteArray(), res));
-
+    System.out.println("java r: " + ByteArray.toHexString(res));
     PedersenHashCapsule pedersenHashCapsule = new PedersenHashCapsule();
     pedersenHashCapsule.setContent(ByteString.copyFrom(res));
 
