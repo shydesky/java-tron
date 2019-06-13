@@ -37,7 +37,9 @@ public class PedersenHashCapsule implements ProtoCapsule<PedersenHash> {
 
     JLibrustzcash.librustzcashMerkleHash(new MerkleHashParams(depth, a.getContent().toByteArray(),
         b.getContent().toByteArray(), res));
-    System.out.println("java r: " + ByteArray.toHexString(res));
+    System.out.println("java combine a:" + ByteArray.toHexString(a.getContent().toByteArray())
+        +"\nb: " + ByteArray.toHexString(b.getContent().toByteArray())
+        + "\nr: " + ByteArray.toHexString(res));
     PedersenHashCapsule pedersenHashCapsule = new PedersenHashCapsule();
     pedersenHashCapsule.setContent(ByteString.copyFrom(res));
 
@@ -48,6 +50,7 @@ public class PedersenHashCapsule implements ProtoCapsule<PedersenHash> {
     byte[] res = new byte[32];
 
     JLibrustzcash.librustzcash_tree_uncommitted(res);
+    System.out.println("java combine r: " + ByteArray.toHexString(res));
 
     PedersenHashCapsule compressCapsule = new PedersenHashCapsule();
     compressCapsule.setContent(ByteString.copyFrom(res));
