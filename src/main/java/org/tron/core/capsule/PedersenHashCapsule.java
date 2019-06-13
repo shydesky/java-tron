@@ -34,10 +34,12 @@ public class PedersenHashCapsule implements ProtoCapsule<PedersenHash> {
   public static PedersenHashCapsule combine(final PedersenHash a, final PedersenHash b, int depth)
       throws ZksnarkException {
     byte[] res = new byte[32];
-
+    System.out.println("java librustzcashMerkleHash begin a:" + ByteArray.toHexString(a.getContent().toByteArray())
+        +"\nb: " + ByteArray.toHexString(b.getContent().toByteArray())
+        + "\nr: " + ByteArray.toHexString(res));
     JLibrustzcash.librustzcashMerkleHash(new MerkleHashParams(depth, a.getContent().toByteArray(),
         b.getContent().toByteArray(), res));
-    System.out.println("java combine a:" + ByteArray.toHexString(a.getContent().toByteArray())
+    System.out.println("java librustzcashMerkleHash end a:" + ByteArray.toHexString(a.getContent().toByteArray())
         +"\nb: " + ByteArray.toHexString(b.getContent().toByteArray())
         + "\nr: " + ByteArray.toHexString(res));
     PedersenHashCapsule pedersenHashCapsule = new PedersenHashCapsule();
@@ -49,8 +51,9 @@ public class PedersenHashCapsule implements ProtoCapsule<PedersenHash> {
   public static PedersenHashCapsule uncommitted() throws ZksnarkException {
     byte[] res = new byte[32];
 
+    System.out.println("java uncommitted begin r: " + ByteArray.toHexString(res));
     JLibrustzcash.librustzcash_tree_uncommitted(res);
-    System.out.println("java combine r: " + ByteArray.toHexString(res));
+    System.out.println("java uncommitted end r: " + ByteArray.toHexString(res));
 
     PedersenHashCapsule compressCapsule = new PedersenHashCapsule();
     compressCapsule.setContent(ByteString.copyFrom(res));
