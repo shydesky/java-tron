@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.tron.common.overlay.server.Channel;
 import org.tron.common.overlay.server.MessageQueue;
+import org.tron.core.db.Manager;
 import org.tron.core.exception.P2pException;
 import org.tron.core.net.peer.PeerConnection;
 import org.tron.core.pbft.message.PbftBaseMessage;
@@ -20,6 +21,7 @@ import org.tron.core.pbft.message.PbftBaseMessage;
 @Scope("prototype")
 public class PbftHandler extends SimpleChannelInboundHandler<PbftBaseMessage> {
 
+  public static final int MIN_BLOCK_COUNTS = 5;
   protected PeerConnection peer;
 
   private MessageQueue msgQueue;
@@ -32,8 +34,14 @@ public class PbftHandler extends SimpleChannelInboundHandler<PbftBaseMessage> {
   @Autowired
   private PbftManager pbftManager;
 
+  @Autowired
+  private Manager manager;
+
   @Override
   public void channelRead0(final ChannelHandlerContext ctx, PbftBaseMessage msg) throws Exception {
+    if (!validMsgTime(msg)) {
+      return;
+    }
     String key = buildKey(msg);
     Lock lock = striped.get(key);
     try {
@@ -70,6 +78,11 @@ public class PbftHandler extends SimpleChannelInboundHandler<PbftBaseMessage> {
   private String buildKey(PbftBaseMessage msg) {
     return msg.getKey() + msg.getPbftMessage().getRawData()
         .getPbftMsgType().toString();
+  }
+
+  private boolean validMsgTime(PbftBaseMessage message) {
+    return manager.getHeadBlockNum() - message.getPbftMessage().getRawData().getBlockNum()
+        < MIN_BLOCK_COUNTS;
   }
 
 }

@@ -48,35 +48,4 @@ public class PbftBlockMessageCapsule extends PbftBaseMessage {
     return pbftMessageCapsule;
   }
 
-  public static PbftBaseMessage buildPrePareMessage(PbftBaseMessage ppMessage) {
-    return buildMessageCapsule(ppMessage, Type.PREPARE);
-  }
-
-  public static PbftBaseMessage buildCommitMessage(PbftBaseMessage paMessage) {
-    return buildMessageCapsule(paMessage, Type.COMMIT);
-  }
-
-  public static PbftBaseMessage buildMessageCapsule(PbftBaseMessage paMessage,
-      Type type) {
-    PbftBlockMessageCapsule pbftMessageCapsule = new PbftBlockMessageCapsule();
-    LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
-    ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
-    PbftMessage.Builder builder = PbftMessage.newBuilder();
-    Raw.Builder rawBuilder = PbftMessage.Raw.newBuilder();
-    byte[] publicKey = localWitnesses.getPublicKey();
-    rawBuilder.setBlockNum(paMessage.getPbftMessage().getRawData().getBlockNum())
-        .setPbftMsgType(type)
-        .setTime(System.currentTimeMillis())
-        .setPublicKey(ByteString.copyFrom(publicKey == null ? new byte[0] : publicKey))
-        .setData(paMessage.getPbftMessage().getRawData().getData());
-    Raw raw = rawBuilder.build();
-    byte[] hash = Sha256Hash.hash(raw.toByteArray());
-    ECDSASignature signature = ecKey.sign(hash);
-    builder.setRawData(raw).setSign(ByteString.copyFrom(signature.toByteArray()));
-    PbftMessage message = builder.build();
-    pbftMessageCapsule.setType(MessageTypes.PBFT_BLOCK_MSG.asByte())
-        .setPbftMessage(message).setData(message.toByteArray());
-    return pbftMessageCapsule;
-  }
-
 }

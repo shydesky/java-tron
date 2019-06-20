@@ -26,12 +26,12 @@ import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
 import org.tron.core.pbft.message.PbftBaseMessage;
-import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 
 @Slf4j(topic = "pbft")
 @Component
 public class PbftMessageHandle {
 
+  public static final int TIME_OUT = 6000;
   //Pre-preparation stage voting information
   private Set<String> preVotes = Sets.newConcurrentHashSet();
   //Preparation stage voting information
@@ -84,7 +84,7 @@ public class PbftMessageHandle {
     if (!checkIsCanSendMsg(message)) {
       return;
     }
-    PbftBaseMessage paMessage = PbftBlockMessageCapsule.buildPrePareMessage(message);
+    PbftBaseMessage paMessage = message.buildPrePareMessage();
     forwardMessage(paMessage);
   }
 
@@ -112,7 +112,7 @@ public class PbftMessageHandle {
       if (agCou >= PbftManager.agreeNodeCount) {
         agreePare.remove(message.getDataKey());
         //Entering the submission stage
-        PbftBaseMessage cmMessage = PbftBlockMessageCapsule.buildCommitMessage(message);
+        PbftBaseMessage cmMessage = message.buildCommitMessage();
         doneMsg.put(message.getNo(), cmMessage);
         forwardMessage(cmMessage);
       }
@@ -254,7 +254,7 @@ public class PbftMessageHandle {
   private void checkTimer() {
     List<String> remo = Lists.newArrayList();
     for (Entry<String, Long> item : timeOuts.entrySet()) {
-      if (System.currentTimeMillis() - item.getValue() > 3000) {
+      if (System.currentTimeMillis() - item.getValue() > TIME_OUT) {
         //If the timeout has not been agreed, the vote will be invalid.
         logger.info("vote will be invalid:{}", item.getKey());
         remove(item.getKey());

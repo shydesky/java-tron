@@ -1,15 +1,22 @@
 package org.tron.core.pbft.message;
 
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.util.Arrays;
 import org.spongycastle.util.encoders.Hex;
 import org.tron.common.crypto.ECKey;
+import org.tron.common.crypto.ECKey.ECDSASignature;
 import org.tron.common.overlay.message.Message;
+import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.core.capsule.TransactionCapsule;
+import org.tron.core.config.args.Args;
+import org.tron.core.config.args.LocalWitnesses;
 import org.tron.core.exception.P2pException;
 import org.tron.protos.Protocol.PbftMessage;
+import org.tron.protos.Protocol.PbftMessage.Raw;
+import org.tron.protos.Protocol.PbftMessage.Type;
 
 public abstract class PbftBaseMessage extends Message {
 
@@ -67,6 +74,36 @@ public abstract class PbftBaseMessage extends Message {
         .getBase64FromByteString(getPbftMessage().getSign()));
     byte[] witnessAccountAddress = getPbftMessage().getRawData().getPublicKey().toByteArray();
     return Arrays.equals(sigAddress, witnessAccountAddress);
+  }
+
+  public PbftBaseMessage buildPrePareMessage() {
+    return buildMessageCapsule(Type.PREPARE);
+  }
+
+  public PbftBaseMessage buildCommitMessage() {
+    return buildMessageCapsule(Type.COMMIT);
+  }
+
+  private PbftBaseMessage buildMessageCapsule(Type type) {
+    PbftBlockMessageCapsule pbftMessageCapsule = new PbftBlockMessageCapsule();
+    LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
+    ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
+    PbftMessage.Builder builder = PbftMessage.newBuilder();
+    Raw.Builder rawBuilder = PbftMessage.Raw.newBuilder();
+    byte[] publicKey = localWitnesses.getPublicKey();
+    rawBuilder.setBlockNum(getPbftMessage().getRawData().getBlockNum())
+        .setPbftMsgType(type)
+        .setTime(System.currentTimeMillis())
+        .setPublicKey(ByteString.copyFrom(publicKey == null ? new byte[0] : publicKey))
+        .setData(getPbftMessage().getRawData().getData());
+    Raw raw = rawBuilder.build();
+    byte[] hash = Sha256Hash.hash(raw.toByteArray());
+    ECDSASignature signature = ecKey.sign(hash);
+    builder.setRawData(raw).setSign(ByteString.copyFrom(signature.toByteArray()));
+    PbftMessage message = builder.build();
+    pbftMessageCapsule.setType(getType().asByte())
+        .setPbftMessage(message).setData(message.toByteArray());
+    return pbftMessageCapsule;
   }
 
   @Override
