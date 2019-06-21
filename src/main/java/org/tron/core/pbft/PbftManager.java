@@ -12,8 +12,6 @@ import org.tron.core.pbft.message.PbftBlockMessageCapsule;
 @Component
 public class PbftManager {
 
-  public final static int agreeNodeCount = Args.getInstance().getAgreeNodeCount();
-
   @Autowired
   private PbftMessageHandle pbftMessageHandle;
 

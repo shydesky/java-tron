@@ -32,6 +32,7 @@ import org.tron.core.pbft.message.PbftBaseMessage;
 public class PbftMessageHandle {
 
   public static final int TIME_OUT = 6000;
+  public final int agreeNodeCount = Args.getInstance().getAgreeNodeCount();
   //Pre-preparation stage voting information
   private Set<String> preVotes = Sets.newConcurrentHashSet();
   //Preparation stage voting information
@@ -66,6 +67,7 @@ public class PbftMessageHandle {
   public void init() {
     syncPool = ctx.getBean(SyncPool.class);
     manager = ctx.getBean(Manager.class);
+    pbftMessageAction.setManager(manager);
     start();
   }
 
@@ -109,7 +111,7 @@ public class PbftMessageHandle {
     //The number of votes plus 1
     if (!doneMsg.containsKey(message.getNo())) {
       long agCou = agreePare.incrementAndGet(message.getDataKey());
-      if (agCou >= PbftManager.agreeNodeCount) {
+      if (agCou >= agreeNodeCount) {
         agreePare.remove(message.getDataKey());
         //Entering the submission stage
         PbftBaseMessage cmMessage = message.buildCommitMessage();
@@ -134,7 +136,7 @@ public class PbftMessageHandle {
     commitVotes.add(key);
     //The number of votes plus 1
     long agCou = agreeCommit.incrementAndGet(message.getDataKey());
-    if (agCou >= PbftManager.agreeNodeCount) {
+    if (agCou >= agreeNodeCount) {
       remove(message.getNo());
       //commit,
       if (!isSyncing()) {
@@ -201,7 +203,7 @@ public class PbftMessageHandle {
     try {
       blockCapsule = manager.getBlockByNum(blockNum);
     } catch (Exception e) {
-      logger.error("can not find the block,num is: {}, error reason: {}", blockNum, e.getMessage());
+      logger.debug("can not find the block,num is: {}, error reason: {}", blockNum, e.getMessage());
     }
     if (blockCapsule == null || blockCapsule.getTimeStamp() > manager
         .getBeforeMaintenanceTime()) {
@@ -236,12 +238,14 @@ public class PbftMessageHandle {
 
     agreePare.asMap().keySet().forEach(s -> {
       if (StringUtils.startsWith(s, pre)) {
-        agreePare.remove(s);
+        long value = agreePare.remove(s);
+        logger.debug("{} agreePare count:{}", no, value);
       }
     });
     agreeCommit.asMap().keySet().forEach(s -> {
       if (StringUtils.startsWith(s, pre)) {
-        agreeCommit.remove(s);
+        long value = agreeCommit.remove(s);
+        logger.debug("{} agreeCommit count:{}", no, value);
       }
     });
     doneMsg.remove(no);

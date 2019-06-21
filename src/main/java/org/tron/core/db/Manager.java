@@ -102,9 +102,9 @@ import org.tron.core.exception.UnLinkedBlockException;
 import org.tron.core.exception.VMIllegalException;
 import org.tron.core.exception.ValidateScheduleException;
 import org.tron.core.exception.ValidateSignatureException;
-import org.tron.core.pbft.PbftManager;
 import org.tron.core.net.TronNetService;
 import org.tron.core.net.message.BlockMessage;
+import org.tron.core.pbft.PbftManager;
 import org.tron.core.services.WitnessService;
 import org.tron.core.witness.ProposalController;
 import org.tron.core.witness.WitnessController;
@@ -1639,6 +1639,17 @@ public class Manager {
     getDynamicPropertiesStore().saveLatestSolidifiedBlockNum(latestSolidifiedBlockNum);
     this.latestSolidifiedBlockNumber = latestSolidifiedBlockNum;
     logger.info("update solid block, num = {}", latestSolidifiedBlockNum);
+  }
+
+  public void updateLatestSolidifiedBlock(long blockNum) {
+    synchronized (this) {
+      if (blockNum <= getDynamicPropertiesStore().getLatestSolidifiedBlockNum()) {
+        return;
+      }
+      getDynamicPropertiesStore().saveLatestSolidifiedBlockNum(blockNum);
+      this.latestSolidifiedBlockNumber = blockNum;
+      logger.info("update solid block, num = {}", blockNum);
+    }
   }
 
   public void updateFork(BlockCapsule block) {
