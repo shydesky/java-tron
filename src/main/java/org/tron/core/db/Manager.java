@@ -241,6 +241,10 @@ public class Manager {
   @Autowired
   private PbftManager pbftManager;
 
+  @Autowired
+  @Getter
+  private PbftCommitMsgStore pbftCommitMsgStore;
+
   @Getter
   private final List<ByteString> beforeWitness = new ArrayList<>();
   @Getter
@@ -877,7 +881,7 @@ public class Manager {
       revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MIN_FLUSH_COUNT);
     }
     //pbft
-    pbftManager.prePrepare(block);
+    pbftManager.blockPrePrepare(block);
   }
 
   private void switchFork(BlockCapsule newHead)
@@ -1695,6 +1699,8 @@ public class Manager {
     this.dynamicPropertiesStore.updateNextMaintenanceTime(block.getTimeStamp());
     forkController.reset();
     currentWitness.addAll(witnessController.getActiveWitnesses());
+    //pbft msg
+    pbftManager.srPrePrepare(block, currentWitness);
   }
 
   /**

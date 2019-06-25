@@ -4,7 +4,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.tron.common.overlay.message.MessageFactory;
 import org.tron.core.exception.P2pException;
 import org.tron.core.pbft.message.PbftBaseMessage;
-import org.tron.core.pbft.message.PbftBlockMessageCapsule;
+import org.tron.core.pbft.message.PbftBlockMessage;
 
 /**
  * msg factory.
@@ -33,7 +33,7 @@ public class PbftMessageFactory extends MessageFactory {
     }
     switch (receivedTypes) {
       case PBFT_BLOCK_MSG:
-        return new PbftBlockMessageCapsule(packed);
+        return new PbftBlockMessage(packed);
       default:
         throw new P2pException(P2pException.TypeEnum.NO_SUCH_MESSAGE,
             receivedTypes.toString() + ", len=" + packed.length);

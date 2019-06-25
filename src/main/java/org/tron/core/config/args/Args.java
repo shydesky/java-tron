@@ -966,6 +966,9 @@ public class Args {
         .getInt("node.agreeNodeCount") : MAX_ACTIVE_WITNESS_NUM * 2 / 3 + 1;
     INSTANCE.agreeNodeCount = INSTANCE.agreeNodeCount > MAX_ACTIVE_WITNESS_NUM
         ? MAX_ACTIVE_WITNESS_NUM : INSTANCE.agreeNodeCount;
+    if (INSTANCE.isWitness()) {
+      INSTANCE.agreeNodeCount = MAX_ACTIVE_WITNESS_NUM * 2 / 3 + 1;
+    }
     INSTANCE.checkMsgCount = config.hasPath("node.checkMsgCount") ? config
         .getInt("node.checkMsgCount") : 1;
 

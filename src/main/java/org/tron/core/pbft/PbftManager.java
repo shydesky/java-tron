@@ -1,12 +1,14 @@
 package org.tron.core.pbft;
 
+import com.google.protobuf.ByteString;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.core.capsule.BlockCapsule;
-import org.tron.core.config.args.Args;
 import org.tron.core.pbft.message.PbftBaseMessage;
-import org.tron.core.pbft.message.PbftBlockMessageCapsule;
+import org.tron.core.pbft.message.PbftBlockMessage;
+import org.tron.core.pbft.message.PbftSrMessage;
 
 @Slf4j(topic = "pbft")
 @Component
@@ -15,9 +17,15 @@ public class PbftManager {
   @Autowired
   private PbftMessageHandle pbftMessageHandle;
 
-  public void prePrepare(BlockCapsule block) {
+  public void blockPrePrepare(BlockCapsule block) {
     if (!pbftMessageHandle.isSyncing()) {
-      doAction(PbftBlockMessageCapsule.buildPrePrepareMessage(block));
+      doAction(PbftBlockMessage.buildPrePrepareMessage(block));
+    }
+  }
+
+  public void srPrePrepare(BlockCapsule block, List<ByteString> currentWitness) {
+    if (!pbftMessageHandle.isSyncing()) {
+      doAction(PbftSrMessage.buildPrePrepareMessage(block, currentWitness));
     }
   }
 

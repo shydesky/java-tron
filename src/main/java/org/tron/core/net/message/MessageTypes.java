@@ -51,6 +51,8 @@ public enum MessageTypes {
 
   PBFT_BLOCK_MSG(0x34),
 
+  PBFT_SR_MSG(0x35),
+
   LAST(0xFF);
 
   private final int type;

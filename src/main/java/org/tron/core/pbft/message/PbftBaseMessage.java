@@ -65,6 +65,10 @@ public abstract class PbftBaseMessage extends Message {
     return getNo() + "_" + Hex.toHexString(pbftMessage.getRawData().getData().toByteArray());
   }
 
+  public long getBlockNum() {
+    return pbftMessage.getRawData().getBlockNum();
+  }
+
   public abstract String getNo();
 
   public boolean validateSignature()
@@ -85,7 +89,7 @@ public abstract class PbftBaseMessage extends Message {
   }
 
   private PbftBaseMessage buildMessageCapsule(Type type) {
-    PbftBlockMessageCapsule pbftMessageCapsule = new PbftBlockMessageCapsule();
+    PbftBlockMessage pbftMessageCapsule = new PbftBlockMessage();
     LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     PbftMessage.Builder builder = PbftMessage.newBuilder();

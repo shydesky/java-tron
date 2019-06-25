@@ -694,3 +694,8 @@ message PbftMessage {
   Raw raw_data = 1;
   bytes sign = 2;
 }
+
+message PbftMessageList {
+  int64 blockNum = 1;
+  repeated PbftMessage pbftMessage = 2;
+}

@@ -13,12 +13,12 @@ import org.tron.protos.Protocol.PbftMessage;
 import org.tron.protos.Protocol.PbftMessage.Raw;
 import org.tron.protos.Protocol.PbftMessage.Type;
 
-public class PbftBlockMessageCapsule extends PbftBaseMessage {
+public class PbftBlockMessage extends PbftBaseMessage {
 
-  public PbftBlockMessageCapsule() {
+  public PbftBlockMessage() {
   }
 
-  public PbftBlockMessageCapsule(byte[] data) throws Exception {
+  public PbftBlockMessage(byte[] data) throws Exception {
     super(MessageTypes.PBFT_BLOCK_MSG.asByte(), data);
   }
 
@@ -27,7 +27,7 @@ public class PbftBlockMessageCapsule extends PbftBaseMessage {
   }
 
   public static PbftBaseMessage buildPrePrepareMessage(BlockCapsule blockCapsule) {
-    PbftBlockMessageCapsule pbftMessageCapsule = new PbftBlockMessageCapsule();
+    PbftBlockMessage pbftBlockMessage = new PbftBlockMessage();
     LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     Raw.Builder rawBuilder = PbftMessage.Raw.newBuilder();
@@ -43,9 +43,9 @@ public class PbftBlockMessageCapsule extends PbftBaseMessage {
     ECDSASignature signature = ecKey.sign(hash);
     builder.setRawData(raw).setSign(ByteString.copyFrom(signature.toByteArray()));
     PbftMessage message = builder.build();
-    pbftMessageCapsule.setType(MessageTypes.PBFT_BLOCK_MSG.asByte())
+    pbftBlockMessage.setType(MessageTypes.PBFT_BLOCK_MSG.asByte())
         .setPbftMessage(message).setData(message.toByteArray());
-    return pbftMessageCapsule;
+    return pbftBlockMessage;
   }
 
 }

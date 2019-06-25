@@ -14,8 +14,10 @@ import org.tron.common.overlay.server.Channel;
 import org.tron.common.overlay.server.MessageQueue;
 import org.tron.core.db.Manager;
 import org.tron.core.exception.P2pException;
+import org.tron.core.net.message.MessageTypes;
 import org.tron.core.net.peer.PeerConnection;
 import org.tron.core.pbft.message.PbftBaseMessage;
+import org.tron.protos.Protocol.PbftMessage.Type;
 
 @Component
 @Scope("prototype")
@@ -52,6 +54,7 @@ public class PbftHandler extends SimpleChannelInboundHandler<PbftBaseMessage> {
       if (!msg.validateSignature() || !pbftManager.checkIsWitnessMsg(msg)) {
         throw new P2pException(P2pException.TypeEnum.BAD_MESSAGE, msg.toString());
       }
+      storeMsg(msg);
       msgCache.put(key, true);
       pbftManager.forwardMessage(msg);
       msgQueue.receivedMessage(msg);
@@ -83,6 +86,13 @@ public class PbftHandler extends SimpleChannelInboundHandler<PbftBaseMessage> {
   private boolean validMsgTime(PbftBaseMessage message) {
     return manager.getHeadBlockNum() - message.getPbftMessage().getRawData().getBlockNum()
         < MIN_BLOCK_COUNTS;
+  }
+
+  private void storeMsg(PbftBaseMessage message) {
+    if (message.getType() == MessageTypes.PBFT_SR_MSG
+        && message.getPbftMessage().getRawData().getPbftMsgType() == Type.COMMIT) {
+      manager.getPbftCommitMsgStore().put(message);
+    }
   }
 
 }
