@@ -51,8 +51,7 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
       }
     } catch (ItemNotFoundException | BadItemException e) {
     }
-    byte[] value = revokingDB.getUnchecked(key);
-    return ArrayUtils.isEmpty(value) ? null : new AccountCapsule(value);
+    return null;
   }
 
 
