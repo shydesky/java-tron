@@ -26,6 +26,11 @@ public class PbftBlockMessage extends PbftBaseMessage {
     return pbftMessage.getRawData().getBlockNum() + "_" + getType().asByte();
   }
 
+  @Override
+  public PbftBaseMessage createMessage() {
+    return new PbftBlockMessage();
+  }
+
   public static PbftBaseMessage buildPrePrepareMessage(BlockCapsule blockCapsule) {
     PbftBlockMessage pbftBlockMessage = new PbftBlockMessage();
     LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();

@@ -1692,15 +1692,20 @@ public class Manager {
    * Perform maintenance.
    */
   private void processMaintenance(BlockCapsule block) {
-    beforeWitness.addAll(witnessController.getActiveWitnesses());
+    updateWitnessValue(beforeWitness);
     beforeMaintenanceTime = dynamicPropertiesStore.getNextMaintenanceTime();
     proposalController.processProposals();
     witnessController.updateWitness();
     this.dynamicPropertiesStore.updateNextMaintenanceTime(block.getTimeStamp());
     forkController.reset();
-    currentWitness.addAll(witnessController.getActiveWitnesses());
+    updateWitnessValue(currentWitness);
     //pbft msg
     pbftManager.srPrePrepare(block, currentWitness);
+  }
+
+  private void updateWitnessValue(List<ByteString> srList) {
+    srList.clear();
+    srList.addAll(witnessController.getActiveWitnesses());
   }
 
   /**

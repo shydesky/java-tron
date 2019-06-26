@@ -31,6 +31,11 @@ public class PbftSrMessage extends PbftBaseMessage {
     return pbftMessage.getRawData().getBlockNum() + "_" + getType().asByte();
   }
 
+  @Override
+  public PbftBaseMessage createMessage() {
+    return new PbftSrMessage();
+  }
+
   public static PbftBaseMessage buildPrePrepareMessage(BlockCapsule block,
       List<ByteString> currentWitness) {
     List<String> srStringList = currentWitness.stream()

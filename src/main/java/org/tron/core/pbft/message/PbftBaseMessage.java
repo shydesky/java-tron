@@ -74,6 +74,8 @@ public abstract class PbftBaseMessage extends Message {
 
   public abstract String getNo();
 
+  public abstract PbftBaseMessage createMessage();
+
   public boolean validateSignature()
       throws SignatureException {
     byte[] hash = Sha256Hash.hash(getPbftMessage().getRawData().toByteArray());
@@ -92,7 +94,7 @@ public abstract class PbftBaseMessage extends Message {
   }
 
   private PbftBaseMessage buildMessageCapsule(Type type) {
-    PbftBlockMessage pbftMessageCapsule = new PbftBlockMessage();
+    PbftBaseMessage pbftMessage = createMessage();
     LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
     PbftMessage.Builder builder = PbftMessage.newBuilder();
@@ -108,9 +110,9 @@ public abstract class PbftBaseMessage extends Message {
     ECDSASignature signature = ecKey.sign(hash);
     builder.setRawData(raw).setSign(ByteString.copyFrom(signature.toByteArray()));
     PbftMessage message = builder.build();
-    pbftMessageCapsule.setType(getType().asByte())
+    pbftMessage.setType(getType().asByte())
         .setPbftMessage(message).setData(message.toByteArray());
-    return pbftMessageCapsule;
+    return pbftMessage;
   }
 
   @Override
