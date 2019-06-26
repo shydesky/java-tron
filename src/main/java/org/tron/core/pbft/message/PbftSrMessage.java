@@ -34,7 +34,7 @@ public class PbftSrMessage extends PbftBaseMessage {
   public static PbftBaseMessage buildPrePrepareMessage(BlockCapsule block,
       List<ByteString> currentWitness) {
     List<String> srStringList = currentWitness.stream()
-        .map(sr -> sr.toStringUtf8()).collect(Collectors.toList());
+        .map(sr -> ByteArray.toHexString(sr.toByteArray())).collect(Collectors.toList());
     PbftSrMessage pbftSrMessage = new PbftSrMessage();
     LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));

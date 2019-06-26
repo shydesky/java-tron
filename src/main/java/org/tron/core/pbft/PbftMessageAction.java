@@ -1,7 +1,6 @@
 package org.tron.core.pbft;
 
 import com.alibaba.fastjson.JSON;
-import com.google.protobuf.ByteString;
 import java.util.List;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -36,8 +35,8 @@ public class PbftMessageAction {
       break;
       case PBFT_SR_MSG: {
         PbftSrMessage srMessage = (PbftSrMessage) message;
-        List<ByteString> srList = JSON.parseArray(srMessage.getPbftMessage().getRawData().getData()
-            .toStringUtf8(), ByteString.class);
+        List<String> srList = JSON.parseArray(srMessage.getPbftMessage().getRawData().getData()
+            .toStringUtf8(), String.class);
         logger.info("sr commit msg :{}, {}", srMessage.getBlockNum(), srList);
       }
       break;
