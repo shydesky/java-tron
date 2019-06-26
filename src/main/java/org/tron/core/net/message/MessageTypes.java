@@ -90,7 +90,7 @@ public enum MessageTypes {
   }
 
   public static boolean inPbftRange(byte code) {
-    return code == PBFT_BLOCK_MSG.asByte();
+    return code >= PBFT_BLOCK_MSG.asByte() && code <= PBFT_SR_MSG.asByte();
   }
 
   @Override
