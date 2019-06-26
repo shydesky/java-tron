@@ -3,6 +3,7 @@ package org.tron.core.pbft.message;
 import com.alibaba.fastjson.JSON;
 import com.google.protobuf.ByteString;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.crypto.ECKey.ECDSASignature;
 import org.tron.common.utils.ByteArray;
@@ -32,6 +33,8 @@ public class PbftSrMessage extends PbftBaseMessage {
 
   public static PbftBaseMessage buildPrePrepareMessage(BlockCapsule block,
       List<ByteString> currentWitness) {
+    List<String> srStringList = currentWitness.stream()
+        .map(sr -> sr.toStringUtf8()).collect(Collectors.toList());
     PbftSrMessage pbftSrMessage = new PbftSrMessage();
     LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
     ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
@@ -42,7 +45,7 @@ public class PbftSrMessage extends PbftBaseMessage {
         .setPbftMsgType(Type.PREPREPARE)
         .setTime(System.currentTimeMillis())
         .setPublicKey(ByteString.copyFrom(publicKey == null ? new byte[0] : publicKey))
-        .setData(ByteString.copyFromUtf8(JSON.toJSONString(currentWitness)));
+        .setData(ByteString.copyFromUtf8(JSON.toJSONString(srStringList)));
     Raw raw = rawBuilder.build();
     byte[] hash = Sha256Hash.hash(raw.toByteArray());
     ECDSASignature signature = ecKey.sign(hash);

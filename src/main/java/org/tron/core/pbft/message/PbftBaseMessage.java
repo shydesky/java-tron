@@ -124,12 +124,15 @@ public abstract class PbftBaseMessage extends Message {
   }
 
   private String decode() {
-    List<ByteString> srList = JSON
-        .parseArray(pbftMessage.getRawData().getData().toStringUtf8(), ByteString.class);
+    List<String> srStringList = JSON
+        .parseArray(pbftMessage.getRawData().getData().toStringUtf8(), String.class);
     StringBuilder sb = new StringBuilder();
-    for (ByteString sr : srList) {
-      sb.append(ByteArray.toHexString(sr.toByteArray()));
-      sb.append(",");
+    for (String sr : srStringList) {
+      sb.append(sr);
+      sb.append("-");
+    }
+    if (sb.length() > 0) {
+      sb.deleteCharAt(sb.length() - 1);
     }
     return sb.toString();
   }
