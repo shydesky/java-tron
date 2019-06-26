@@ -1,9 +1,11 @@
 package org.tron.core.pbft.message;
 
+import com.alibaba.fastjson.JSON;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.util.Arrays;
+import java.util.List;
 import org.spongycastle.util.encoders.Hex;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.crypto.ECKey.ECDSASignature;
@@ -14,6 +16,7 @@ import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.config.args.LocalWitnesses;
 import org.tron.core.exception.P2pException;
+import org.tron.core.net.message.MessageTypes;
 import org.tron.protos.Protocol.PbftMessage;
 import org.tron.protos.Protocol.PbftMessage.Raw;
 import org.tron.protos.Protocol.PbftMessage.Type;
@@ -115,7 +118,19 @@ public abstract class PbftBaseMessage extends Message {
     return "PbftMsgType:" + pbftMessage.getRawData().getPbftMsgType()
         + ", node address:" + Hex.toHexString(pbftMessage.getRawData().getPublicKey().toByteArray())
         + ", block num:" + pbftMessage.getRawData().getBlockNum()
-        + ", data:" + Hex.toHexString(pbftMessage.getRawData().getData().toByteArray())
+        + ", data:" + (getType() == MessageTypes.PBFT_SR_MSG ? decode()
+        : Hex.toHexString(pbftMessage.getRawData().getData().toByteArray()))
         + ", " + super.toString();
+  }
+
+  private String decode() {
+    List<ByteString> srList = JSON
+        .parseArray(pbftMessage.getRawData().getData().toStringUtf8(), ByteString.class);
+    StringBuilder sb = new StringBuilder();
+    for (ByteString sr : srList) {
+      sb.append(ByteArray.toHexString(sr.toByteArray()));
+      sb.append(",");
+    }
+    return sb.toString();
   }
 }

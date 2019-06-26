@@ -31,7 +31,7 @@ import org.tron.core.pbft.message.PbftBaseMessage;
 @Component
 public class PbftMessageHandle {
 
-  public static final int TIME_OUT = 6000;
+  public static final int TIME_OUT = 9100;
   public final int agreeNodeCount = Args.getInstance().getAgreeNodeCount();
   //Pre-preparation stage voting information
   private Set<String> preVotes = Sets.newConcurrentHashSet();

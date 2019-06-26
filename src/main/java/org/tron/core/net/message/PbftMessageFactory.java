@@ -5,6 +5,7 @@ import org.tron.common.overlay.message.MessageFactory;
 import org.tron.core.exception.P2pException;
 import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.core.pbft.message.PbftBlockMessage;
+import org.tron.core.pbft.message.PbftSrMessage;
 
 /**
  * msg factory.
@@ -34,6 +35,8 @@ public class PbftMessageFactory extends MessageFactory {
     switch (receivedTypes) {
       case PBFT_BLOCK_MSG:
         return new PbftBlockMessage(packed);
+      case PBFT_SR_MSG:
+        return new PbftSrMessage(packed);
       default:
         throw new P2pException(P2pException.TypeEnum.NO_SUCH_MESSAGE,
             receivedTypes.toString() + ", len=" + packed.length);

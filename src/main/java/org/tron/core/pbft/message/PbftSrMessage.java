@@ -17,6 +17,14 @@ import org.tron.protos.Protocol.PbftMessage.Type;
 
 public class PbftSrMessage extends PbftBaseMessage {
 
+  public PbftSrMessage() {
+
+  }
+
+  public PbftSrMessage(byte[] data) throws Exception {
+    super(MessageTypes.PBFT_SR_MSG.asByte(), data);
+  }
+
   @Override
   public String getNo() {
     return pbftMessage.getRawData().getBlockNum() + "_" + getType().asByte();
