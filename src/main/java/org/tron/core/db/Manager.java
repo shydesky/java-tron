@@ -607,7 +607,9 @@ public class Manager {
     hmap.values().stream().forEach(
         value-> {
           AccountCapsule accountCapsule = new AccountCapsule(value.getBytes());
-          accountCache.put(accountCapsule.getAddress().toByteArray(), new BytesCapsule(accountCapsule.getData()));
+          if (Objects.nonNull(accountCapsule) && Objects.nonNull(accountCapsule.getAddress())) {
+            accountCache.put(accountCapsule.getAddress().toByteArray(), new BytesCapsule(accountCapsule.getData()));
+          }
         }
     );
     exit(0);
