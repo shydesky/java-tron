@@ -41,7 +41,6 @@ import javax.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import static java.lang.System.exit;
 import org.apache.commons.collections4.CollectionUtils;
 import org.joda.time.DateTime;
 import org.spongycastle.util.encoders.Hex;
@@ -612,7 +611,6 @@ public class Manager {
           }
         }
     );
-    exit(0);
   }
 
   public void initCacheTxs() {

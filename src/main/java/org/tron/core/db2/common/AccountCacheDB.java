@@ -2,7 +2,6 @@ package org.tron.core.db2.common;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
-import com.google.common.primitives.Longs;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;

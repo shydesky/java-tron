@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tron.core.Wallet;
 import org.tron.core.capsule.AccountCapsule;
+import org.tron.core.capsule.BytesCapsule;
 import org.tron.core.db.accountstate.callback.AccountStateCallBack;
 import org.tron.core.db.accountstate.storetrie.AccountStateStoreTrie;
+import org.tron.core.db.common.WrappedByteArray;
+import org.tron.core.exception.BadItemException;
+import org.tron.core.exception.ItemNotFoundException;
 
 @Slf4j(topic = "DB")
 @Component
@@ -22,6 +27,9 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
 
   @Autowired
   private AccountStateCallBack accountStateCallBack;
+
+  @Autowired(required = false)
+  private AccountCache accountCache;
 
   @Autowired
   private AccountStateStoreTrie accountStateStoreTrie;
@@ -33,6 +41,16 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
 
   @Override
   public AccountCapsule get(byte[] key) {
+    try {
+      BytesCapsule result = accountCache.get(key);
+      if (Objects.nonNull(result)) {
+        AccountCapsule resultData = new AccountCapsule(result.getData());
+        if (Objects.nonNull(resultData)) {
+          return resultData;
+        }
+      }
+    } catch (ItemNotFoundException | BadItemException e) {
+    }
     byte[] value = revokingDB.getUnchecked(key);
     return ArrayUtils.isEmpty(value) ? null : new AccountCapsule(value);
   }
@@ -40,6 +58,7 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
 
   @Override
   public void put(byte[] key, AccountCapsule item) {
+    accountCache.put(key, new BytesCapsule(item.getData()));
     super.put(key, item);
     accountStateCallBack.accountCallBack(key, item);
   }
