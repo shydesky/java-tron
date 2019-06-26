@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,7 @@ import javax.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import static java.lang.System.exit;
 import org.apache.commons.collections4.CollectionUtils;
 import org.joda.time.DateTime;
 import org.spongycastle.util.encoders.Hex;
@@ -78,6 +80,7 @@ import org.tron.core.db.KhaosDatabase.KhaosBlock;
 import org.tron.core.db.api.AssetUpdateHelper;
 import org.tron.core.db.accountstate.TrieService;
 import org.tron.core.db.accountstate.callback.AccountStateCallBack;
+import org.tron.core.db.common.WrappedByteArray;
 import org.tron.core.db2.core.ISession;
 import org.tron.core.db2.core.ITronChainBase;
 import org.tron.core.db2.core.SnapshotManager;
@@ -124,6 +127,8 @@ public class Manager {
   private TransactionStore transactionStore;
   @Autowired(required = false)
   private TransactionCache transactionCache;
+  @Autowired(required = false)
+  private AccountCache accountCache;
   @Autowired
   private BlockStore blockStore;
   @Autowired
@@ -480,7 +485,7 @@ public class Manager {
 
     //for test only
     dynamicPropertiesStore.updateDynamicStoreByConfig();
-
+    initCacheAccount();
     initCacheTxs();
     revokingStore.enable();
     validateSignService = Executors
@@ -590,6 +595,22 @@ public class Manager {
               witnessCapsule.setIsJobs(true);
               this.witnessStore.put(keyAddress, witnessCapsule);
             });
+  }
+
+  public void initCacheAccount() {
+    logger.info("begin to init account cache.");
+    int dbVersion = Args.getInstance().getStorage().getDbVersion();
+    if (dbVersion != 2) {
+      return;
+    }
+    Map<WrappedByteArray, WrappedByteArray> hmap = accountStore.getRevokingDB().getAllValues();
+    hmap.values().stream().forEach(
+        value-> {
+          AccountCapsule accountCapsule = new AccountCapsule(value.getBytes());
+          accountCache.put(accountCapsule.getAddress().toByteArray(), new BytesCapsule(accountCapsule.getData()));
+        }
+    );
+    exit(0);
   }
 
   public void initCacheTxs() {
