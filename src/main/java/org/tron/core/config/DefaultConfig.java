@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.tron.core.config.args.Args;
+import org.tron.core.db.AccountCache;
 import org.tron.core.db.RevokingDatabase;
 import org.tron.core.db.RevokingStore;
 import org.tron.core.db.TransactionCache;
@@ -84,6 +85,16 @@ public class DefaultConfig {
     int dbVersion = Args.getInstance().getStorage().getDbVersion();
     if (!isSolidityNode && dbVersion == 2) {
       return new HttpApiOnSolidityService();
+    }
+
+    return null;
+  }
+
+  @Bean
+  public AccountCache accountCache() {
+    int dbVersion = Args.getInstance().getStorage().getDbVersion();
+    if (dbVersion == 2) {
+      return new AccountCache("account-cache");
     }
 
     return null;
