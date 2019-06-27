@@ -1,7 +1,6 @@
 package org.tron.core.pbft;
 
 import com.alibaba.fastjson.JSON;
-import java.util.List;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -35,9 +34,10 @@ public class PbftMessageAction {
       break;
       case PBFT_SR_MSG: {
         PbftSrMessage srMessage = (PbftSrMessage) message;
-        List<String> srList = JSON.parseArray(srMessage.getPbftMessage().getRawData().getData()
-            .toStringUtf8(), String.class);
-        logger.info("sr commit msg :{}, {}", srMessage.getBlockNum(), srList);
+        String srString = srMessage.getPbftMessage().getRawData().getData().toStringUtf8();
+        manager.getDynamicPropertiesStore().saveCurrentSrList(srString);
+        logger.info("sr commit msg :{}, {}", srMessage.getBlockNum(),
+            JSON.parseArray(srString, String.class));
       }
       break;
       default:

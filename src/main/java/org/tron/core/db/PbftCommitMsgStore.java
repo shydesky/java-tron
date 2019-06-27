@@ -8,12 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tron.core.capsule.PbftCommitMsgCapsule;
+import org.tron.core.net.message.MessageTypes;
 import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.protos.Protocol.PbftMessage;
 
 @Slf4j(topic = "DB")
 @Component
 public class PbftCommitMsgStore extends TronStoreWithRevoking<PbftCommitMsgCapsule> {
+
+  private static final byte[] SR_LIST_KEY = "current_sr_list".getBytes();
 
   @Autowired
   private PbftCommitMsgStore(@Value("pbftcommit") String dbName) {
@@ -36,7 +39,8 @@ public class PbftCommitMsgStore extends TronStoreWithRevoking<PbftCommitMsgCapsu
     PbftCommitMsgCapsule pbftCommitMsgCapsule = get(key);
     List<PbftMessage> pbftMessageList = new ArrayList<>();
     pbftMessageList.add(pbftBaseMessage.getPbftMessage());
-    if (pbftCommitMsgCapsule != null) {
+    if (pbftCommitMsgCapsule != null && pbftBaseMessage.getBlockNum() == pbftCommitMsgCapsule
+        .getInstance().getBlockNum()) {
       pbftMessageList.addAll(pbftCommitMsgCapsule.getInstance().getPbftMessageList());
     }
     put(key, new PbftCommitMsgCapsule(pbftBaseMessage.getBlockNum(), pbftMessageList));
@@ -48,6 +52,9 @@ public class PbftCommitMsgStore extends TronStoreWithRevoking<PbftCommitMsgCapsu
   }
 
   private byte[] buildKey(PbftBaseMessage message) {
+    if (message.getType() == MessageTypes.PBFT_SR_MSG) {
+      return SR_LIST_KEY;
+    }
     String key = String.valueOf(message.getBlockNum()) + "_" + message.getType().asByte();
     return key.getBytes();
   }

@@ -1,7 +1,10 @@
 package org.tron.core.db;
 
+import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
@@ -95,7 +98,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
   private static final byte[] CREATE_NEW_ACCOUNT_BANDWIDTH_RATE =
       "CREATE_NEW_ACCOUNT_BANDWIDTH_RATE"
-      .getBytes();
+          .getBytes();
 
   private static final byte[] TRANSACTION_FEE = "TRANSACTION_FEE".getBytes(); // 1 byte
 
@@ -172,6 +175,8 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
   private static final byte[] ACTIVE_DEFAULT_OPERATIONS = "ACTIVE_DEFAULT_OPERATIONS".getBytes();
   //Used only for account state root, once，value is {0,1} allow is 1
   private static final byte[] ALLOW_ACCOUNT_STATE_ROOT = "ALLOW_ACCOUNT_STATE_ROOT".getBytes();
+
+  private static final byte[] CURRENT_SR_LIST = "CURRENT_SR_LIST".getBytes();
 
   @Autowired
   private DynamicPropertiesStore(@Value("properties") String dbName) {
@@ -1303,7 +1308,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
   }
 
 
-  public void addSystemContractAndSetPermission(int id){
+  public void addSystemContractAndSetPermission(int id) {
     byte[] availableContractType = getAvailableContractType();
     availableContractType[id / 8] |= (1 << id % 8);
     saveAvailableContractType(availableContractType);
@@ -1315,12 +1320,11 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
 
   public void updateDynamicStoreByConfig() {
-    if(Args.getInstance().getAllowTvmConstantinople() != 0) {
+    if (Args.getInstance().getAllowTvmConstantinople() != 0) {
       saveAllowTvmConstantinople(Args.getInstance().getAllowTvmConstantinople());
       addSystemContractAndSetPermission(48);
     }
   }
-
 
 
   public void saveActiveDefaultOperations(byte[] value) {
@@ -1662,5 +1666,17 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
   public boolean allowAccountStateRoot() {
     return getAllowAccountStateRoot() == 1;
+  }
+
+  public List<String> getCurrentSrList() {
+    return Optional.ofNullable(getUnchecked(CURRENT_SR_LIST))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toStr)
+        .map(str -> JSON.parseArray(str, String.class))
+        .orElse(Lists.newArrayList());
+  }
+
+  public void saveCurrentSrList(String currentSrList) {
+    this.put(CURRENT_SR_LIST, new BytesCapsule(ByteArray.fromString(currentSrList)));
   }
 }
