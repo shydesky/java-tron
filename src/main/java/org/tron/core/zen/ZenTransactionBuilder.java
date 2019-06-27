@@ -232,6 +232,7 @@ public class ZenTransactionBuilder {
     byte[] cv = new byte[32];
     byte[] rk = new byte[32];
     byte[] zkproof = new byte[192];
+    long start = System.currentTimeMillis();
     if (!JLibrustzcash.librustzcashSaplingSpendProof(
         new SpendProofParams(ctx,
             ak,
@@ -247,6 +248,7 @@ public class ZenTransactionBuilder {
             zkproof))) {
       throw new ZksnarkException("Spend proof failed");
     }
+    System.out.println("cost: " + (System.currentTimeMillis() - start));
     SpendDescriptionCapsule spendDescriptionCapsule = new SpendDescriptionCapsule();
     spendDescriptionCapsule.setValueCommitment(cv);
     spendDescriptionCapsule.setRk(rk);
