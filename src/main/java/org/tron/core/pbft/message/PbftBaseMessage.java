@@ -128,14 +128,6 @@ public abstract class PbftBaseMessage extends Message {
   private String decode() {
     List<String> srStringList = JSON
         .parseArray(pbftMessage.getRawData().getData().toStringUtf8(), String.class);
-    StringBuilder sb = new StringBuilder();
-    for (String sr : srStringList) {
-      sb.append(sr);
-      sb.append("-");
-    }
-    if (sb.length() > 0) {
-      sb.deleteCharAt(sb.length() - 1);
-    }
-    return sb.toString();
+    return srStringList.toString();
   }
 }
