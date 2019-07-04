@@ -658,7 +658,7 @@ public class Program {
         refundEnergy(msg.getEnergy().longValue(), "endowment out of long range");
         throw new TransferException("endowment out of long range");
       } else {
-      throw e;
+        throw e;
       }
     }
     // transfer trx validation
@@ -743,12 +743,17 @@ public class Program {
     if (isNotEmpty(programCode)) {
       long vmStartInUs = System.nanoTime() / 1000;
       DataWord callValue = msg.getType().callIsDelegate() ? getCallValue() : msg.getEndowment();
+      DataWord callTokenId =
+          msg.getType().callIsDelegate() ? getTokenId()
+              : (!isTokenTransfer ? new DataWord(0) : msg.getTokenId());
+      DataWord callTokenValue =
+          msg.getType().callIsDelegate() ? getTokenValue()
+              : (!isTokenTransfer ? new DataWord(0) : callValue);
       ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
           this, new DataWord(contextAddress),
           msg.getType().callIsDelegate() ? getCallerAddress() : getContractAddress(),
           !isTokenTransfer ? callValue : new DataWord(0),
-          !isTokenTransfer ? new DataWord(0) : callValue,
-          !isTokenTransfer ? new DataWord(0) : msg.getTokenId(),
+          callTokenValue, callTokenId,
           contextBalance, data, deposit, msg.getType().callIsStatic() || isStaticCall(),
           byTestingSuite(), vmStartInUs, getVmShouldEndInUs(), msg.getEnergy().longValueSafe());
       VM vm = new VM(config);
