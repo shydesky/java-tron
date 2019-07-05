@@ -71,7 +71,6 @@ import org.tron.core.actuator.ProposalDeleteActuator;
 import org.tron.core.actuator.VoteWitnessActuator;
 import org.tron.core.actuator.WithdrawBalanceActuator;
 import org.tron.core.capsule.TransactionCapsule;
-import org.tron.core.db.Manager;
 import org.tron.core.exception.ContractExeException;
 import org.tron.core.exception.ContractValidateException;
 import org.tron.core.exception.ValidateSignatureException;
@@ -1385,7 +1384,7 @@ public class PrecompiledContracts {
       }
 
       @Override
-      public Boolean call() throws ValidateSignatureException {
+      public Boolean call() {
         try {
           return validSign(this.address, this.hash, this.signature);
         } finally {
@@ -1412,9 +1411,9 @@ public class PrecompiledContracts {
         throws InterruptedException, ExecutionException {
       DataWord[] words = DataWord.parseArray(data);
       int[] offsets = getOffsets(words);
-      byte[][] hashes = exectHashes(words, offsets[0]);
+      byte[][] hashes = exectBytes32Array(words, offsets[0]);
       byte[][] signatures = exectSignatures(words, offsets[1], data);
-      byte[][] addresses = exectAddresses(words, offsets[2]);
+      byte[][] addresses = exectBytes32Array(words, offsets[2]);
       int cnt = hashes.length;
       // add check
       CountDownLatch countDownLatch = new CountDownLatch(cnt);
@@ -1430,7 +1429,6 @@ public class PrecompiledContracts {
             return Pair.of(true, new DataWord(Longs.toByteArray(0)).getData());
           }
       }
-
       return Pair.of(true, new DataWord(Longs.toByteArray(1)).getData());
     }
 
@@ -1464,7 +1462,7 @@ public class PrecompiledContracts {
       return offsets;
     }
 
-    private byte[][] exectHashes(DataWord[] words, int offset) {
+    private byte[][] exectBytes32Array(DataWord[] words, int offset) {
       int hashCnt = words[offset].intValueSafe();
       byte[][] hashes = new byte[hashCnt][];
       for (int i = 0; i < hashCnt; i++) {
@@ -1474,14 +1472,14 @@ public class PrecompiledContracts {
     }
 
     private byte[][] exectSignatures(DataWord[] words, int baseOffset, byte[] data) {
-      int signatureCnt = words[baseOffset].intValueSafe();
-      byte[][] signatures = new byte[signatureCnt][];
+      int cnt = words[baseOffset].intValueSafe();
+      byte[][] signatures = new byte[cnt][];
 
-      int[] offsets = new int[3];
-      for (int i = 0; i < 3; i++) {
+      int[] offsets = new int[cnt];
+      for (int i = 0; i < cnt; i++) {
         offsets[i] = words[i + 1 + baseOffset].intValueSafe();
       }
-      for (int i = 0; i < signatureCnt; i++) {
+      for (int i = 0; i < cnt; i++) {
         int len = words[offsets[i]].intValueSafe();
         signatures[i] = exectSignature(data,  (offsets[i] + 1) * 32, len);
       }
@@ -1490,15 +1488,6 @@ public class PrecompiledContracts {
 
     private byte[] exectSignature(byte[] data, int len, int offset) {
       return Arrays.copyOfRange(data, offset, offset + len);
-    }
-
-    private byte[][] exectAddresses(DataWord[] words, int offset) {
-      int cnt = words[offset].intValueSafe();
-      byte[][] addresses = new byte[cnt][];
-      for (int i = 0; i < cnt; i++) {
-        addresses[i] = words[offset + 1 + i].getData();
-      }
-      return addresses;
     }
 
     private static boolean validateV(byte[] v) {
