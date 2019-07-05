@@ -32,10 +32,18 @@ import static org.tron.common.utils.ByteUtil.stripLeadingZeroes;
 import com.google.common.primitives.Longs;
 import com.google.protobuf.ByteString;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -63,8 +71,10 @@ import org.tron.core.actuator.ProposalDeleteActuator;
 import org.tron.core.actuator.VoteWitnessActuator;
 import org.tron.core.actuator.WithdrawBalanceActuator;
 import org.tron.core.capsule.TransactionCapsule;
+import org.tron.core.db.Manager;
 import org.tron.core.exception.ContractExeException;
 import org.tron.core.exception.ContractValidateException;
+import org.tron.core.exception.ValidateSignatureException;
 import org.tron.protos.Contract;
 import org.tron.protos.Contract.ProposalApproveContract;
 import org.tron.protos.Contract.ProposalCreateContract;
@@ -89,6 +99,7 @@ public class PrecompiledContracts {
   private static final BN128Addition altBN128Add = new BN128Addition();
   private static final BN128Multiplication altBN128Mul = new BN128Multiplication();
   private static final BN128Pairing altBN128Pairing = new BN128Pairing();
+  private static final ParallelECRecover parallelECRecover = new ParallelECRecover();
 //  private static final VoteWitnessNative voteContract = new VoteWitnessNative();
 //  private static final FreezeBalanceNative freezeBalance = new FreezeBalanceNative();
 //  private static final UnfreezeBalanceNative unFreezeBalance = new UnfreezeBalanceNative();
@@ -122,6 +133,9 @@ public class PrecompiledContracts {
       "0000000000000000000000000000000000000000000000000000000000000007");
   private static final DataWord altBN128PairingAddr = new DataWord(
       "0000000000000000000000000000000000000000000000000000000000000008");
+
+  private static final DataWord parllelECRecover = new DataWord(
+      "000000000000000000000000000000000000000000000000000000000000000A");
 //  private static final DataWord voteContractAddr = new DataWord(
 //      "0000000000000000000000000000000000000000000000000000000000010001");
   //  private static final DataWord freezeBalanceAddr = new DataWord(
@@ -161,6 +175,10 @@ public class PrecompiledContracts {
     }
     if (address.equals(identityAddr)) {
       return identity;
+    }
+
+    if (address.equals(parllelECRecover)) {
+      return parallelECRecover;
     }
 //    if (address.equals(voteContractAddr)) {
 //      return voteContract;
@@ -1346,6 +1364,150 @@ public class PrecompiledContracts {
           getAssetMap().get(ByteArray.toStr(name));
 
       return Pair.of(true, new DataWord(Longs.toByteArray(assetBalance)).getData());
+    }
+  }
+
+  public static class ParallelECRecover extends PrecompiledContract {
+    public static ExecutorService service = Executors.newFixedThreadPool(4);
+
+    private static class ValidateSignTask implements Callable<Boolean> {
+
+      private CountDownLatch countDownLatch;
+      private byte[] hash;
+      private byte[] signature;
+      private byte[] address;
+
+      ValidateSignTask(CountDownLatch countDownLatch, byte[] hash, byte[] signature, byte[] address) {
+        this.hash = hash;
+        this.signature = signature;
+        this.address = address;
+        this.countDownLatch = countDownLatch;
+      }
+
+      @Override
+      public Boolean call() throws ValidateSignatureException {
+        try {
+          return validSign(this.address, this.hash, this.signature);
+        } finally {
+          countDownLatch.countDown();
+        }
+      }
+    }
+
+    @Override
+    public long getEnergyForData(byte[] data) {
+      return 0;
+    }
+
+    @Override
+    public Pair<Boolean, byte[]> execute(byte[] data) {
+      try {
+        return doExecute(data);
+      } catch (Throwable t) {
+        return Pair.of(true, new DataWord(Longs.toByteArray(0)).getData());
+      }
+    }
+
+    private Pair<Boolean, byte[]> doExecute(byte[] data)
+        throws InterruptedException, ExecutionException {
+      DataWord[] words = DataWord.parseArray(data);
+      int[] offsets = getOffsets(words);
+      byte[][] hashes = exectHashes(words, offsets[0]);
+      byte[][] signatures = exectSignatures(words, offsets[1], data);
+      byte[][] addresses = exectAddresses(words, offsets[2]);
+      int cnt = hashes.length;
+      // add check
+      CountDownLatch countDownLatch = new CountDownLatch(cnt);
+      List<Future<Boolean>> futures = new ArrayList<>(cnt);
+
+      for (int i = 0; i < cnt; i++) {
+        Future<Boolean> future = service.submit(new ValidateSignTask(countDownLatch, hashes[i], signatures[i], addresses[i]));
+        futures.add(future);
+      }
+      countDownLatch.await();
+      for (Future<Boolean> future : futures) {
+          if (!future.get()) {
+            return Pair.of(true, new DataWord(Longs.toByteArray(0)).getData());
+          }
+      }
+
+      return Pair.of(true, new DataWord(Longs.toByteArray(1)).getData());
+    }
+
+    private static boolean validSign(byte[] address, byte[] hash, byte[] sign) {
+      byte[] v = new byte[32];
+      byte[] r = new byte[32];
+      byte[] s = new byte[32];
+
+      DataWord out = null;
+
+      try {
+        System.arraycopy(sign, 0, v, 0, 32);
+        System.arraycopy(sign, 32, r, 0, 32);
+        int sLength = sign.length < (128 - 32) ? sign.length - 64 : 32;
+        System.arraycopy(sign, 64, s, 0, sLength);
+
+        ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
+        if (validateV(v) && signature.validateComponents()) {
+          out = new DataWord(ECKey.signatureToAddress(hash, signature));
+        }
+      } catch (Throwable any) {
+      }
+      return out != null && Arrays.equals(address, out.getData());
+    }
+
+    private int[] getOffsets(DataWord[] words) {
+      int[] offsets = new int[3];
+      for (int i = 0;i < 3; i++) {
+        offsets[i] = words[i].intValueSafe() / 32;
+      }
+      return offsets;
+    }
+
+    private byte[][] exectHashes(DataWord[] words, int offset) {
+      int hashCnt = words[offset].intValueSafe();
+      byte[][] hashes = new byte[hashCnt][];
+      for (int i = 0; i < hashCnt; i++) {
+        hashes[i] = words[offset + 1 + i].getData();
+      }
+      return hashes;
+    }
+
+    private byte[][] exectSignatures(DataWord[] words, int baseOffset, byte[] data) {
+      int signatureCnt = words[baseOffset].intValueSafe();
+      byte[][] signatures = new byte[signatureCnt][];
+
+      int[] offsets = new int[3];
+      for (int i = 0; i < 3; i++) {
+        offsets[i] = words[i + 1 + baseOffset].intValueSafe();
+      }
+      for (int i = 0; i < signatureCnt; i++) {
+        int len = words[offsets[i]].intValueSafe();
+        signatures[i] = exectSignature(data,  (offsets[i] + 1) * 32, len);
+      }
+      return signatures;
+    }
+
+    private byte[] exectSignature(byte[] data, int len, int offset) {
+      return Arrays.copyOfRange(data, offset, offset + len);
+    }
+
+    private byte[][] exectAddresses(DataWord[] words, int offset) {
+      int cnt = words[offset].intValueSafe();
+      byte[][] addresses = new byte[cnt][];
+      for (int i = 0; i < cnt; i++) {
+        addresses[i] = words[offset + 1 + i].getData();
+      }
+      return addresses;
+    }
+
+    private static boolean validateV(byte[] v) {
+      for (int i = 0; i < v.length - 1; i++) {
+        if (v[i] != 0) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 }
