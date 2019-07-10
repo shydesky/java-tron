@@ -516,7 +516,7 @@ public class DataWord implements Comparable<DataWord> {
     int len = data.length / 32;
     DataWord[] words = new DataWord[len];
     for (int i = 0; i < len; i++) {
-      byte[] bytes = Arrays.copyOfRange(data, i * 32, ( i + 1) * 32);
+      byte[] bytes = Arrays.copyOfRange(data, i * 32, (i + 1) * 32);
       words[i] = new DataWord(bytes);
     }
     return words;

@@ -44,12 +44,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import javax.xml.bind.SchemaOutputResolver;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.spongycastle.util.encoders.Hex;
 import org.tron.common.crypto.ECKey;
+import org.tron.common.crypto.ECKey.ECDSASignature;
+import org.tron.common.crypto.Hash;
 import org.tron.common.crypto.zksnark.BN128;
 import org.tron.common.crypto.zksnark.BN128Fp;
 import org.tron.common.crypto.zksnark.BN128G1;
@@ -73,7 +78,6 @@ import org.tron.core.actuator.WithdrawBalanceActuator;
 import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.exception.ContractExeException;
 import org.tron.core.exception.ContractValidateException;
-import org.tron.core.exception.ValidateSignatureException;
 import org.tron.protos.Contract;
 import org.tron.protos.Contract.ProposalApproveContract;
 import org.tron.protos.Contract.ProposalCreateContract;
@@ -1369,6 +1373,8 @@ public class PrecompiledContracts {
   public static class ParallelECRecover extends PrecompiledContract {
     public static ExecutorService service = Executors.newFixedThreadPool(4);
 
+    @Data
+    @AllArgsConstructor
     private static class ValidateSignTask implements Callable<Boolean> {
 
       private CountDownLatch countDownLatch;
@@ -1376,17 +1382,10 @@ public class PrecompiledContracts {
       private byte[] signature;
       private byte[] address;
 
-      ValidateSignTask(CountDownLatch countDownLatch, byte[] hash, byte[] signature, byte[] address) {
-        this.hash = hash;
-        this.signature = signature;
-        this.address = address;
-        this.countDownLatch = countDownLatch;
-      }
-
       @Override
       public Boolean call() {
         try {
-          return validSign(this.address, this.hash, this.signature);
+          return validSign(this.signature, this.hash, this.address);
         } finally {
           countDownLatch.countDown();
         }
@@ -1409,11 +1408,15 @@ public class PrecompiledContracts {
 
     private Pair<Boolean, byte[]> doExecute(byte[] data)
         throws InterruptedException, ExecutionException {
+      System.err.println(Hex.toHexString(data));
       DataWord[] words = DataWord.parseArray(data);
+      data = Arrays.copyOfRange(data, 32, data.length);
+      System.err.println(Hex.toHexString(data));
       int[] offsets = getOffsets(words);
-      byte[][] hashes = exectBytes32Array(words, offsets[0]);
-      byte[][] signatures = exectSignatures(words, offsets[1], data);
-      byte[][] addresses = exectBytes32Array(words, offsets[2]);
+      byte[][] addresses = extractBytes32Array(words, offsets[0]);
+      byte[][] hashes = extractBytes32Array(words, offsets[1]);
+      byte[][] signatures = extractBytesArray(words, offsets[2], data);
+
       int cnt = hashes.length;
       // add check
       CountDownLatch countDownLatch = new CountDownLatch(cnt);
@@ -1432,71 +1435,80 @@ public class PrecompiledContracts {
       return Pair.of(true, new DataWord(Longs.toByteArray(1)).getData());
     }
 
-    private static boolean validSign(byte[] address, byte[] hash, byte[] sign) {
-      byte[] v = new byte[32];
-      byte[] r = new byte[32];
-      byte[] s = new byte[32];
-
+    private static boolean validSign(byte[] sign, byte[] hash, byte[] address) {
+      byte v;
+      byte[] r;
+      byte[] s;
       DataWord out = null;
-
       try {
-        System.arraycopy(sign, 0, v, 0, 32);
-        System.arraycopy(sign, 32, r, 0, 32);
-        int sLength = sign.length < (128 - 32) ? sign.length - 64 : 32;
-        System.arraycopy(sign, 64, s, 0, sLength);
-
-        ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
-        if (validateV(v) && signature.validateComponents()) {
+        r = Arrays.copyOfRange(sign, 0, 32);
+        s = Arrays.copyOfRange(sign, 32, 64);
+        v = sign[64];
+        if (v < 27) {
+          v += 27;
+        }
+        ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v);
+        if (v != 0 && signature.validateComponents()) {
           out = new DataWord(ECKey.signatureToAddress(hash, signature));
+          System.out.println("actual:" + Hex.toHexString(out.getData()));
+          System.out.println("expected:" + Hex.toHexString(address));
         }
       } catch (Throwable any) {
+        logger.error("check", any);
       }
-      return out != null && Arrays.equals(address, out.getData());
+      return out != null && Arrays.equals(new DataWord(address).getLast20Bytes(), out.getLast20Bytes());
     }
 
     private int[] getOffsets(DataWord[] words) {
       int[] offsets = new int[3];
-      for (int i = 0;i < 3; i++) {
-        offsets[i] = words[i].intValueSafe() / 32;
+      for (int i = 0; i < 3; i++) {
+        // TODO remove +1
+        offsets[i] = words[i + 1].intValueSafe() / 32;
       }
       return offsets;
     }
 
-    private byte[][] exectBytes32Array(DataWord[] words, int offset) {
-      int hashCnt = words[offset].intValueSafe();
-      byte[][] hashes = new byte[hashCnt][];
-      for (int i = 0; i < hashCnt; i++) {
-        hashes[i] = words[offset + 1 + i].getData();
+    private byte[][] extractBytes32Array(DataWord[] words, int offset) {
+      int len = words[offset].intValueSafe();
+      byte[][] bytes32Array = new byte[len][];
+      for (int i = 0; i < len; i++) {
+        bytes32Array[i] = words[offset + i + 1].getData();
       }
-      return hashes;
+      return bytes32Array;
     }
 
-    private byte[][] exectSignatures(DataWord[] words, int baseOffset, byte[] data) {
-      int cnt = words[baseOffset].intValueSafe();
-      byte[][] signatures = new byte[cnt][];
-
-      int[] offsets = new int[cnt];
-      for (int i = 0; i < cnt; i++) {
-        offsets[i] = words[i + 1 + baseOffset].intValueSafe();
+    private byte[][] extractBytesArray(DataWord[] words, int offset, byte[] data) {
+      int len = words[offset].intValueSafe();
+      byte[][] bytesArray = new byte[len][];
+      for (int i = 0; i < len; i++) {
+        int bytesOffset = words[offset + i + 1].intValueSafe() / 32;
+        int bytesLen = words[offset + bytesOffset + 1].intValueSafe();
+        bytesArray[i] = extractBytes(data,  (bytesOffset + offset + 1) * 32, bytesLen);
       }
-      for (int i = 0; i < cnt; i++) {
-        int len = words[offsets[i]].intValueSafe();
-        signatures[i] = exectSignature(data,  (offsets[i] + 1) * 32, len);
-      }
-      return signatures;
+      return bytesArray;
     }
 
-    private byte[] exectSignature(byte[] data, int len, int offset) {
+    private byte[] extractBytes(byte[] data, int offset, int len) {
       return Arrays.copyOfRange(data, offset, offset + len);
     }
+  }
 
-    private static boolean validateV(byte[] v) {
-      for (int i = 0; i < v.length - 1; i++) {
-        if (v[i] != 0) {
-          return false;
-        }
-      }
-      return true;
-    }
+  public static void main(String[] args) throws ExecutionException, InterruptedException {
+    byte[] data = "f33101ea976d90491dcb9669be568db8bbc1ad23d90be4dede094976b67d550ef33101ea976d90491dcb9669be568db8bbc1ad23d90be4dede094976b67d550ef33101ea976d90491dcb9669be568db8bbc1ad23d90be4dede094976b67d550ef33101ea976d90491dcb9669be568db8bbc1ad23d90be4dede094976b67d550ef33101ea976d90491dcb9669be568db8bbc1ad23d90be4dede094976b67d550ef33101ea976d90491dcb9669be568db8bbc1ad23d90be4dede094976b67d550ef33101ea976d90491dcb9669be568db8bbc1ad23d90be4dede094976b67d550e".getBytes();
+//    byte[] data = "hello world".getBytes();
+    byte[] hash = Hash.sha3(data);
+    byte[] privateKey = Hex.decode("f33101ea976d90491dcb9669be568db8bbc1ad23d90be4dede094976b67d550e");
+    ECKey ecKey = ECKey.fromPrivate(privateKey);
+
+    ECDSASignature sign = ecKey.sign(hash);
+    System.out.println(Hex.toHexString(ecKey.getAddress()));
+    System.out.println(Hex.toHexString(hash));
+    System.out.println(sign.toHex());
+//
+//    System.out.println(sign.toByteArray().length);
+    Pair<Boolean, byte[]> ret = parallelECRecover.doExecute(Hex.decode("0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000e000000000000000000000000000000000000000000000000000000000000001400000000000000000000000000000000000000000000000000000000000000002000000000000000000000000af71e98f91515d7e5d5379837b9eefd1ab4650d2000000000000000000000000af71e98f91515d7e5d5379837b9eefd1ab4650d2000000000000000000000000000000000000000000000000000000000000000247173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000041895951c2580aed54527f555ba092e304b249ccdbf335ca320d8f5bee2c4320ad54439564cecc218bfd39001277d59934f55c862746025cc53a877e84eafceee901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000041895951c2580aed54527f555ba092e304b249ccdbf335ca320d8f5bee2c4320ad54439564cecc218bfd39001277d59934f55c862746025cc53a877e84eafceee90100000000000000000000000000000000000000000000000000000000000000"));
+    System.out.println(ret.getLeft() + " " + Hex.toHexString(ret.getRight()));
+
+
   }
 }
