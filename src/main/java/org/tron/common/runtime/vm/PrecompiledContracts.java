@@ -44,7 +44,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import javax.xml.bind.SchemaOutputResolver;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -102,7 +101,7 @@ public class PrecompiledContracts {
   private static final BN128Addition altBN128Add = new BN128Addition();
   private static final BN128Multiplication altBN128Mul = new BN128Multiplication();
   private static final BN128Pairing altBN128Pairing = new BN128Pairing();
-  private static final ParallelECRecover parallelECRecover = new ParallelECRecover();
+  private static final MultiValidateSign multiValidateSign = new MultiValidateSign();
 //  private static final VoteWitnessNative voteContract = new VoteWitnessNative();
 //  private static final FreezeBalanceNative freezeBalance = new FreezeBalanceNative();
 //  private static final UnfreezeBalanceNative unFreezeBalance = new UnfreezeBalanceNative();
@@ -137,8 +136,8 @@ public class PrecompiledContracts {
   private static final DataWord altBN128PairingAddr = new DataWord(
       "0000000000000000000000000000000000000000000000000000000000000008");
 
-  private static final DataWord parllelECRecover = new DataWord(
-      "000000000000000000000000000000000000000000000000000000000000000A");
+  private static final DataWord multiValidateSignAddr = new DataWord(
+      "0000000000000000000000000000000000000000000000000000000000000009");
 //  private static final DataWord voteContractAddr = new DataWord(
 //      "0000000000000000000000000000000000000000000000000000000000010001");
   //  private static final DataWord freezeBalanceAddr = new DataWord(
@@ -179,9 +178,8 @@ public class PrecompiledContracts {
     if (address.equals(identityAddr)) {
       return identity;
     }
-
-    if (address.equals(parllelECRecover)) {
-      return parallelECRecover;
+    if (address.equals(multiValidateSignAddr)) {
+      return multiValidateSign;
     }
 //    if (address.equals(voteContractAddr)) {
 //      return voteContract;
@@ -1370,8 +1368,12 @@ public class PrecompiledContracts {
     }
   }
 
-  public static class ParallelECRecover extends PrecompiledContract {
-    public static ExecutorService service = Executors.newFixedThreadPool(4);
+  public static class MultiValidateSign extends PrecompiledContract {
+    public static final ExecutorService workers;
+
+    static {
+      workers = Executors.newFixedThreadPool(4);
+    }
 
     @Data
     @AllArgsConstructor
@@ -1408,31 +1410,28 @@ public class PrecompiledContracts {
 
     private Pair<Boolean, byte[]> doExecute(byte[] data)
         throws InterruptedException, ExecutionException {
-      System.err.println(Hex.toHexString(data));
       DataWord[] words = DataWord.parseArray(data);
-      data = Arrays.copyOfRange(data, 32, data.length);
-      System.err.println(Hex.toHexString(data));
       int[] offsets = getOffsets(words);
       byte[][] addresses = extractBytes32Array(words, offsets[0]);
       byte[][] hashes = extractBytes32Array(words, offsets[1]);
       byte[][] signatures = extractBytesArray(words, offsets[2], data);
-
       int cnt = hashes.length;
       // add check
       CountDownLatch countDownLatch = new CountDownLatch(cnt);
       List<Future<Boolean>> futures = new ArrayList<>(cnt);
 
       for (int i = 0; i < cnt; i++) {
-        Future<Boolean> future = service.submit(new ValidateSignTask(countDownLatch, hashes[i], signatures[i], addresses[i]));
+        Future<Boolean> future = workers
+            .submit(new ValidateSignTask(countDownLatch, hashes[i], signatures[i], addresses[i]));
         futures.add(future);
       }
       countDownLatch.await();
       for (Future<Boolean> future : futures) {
           if (!future.get()) {
-            return Pair.of(true, new DataWord(Longs.toByteArray(0)).getData());
+            return Pair.of(true, DataWord.ZERO().getData());
           }
       }
-      return Pair.of(true, new DataWord(Longs.toByteArray(1)).getData());
+      return Pair.of(true, DataWord.ONE().getData());
     }
 
     private static boolean validSign(byte[] sign, byte[] hash, byte[] address) {
@@ -1454,7 +1453,6 @@ public class PrecompiledContracts {
           System.out.println("expected:" + Hex.toHexString(address));
         }
       } catch (Throwable any) {
-        logger.error("check", any);
       }
       return out != null && Arrays.equals(new DataWord(address).getLast20Bytes(), out.getLast20Bytes());
     }
@@ -1462,8 +1460,7 @@ public class PrecompiledContracts {
     private int[] getOffsets(DataWord[] words) {
       int[] offsets = new int[3];
       for (int i = 0; i < 3; i++) {
-        // TODO remove +1
-        offsets[i] = words[i + 1].intValueSafe() / 32;
+        offsets[i] = words[i].intValueSafe() / 32;
       }
       return offsets;
     }
