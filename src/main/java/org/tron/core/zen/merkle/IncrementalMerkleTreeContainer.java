@@ -54,6 +54,39 @@ public class IncrementalMerkleTreeContainer {
     }
   }
 
+  //just for test
+  public String showMerkerPath() {
+    String msg = "CM size: " + size();
+    msg += "  left: ";
+    if (leftIsPresent()) {
+      msg += "1 ";
+    } else {
+      msg += "0 ";
+    }
+
+    msg += "right: ";
+    if (rightIsPresent()) {
+      msg += "1 ";
+    } else {
+      msg += "0 ";
+    }
+
+    msg +="parent:(";
+    msg += treeCapsule.getParents().size();
+    msg +=") ";
+    for (int i = 0; i < treeCapsule.getParents().size(); i++) {
+      PedersenHashCapsule parentCompressCapsule =
+          new PedersenHashCapsule(treeCapsule.getParents().get(i));
+      if (parentCompressCapsule.isPresent()) {
+        msg += "1 ";
+      } else {
+        msg += "0 ";
+      }
+    }
+
+    return msg;
+  }
+
   public PedersenHash last() throws ZksnarkException {
     if (rightIsPresent()) {
       return treeCapsule.getRight();
