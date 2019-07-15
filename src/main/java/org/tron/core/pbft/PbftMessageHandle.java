@@ -165,8 +165,8 @@ public class PbftMessageHandle {
   private void checkPrepareMsgCache(String key) {
     for (Entry<String, PbftBaseMessage> entry : pareMsgCache.asMap().entrySet()) {
       if (StringUtils.startsWith(entry.getKey(), key)) {
-        onPrepare(entry.getValue());
         pareMsgCache.invalidate(entry.getKey());
+        onPrepare(entry.getValue());
       }
     }
   }
@@ -174,8 +174,8 @@ public class PbftMessageHandle {
   private void checkCommitMsgCache(String key) {
     for (Entry<String, PbftBaseMessage> entry : commitMsgCache.asMap().entrySet()) {
       if (StringUtils.startsWith(entry.getKey(), key)) {
-        onCommit(entry.getValue());
         commitMsgCache.invalidate(entry.getKey());
+        onCommit(entry.getValue());
       }
     }
   }
