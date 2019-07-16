@@ -1028,9 +1028,9 @@ public class Wallet {
             .build());
 
     builder.addChainParameter(Protocol.ChainParameters.ChainParameter.newBuilder()
-        .setKey("getAllowTvmSolidity0_5_10")
-        .setValue(dbManager.getDynamicPropertiesStore().getAllowTvmSolidity0_5_10())
-        .build());
+            .setKey("getAllowTvmSolidity059")
+            .setValue(dbManager.getDynamicPropertiesStore().getAllowTvmSolidity059())
+            .build());
 
     return builder.build();
   }
