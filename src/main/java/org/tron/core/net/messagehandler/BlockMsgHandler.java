@@ -3,7 +3,6 @@ package org.tron.core.net.messagehandler;
 import static org.tron.core.config.Parameter.ChainConstant.BLOCK_PRODUCED_INTERVAL;
 import static org.tron.core.config.Parameter.ChainConstant.BLOCK_SIZE;
 
-import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +48,11 @@ public class BlockMsgHandler implements TronMsgHandler {
     BlockMessage blockMessage = (BlockMessage) msg;
     BlockId blockId = blockMessage.getBlockId();
 
+    if (fastForward && peer.isFastForwardPeer()) {
+      logger.info("return");
+      return;
+    }
+
     if (!fastForward && !peer.isFastForwardPeer()) {
       check(peer, blockMessage);
     }
@@ -58,6 +62,9 @@ public class BlockMsgHandler implements TronMsgHandler {
       syncService.processBlock(peer, blockMessage);
     } else {
       Long time = peer.getAdvInvRequest().remove(new Item(blockId, InventoryType.BLOCK));
+      if (time == null) {
+        peer.set361(true);
+      }
       long now = System.currentTimeMillis();
       long interval = blockId.getNum() - tronNetDelegate.getHeadBlockId().getNum();
       processBlock(peer, blockMessage.getBlockCapsule());

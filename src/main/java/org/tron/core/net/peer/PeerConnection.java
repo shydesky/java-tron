@@ -34,6 +34,10 @@ import org.tron.core.net.service.SyncService;
 @Scope("prototype")
 public class PeerConnection extends Channel {
 
+  @Setter
+  @Getter
+  private boolean is361;
+
   @Autowired
   private TronNetDelegate tronNetDelegate;
 

@@ -188,6 +188,10 @@ public class AdvService {
 
     if (!fastForward) {
       peers = peers.stream().filter(peer -> peer.isFastForwardPeer()).collect(Collectors.toList());
+    }else {
+      peers = peers.stream()
+          .filter(peer -> !peer.isFastForwardPeer() && peer.is361())
+          .collect(Collectors.toList());
     }
 
     peers.forEach(peer -> {
@@ -195,6 +199,8 @@ public class AdvService {
       peer.getAdvInvSpread().put(item, System.currentTimeMillis());
       peer.setFastForwardBlock(msg.getBlockId());
     });
+
+    broadcast(msg);
   }
 
 
@@ -251,7 +257,8 @@ public class AdvService {
   synchronized private void consumerInvToSpread() {
 
     List<PeerConnection> peers = tronNetDelegate.getActivePeer().stream()
-        .filter(peer -> !peer.isNeedSyncFromPeer() && !peer.isNeedSyncFromUs())
+        .filter(peer -> !peer.isNeedSyncFromPeer()
+            && !peer.isNeedSyncFromUs() && !peer.is361())
         .collect(Collectors.toList());
 
     if (invToSpread.isEmpty() || peers.isEmpty()) {
