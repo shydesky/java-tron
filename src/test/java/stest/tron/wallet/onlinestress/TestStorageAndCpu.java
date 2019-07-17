@@ -88,8 +88,19 @@ public class TestStorageAndCpu {
         .EmptyMessage.newBuilder().build());
 
     while (true) {
-      blockingStubFull.getNowBlock(GrpcAPI
-          .EmptyMessage.newBuilder().build());
+      try {
+        ManagedChannel channelFull = null;
+        WalletGrpc.WalletBlockingStub blockingStubFull = null;
+        channelFull = ManagedChannelBuilder.forTarget(fullnode)
+            .usePlaintext(true)
+            .build();
+        blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
+        blockingStubFull.getNowBlock(GrpcAPI
+            .EmptyMessage.newBuilder().build());
+      } catch (Exception e) {
+        logger.info(e.toString());
+      }
+
 
     }
   }
