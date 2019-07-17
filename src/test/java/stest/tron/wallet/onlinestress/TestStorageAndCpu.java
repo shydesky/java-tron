@@ -4,7 +4,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.testng.annotations.AfterClass;
@@ -12,12 +11,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import org.tron.api.GrpcAPI;
-import org.tron.api.GrpcAPI.EmptyMessage;
 import org.tron.api.WalletGrpc;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Block;
-import org.tron.protos.Protocol.ChainParameters;
-import org.tron.protos.Protocol.SmartContract;
 import org.tron.protos.Protocol.TransactionInfo;
 import stest.tron.wallet.common.client.Configuration;
 import stest.tron.wallet.common.client.Parameter.CommonConstant;
@@ -43,9 +39,9 @@ public class TestStorageAndCpu {
   private ManagedChannel channelFull1 = null;
   private WalletGrpc.WalletBlockingStub blockingStubFull1 = null;
   private String fullnode = Configuration.getByPath("testng.conf")
-      .getStringList("fullnode.ip.list").get(0);
-  private String fullnode1 = Configuration.getByPath("testng.conf")
       .getStringList("fullnode.ip.list").get(1);
+  private String fullnode1 = Configuration.getByPath("testng.conf")
+      .getStringList("fullnode.ip.list").get(0);
   ArrayList<String> txidList = new ArrayList<String>();
 
   Optional<TransactionInfo> infoById = null;
@@ -84,65 +80,12 @@ public class TestStorageAndCpu {
     beforeTime = System.currentTimeMillis();
   }
 
-  @Test(enabled = true, threadPoolSize = 1, invocationCount = 1)
+  @Test(enabled = true, threadPoolSize = 31, invocationCount = 31)
   public void storageAndCpu() {
-    Random rand = new Random();
-    Integer randNum = rand.nextInt(30) + 1;
-    randNum = rand.nextInt(4000);
 
-    Long maxFeeLimit = 1000000000L;
-    String contractName = "StorageAndCpu" + Integer.toString(randNum);
-    String code = Configuration.getByPath("testng.conf")
-        .getString("code.code_TestStorageAndCpu_storageAndCpu");
-    String abi = Configuration.getByPath("testng.conf")
-        .getString("abi.abi_TestStorageAndCpu_storageAndCpu");
-    PublicMethed
-        .freezeBalanceGetEnergy(fromAddress, 1000000000000L, 3, 1, testKey002, blockingStubFull);
-    byte[] contractAddress = PublicMethed.deployContract(contractName, abi, code,
-        "", maxFeeLimit,
-        0L, 100, null, testKey002, fromAddress, blockingStubFull);
-    try {
-      Thread.sleep(30000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-    SmartContract smartContract = PublicMethed.getContract(contractAddress, blockingStubFull);
-    String txid;
+    while (true) {
+      PublicMethed.queryAccount(fromAddress, blockingStubFull);
 
-    ChainParameters chainParameters = blockingStubFull
-        .getChainParameters(EmptyMessage.newBuilder().build());
-    Optional<ChainParameters> getChainParameters = Optional.ofNullable(chainParameters);
-
-    Integer i = 1;
-    while (i++ < 8000) {
-      String initParmes = "\"" + "930" + "\"";
-      txid = PublicMethed.triggerContract(contractAddress,
-          "testUseCpu(uint256)", "9100", false,
-          0, maxFeeLimit, fromAddress, testKey002, blockingStubFull);
-      txid = PublicMethed.triggerContract(contractAddress,
-          "storage8Char()", "", false,
-          0, maxFeeLimit, fromAddress, testKey002, blockingStubFull);
-      //storage 9 EnergyUsageTotal is  211533, 10 is 236674, 5 is 110969,21 is 500000
-      txid = PublicMethed.triggerContract(contractAddress,
-          "testUseStorage(uint256)", "21", false,
-          0, maxFeeLimit, fromAddress, testKey002, blockingStubFull);
-      //logger.info("i is " +Integer.toString(i) + " " + txid);
-      //txidList.add(txid);
-      try {
-        Thread.sleep(50);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      if (i % 10 == 0) {
-        chainParameters = blockingStubFull
-            .getChainParameters(EmptyMessage.newBuilder().build());
-        getChainParameters = Optional.ofNullable(chainParameters);
-        logger.info(getChainParameters.get().getChainParameter(22).getKey());
-        logger.info(Long.toString(getChainParameters.get().getChainParameter(22).getValue()));
-        logger.info(getChainParameters.get().getChainParameter(23).getKey());
-        logger.info(Long.toString(getChainParameters.get().getChainParameter(23).getValue()));
-
-      }
     }
   }
 
