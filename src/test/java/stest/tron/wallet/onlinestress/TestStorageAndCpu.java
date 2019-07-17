@@ -13,6 +13,7 @@ import org.testng.annotations.Test;
 import org.tron.api.GrpcAPI;
 import org.tron.api.WalletGrpc;
 import org.tron.core.Wallet;
+import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.TransactionInfo;
 import stest.tron.wallet.common.client.Configuration;
@@ -83,8 +84,12 @@ public class TestStorageAndCpu {
   @Test(enabled = true, threadPoolSize = 31, invocationCount = 31)
   public void storageAndCpu() {
 
+    Protocol.Block currentBlock = blockingStubFull.getNowBlock(GrpcAPI
+        .EmptyMessage.newBuilder().build());
+
     while (true) {
-      PublicMethed.queryAccount(fromAddress, blockingStubFull);
+      blockingStubFull.getNowBlock(GrpcAPI
+          .EmptyMessage.newBuilder().build());
 
     }
   }
