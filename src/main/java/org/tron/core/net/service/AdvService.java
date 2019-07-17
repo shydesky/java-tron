@@ -140,9 +140,9 @@ public class AdvService {
 
   public void broadcast(Message msg) {
 
-    if (fastForward) {
-      return;
-    }
+//    if (fastForward) {
+////      return;
+////    }
 
     if (invToSpread.size() > maxSpreadSize) {
       logger.warn("Drop message, type: {}, ID: {}.", msg.getType(), msg.getMessageId());
