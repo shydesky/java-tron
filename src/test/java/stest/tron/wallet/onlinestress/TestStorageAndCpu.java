@@ -81,7 +81,7 @@ public class TestStorageAndCpu {
     beforeTime = System.currentTimeMillis();
   }
 
-  @Test(enabled = true, threadPoolSize = 31, invocationCount = 31)
+  @Test(enabled = true, threadPoolSize = 100, invocationCount = 100)
   public void storageAndCpu() {
 
     Protocol.Block currentBlock = blockingStubFull.getNowBlock(GrpcAPI
