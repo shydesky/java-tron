@@ -470,6 +470,10 @@ public class Args {
   @Setter
   private int validContractProtoThreadNum;
 
+  @Getter
+  @Setter
+  private boolean isOneWitness;
+
   public static void clearParam() {
     INSTANCE.outputDirectory = "output-directory";
     INSTANCE.help = false;
@@ -944,6 +948,10 @@ public class Args {
         config.hasPath("node.validContractProto.threads") ? config
             .getInt("node.validContractProto.threads")
             : Runtime.getRuntime().availableProcessors();
+
+    INSTANCE.isOneWitness =
+            config.hasPath("node.isOneWitness") && config
+                    .getBoolean("node.isOneWitness");
 
     INSTANCE.activeNodes = getNodes(config, "node.active");
 
