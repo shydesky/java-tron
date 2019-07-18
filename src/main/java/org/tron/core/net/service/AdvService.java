@@ -191,6 +191,7 @@ public class AdvService {
     }else {
       peers = peers.stream()
           .filter(peer -> !peer.isFastForwardPeer() && peer.is361())
+          .filter(peer -> !msg.getBlockId().getByteString().equals(peer.getWitness()))
           .collect(Collectors.toList());
     }
 

@@ -64,6 +64,7 @@ public class BlockMsgHandler implements TronMsgHandler {
       Long time = peer.getAdvInvRequest().remove(new Item(blockId, InventoryType.BLOCK));
       if (time == null) {
         peer.set361(true);
+        peer.setWitness(blockId.getByteString());
       }
       long now = System.currentTimeMillis();
       long interval = blockId.getNum() - tronNetDelegate.getHeadBlockId().getNum();

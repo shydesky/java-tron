@@ -2,6 +2,7 @@ package org.tron.core.net.peer;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.protobuf.ByteString;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -37,6 +38,10 @@ public class PeerConnection extends Channel {
   @Setter
   @Getter
   private boolean is361;
+
+  @Setter
+  @Getter
+  private ByteString witness;
 
   @Autowired
   private TronNetDelegate tronNetDelegate;
