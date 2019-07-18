@@ -181,6 +181,7 @@ public class AdvService {
   }
 
   public void fastForward(BlockMessage msg) {
+    String witness = Hex.toHexString(msg.getBlockCapsule().getWitnessAddress().toByteArray());
     Item item = new Item(msg.getBlockId(), InventoryType.BLOCK);
     List<PeerConnection> peers = tronNetDelegate.getActivePeer().stream()
         .filter(peer -> !peer.isNeedSyncFromPeer() && !peer.isNeedSyncFromUs())
@@ -193,7 +194,7 @@ public class AdvService {
     }else {
       peers = peers.stream()
           .filter(peer -> !peer.isFastForwardPeer() && peer.is361())
-          .filter(peer -> !msg.getBlockId().getByteString().equals(peer.getWitness()))
+          .filter(peer -> !witness.equals(peer.getWitness()))
           .collect(Collectors.toList());
     }
 
@@ -203,9 +204,10 @@ public class AdvService {
       peer.setFastForwardBlock(msg.getBlockId());
       logger.info("send block {} witness {}, peer witness {}",
           msg.getBlockId().getNum(),
-          Hex.toHexString(msg.getBlockCapsule().getWitnessAddress().toByteArray()),
+          witness,
           peer.getWitness());
     });
+    logger.info("*****");
 
     broadcast(msg);
   }
