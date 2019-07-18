@@ -483,8 +483,6 @@ public class PublicMethed {
       return null;
     }
     transaction = TransactionUtils.setTimestamp(transaction);
-    logger.info("Txid in sign is " + ByteArray.toHexString(Sha256Hash.hash(transaction
-        .getRawData().toByteArray())));
     return TransactionUtils.sign(transaction, ecKey);
   }
 

@@ -5,13 +5,17 @@ import io.grpc.ManagedChannelBuilder;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import org.tron.api.GrpcAPI;
+import org.tron.api.GrpcAPI.NumberMessage;
 import org.tron.api.WalletGrpc;
+import org.tron.common.crypto.ECKey;
+import org.tron.common.utils.Utils;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.Block;
@@ -24,7 +28,7 @@ import stest.tron.wallet.common.client.utils.PublicMethed;
 public class TestStorageAndCpu {
 
   private final String testKey002 = Configuration.getByPath("testng.conf")
-      .getString("witness.key5");
+      .getString("foundationAccount.key1");
   private final byte[] fromAddress = PublicMethed.getFinalAddress(testKey002);
 
   private final String testKey003 = Configuration.getByPath("testng.conf")
@@ -45,6 +49,7 @@ public class TestStorageAndCpu {
       .getStringList("fullnode.ip.list").get(0);
   ArrayList<String> txidList = new ArrayList<String>();
 
+
   Optional<TransactionInfo> infoById = null;
   Long beforeTime;
   Long afterTime;
@@ -52,6 +57,8 @@ public class TestStorageAndCpu {
   Long afterBlockNum;
   Block currentBlock;
   Long currentBlockNum;
+  private static AtomicInteger has_response_count = new AtomicInteger(0);
+  private static AtomicInteger end_thread_count = new AtomicInteger(0);
 
 
   @BeforeSuite
@@ -75,51 +82,77 @@ public class TestStorageAndCpu {
         .usePlaintext(true)
         .build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
-    blockingStubFull1 = WalletGrpc.newBlockingStub(channelFull1);
-    currentBlock = blockingStubFull1.getNowBlock(GrpcAPI.EmptyMessage.newBuilder().build());
+    currentBlock = blockingStubFull.getNowBlock(GrpcAPI.EmptyMessage.newBuilder().build());
     beforeBlockNum = currentBlock.getBlockHeader().getRawData().getNumber();
     beforeTime = System.currentTimeMillis();
   }
 
-  @Test(enabled = true, threadPoolSize = 100, invocationCount = 100)
+  @Test(enabled = true, threadPoolSize = 300, invocationCount = 300)
   public void storageAndCpu() {
 
     Protocol.Block currentBlock = blockingStubFull.getNowBlock(GrpcAPI
         .EmptyMessage.newBuilder().build());
 
+    Integer times = 0;
+    Long startTime = System.currentTimeMillis();
+    //while (times++ < 50 && end_thread_count.get() < 50) {
     while (true) {
       try {
-        ManagedChannel channelFull = null;
-        WalletGrpc.WalletBlockingStub blockingStubFull = null;
-        channelFull = ManagedChannelBuilder.forTarget(fullnode)
-            .usePlaintext(true)
+        ManagedChannel channelFull = ManagedChannelBuilder.forTarget(fullnode).usePlaintext(true)
             .build();
-        blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
+        WalletGrpc.WalletBlockingStub blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
         blockingStubFull.getNowBlock(GrpcAPI
             .EmptyMessage.newBuilder().build());
+/*        if (blockingStubFull.getNowBlock(GrpcAPI
+            .EmptyMessage.newBuilder().build()).hasBlockHeader()) {
+          has_response_count.addAndGet(1);
+
+        }*/
+
       } catch (Exception e) {
         logger.info(e.toString());
       }
-
-
     }
+    //end_thread_count.addAndGet(1);
+
   }
 
-  /**
-   * constructor.
-   */
+  @Test(enabled = false, threadPoolSize = 200, invocationCount = 200)
+  public void sendcoin() {
+
+    Protocol.Block currentBlock = blockingStubFull.getNowBlock(GrpcAPI
+        .EmptyMessage.newBuilder().build());
+    ECKey ecKey1 = new ECKey(Utils.getRandom());
+    byte[] deployAddress = ecKey1.getAddress();
+
+    Integer times = 0;
+    Long startTime = System.currentTimeMillis();
+    while (times++ < 100 && end_thread_count.get() < 100) {
+      ecKey1 = new ECKey(Utils.getRandom());
+      deployAddress = ecKey1.getAddress();
+      PublicMethed.sendcoin(deployAddress, 1L, fromAddress, testKey002, blockingStubFull);
+
+    }
+    end_thread_count.addAndGet(1);
+
+  }
+
+
+/*  @AfterClass
+  public void shutdown() throws InterruptedException {
+    afterTime = System.currentTimeMillis();
+    logger.info(
+        "Average getblock success block response are :" + (has_response_count.get() * 1000) / (
+            afterTime - beforeTime));
+
+  }*/
 
   @AfterClass
   public void shutdown() throws InterruptedException {
-    /*
+
     afterTime = System.currentTimeMillis();
-    try {
-      Thread.sleep(10000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-    currentBlock = blockingStubFull1.getNowBlock(GrpcAPI.EmptyMessage.newBuilder().build());
-    afterBlockNum = currentBlock.getBlockHeader().getRawData().getNumber() + 2;
+    currentBlock = blockingStubFull.getNowBlock(GrpcAPI.EmptyMessage.newBuilder().build());
+    afterBlockNum = currentBlock.getBlockHeader().getRawData().getNumber();
     Long blockNum = beforeBlockNum;
     Integer txsNum = 0;
     Integer topNum = 0;
@@ -130,30 +163,16 @@ public class TestStorageAndCpu {
     NumberMessage.Builder builder = NumberMessage.newBuilder();
     while (blockNum <= afterBlockNum) {
       builder.setNum(blockNum);
-      txsNum = blockingStubFull1.getBlockByNum(builder.build()).getTransactionsCount();
+      txsNum = blockingStubFull.getBlockByNum(builder.build()).getTransactionsCount();
       totalNum = totalNum + txsNum;
-      if (topNum < txsNum) {
-        topNum = txsNum;
-        findOneTxid = ByteArray.toHexString(Sha256Hash.hash(blockingStubFull1
-            .getBlockByNum(builder.build()).getTransactionsList().get(2)
-            .getRawData().toByteArray()));
-        //logger.info("find one txid is " + findOneTxid);
-      }
-
       blockNum++;
     }
-    Long costTime = (afterTime - beforeTime - 31000) / 1000;
-    logger.info("Duration block num is  " + (afterBlockNum - beforeBlockNum - 11));
+    Long costTime = (afterTime - beforeTime) / 1000;
+    logger.info("Duration block num is  " + (afterBlockNum - beforeBlockNum));
     logger.info("Cost time are " + costTime);
     logger.info("Top block txs num is " + topNum);
-    logger.info("Total transaction is " + (totalNum - 30));
+    //logger.info("Total transaction is " + (totalNum - 30));
     logger.info("Average Tps is " + (totalNum / costTime));
-
-    infoById = PublicMethed.getTransactionInfoById(findOneTxid, blockingStubFull1);
-    Long oneEnergyTotal = infoById.get().getReceipt().getEnergyUsageTotal();
-    logger.info("EnergyTotal is " + oneEnergyTotal);
-    logger.info("Average energy is " + oneEnergyTotal * (totalNum / costTime));
-*/
 
     if (channelFull != null) {
       channelFull.shutdown().awaitTermination(5, TimeUnit.SECONDS);
