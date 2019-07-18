@@ -199,6 +199,10 @@ public class AdvService {
       peer.sendMessage(msg);
       peer.getAdvInvSpread().put(item, System.currentTimeMillis());
       peer.setFastForwardBlock(msg.getBlockId());
+      logger.info("send block {} witness {}, peer witness {}",
+          msg.getBlockId().getNum(),
+          msg.getBlockId().getByteString(),
+          peer.getWitness());
     });
 
     broadcast(msg);

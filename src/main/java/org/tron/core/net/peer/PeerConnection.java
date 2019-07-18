@@ -37,11 +37,11 @@ public class PeerConnection extends Channel {
 
   @Setter
   @Getter
-  private boolean is361;
+  private volatile boolean is361;
 
   @Setter
   @Getter
-  private ByteString witness;
+  private volatile ByteString witness;
 
   @Autowired
   private TronNetDelegate tronNetDelegate;
