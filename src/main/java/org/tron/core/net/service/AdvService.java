@@ -6,6 +6,7 @@ import static org.tron.core.config.Parameter.NetConstants.MSG_CACHE_DURATION_IN_
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.common.overlay.discover.node.statistics.MessageCount;
@@ -201,7 +203,7 @@ public class AdvService {
       peer.setFastForwardBlock(msg.getBlockId());
       logger.info("send block {} witness {}, peer witness {}",
           msg.getBlockId().getNum(),
-          msg.getBlockId().getByteString(),
+          Hex.toHexString(msg.getBlockCapsule().getWitnessAddress().toByteArray()),
           peer.getWitness());
     });
 
