@@ -57,10 +57,10 @@ public abstract class TronStoreWithRevoking<T extends ProtoCapsule> implements I
                     Args.getInstance().getStorage().getOptionsByDbName(dbName),
                     new WriteOptions().sync(Args.getInstance().getStorage().isDbSync())))));
       } else if ("ROCKSDB".equals(dbEngine.toUpperCase())) {
-        this.revokingDB = new Chainbase(
-            new SnapshotRoot(
+        this.revokingDB = new Chainbase(new SnapshotRoot(
                 new RocksDB(
-                    new RocksDbDataSourceImpl(Args.getInstance().getOutputDirectoryByDbName(dbName), dbName, Args.getInstance().getRocksDBCustomSettings()))));
+                    new RocksDbDataSourceImpl(Args.getInstance().getOutputDirectoryByDbName(dbName),
+                        dbName, Args.getInstance().getRocksDBCustomSettings()))));
       }
     } else {
       throw new RuntimeException("db version is error.");
