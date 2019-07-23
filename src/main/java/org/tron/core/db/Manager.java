@@ -1643,12 +1643,13 @@ public class Manager {
 
   public void updateLatestSolidifiedBlock(long blockNum) {
     synchronized (this) {
+      logger.info("before update solid block, num = {},{}",blockNum,getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
       if (blockNum <= getDynamicPropertiesStore().getLatestSolidifiedBlockNum()) {
         return;
       }
       getDynamicPropertiesStore().saveLatestSolidifiedBlockNum(blockNum);
       this.latestSolidifiedBlockNumber = blockNum;
-      logger.info("update solid block, num = {}", blockNum);
+      logger.info("after update solid block, num = {},{}", blockNum,getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
     }
   }
 
