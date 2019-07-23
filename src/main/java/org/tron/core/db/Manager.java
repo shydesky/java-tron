@@ -251,6 +251,7 @@ public class Manager {
   private final List<ByteString> currentWitness = new ArrayList<>();
   @Getter
   private long beforeMaintenanceTime;
+  private static Object sLock = new Object();
 
   public WitnessStore getWitnessStore() {
     return this.witnessStore;
@@ -1643,7 +1644,8 @@ public class Manager {
 
   public void updateLatestSolidifiedBlock(long blockNum) {
     synchronized (this) {
-      logger.info("before update solid block, num = {},{}",blockNum,getDynamicPropertiesStore().getLatestSolidifiedBlockNum());
+      logger.info("before update solid block, num = {},{},{}",
+          blockNum,getDynamicPropertiesStore().getLatestSolidifiedBlockNum(),this);
       if (blockNum <= getDynamicPropertiesStore().getLatestSolidifiedBlockNum()) {
         return;
       }
