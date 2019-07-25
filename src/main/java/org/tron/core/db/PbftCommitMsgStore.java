@@ -14,7 +14,7 @@ import org.tron.protos.Protocol.PbftMessage;
 
 @Slf4j(topic = "DB")
 @Component
-public class PbftCommitMsgStore extends TronStoreWithRevoking<PbftCommitMsgCapsule> {
+public class PbftCommitMsgStore extends TronDatabase<PbftCommitMsgCapsule> {
 
   private static final byte[] SR_LIST_KEY = "current_sr_list".getBytes();
 
@@ -25,13 +25,23 @@ public class PbftCommitMsgStore extends TronStoreWithRevoking<PbftCommitMsgCapsu
 
   @Override
   public PbftCommitMsgCapsule get(byte[] key) {
-    byte[] value = revokingDB.getUnchecked(key);
+    byte[] value = dbSource.getData(key);
     return ArrayUtils.isEmpty(value) ? null : new PbftCommitMsgCapsule(value);
   }
 
   @Override
+  public boolean has(byte[] key) {
+    return dbSource.getData(key) != null;
+  }
+
+  @Override
   public void put(byte[] key, PbftCommitMsgCapsule item) {
-    super.put(key, item);
+    dbSource.putData(key, item.getData());
+  }
+
+  @Override
+  public void delete(byte[] key) {
+    dbSource.deleteData(key);
   }
 
   public synchronized void put(PbftBaseMessage pbftBaseMessage) {

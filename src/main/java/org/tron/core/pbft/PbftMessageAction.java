@@ -27,7 +27,7 @@ public class PbftMessageAction {
         long blockNum = blockMessage.getBlockNum();
         if (blockNum - checkPoint >= count) {
           checkPoint = blockNum;
-          manager.updateLatestSolidifiedBlock(blockNum);
+//          manager.updateLatestSolidifiedBlock(blockNum);
           logger.info("commit msg block num is:{}", blockNum);
         }
       }
@@ -35,7 +35,7 @@ public class PbftMessageAction {
       case PBFT_SR_MSG: {
         PbftSrMessage srMessage = (PbftSrMessage) message;
         String srString = srMessage.getPbftMessage().getRawData().getData().toStringUtf8();
-        manager.getDynamicPropertiesStore().saveCurrentSrList(srString);
+        manager.getCommonDataBase().saveCurrentSrList(srString);
         logger.info("sr commit msg :{}, {}", srMessage.getBlockNum(),
             JSON.parseArray(srString, String.class));
       }
