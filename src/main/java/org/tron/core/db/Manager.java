@@ -1276,6 +1276,8 @@ public class Manager {
       ownerAddressSet.add(ByteArray.toHexString(TransactionCapsule.getOwner(contract)));
     }
 
+    trxCap.setTrxTrace(null);
+
     return transactionInfo.getInstance();
   }
 

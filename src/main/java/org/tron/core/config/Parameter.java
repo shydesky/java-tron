@@ -39,7 +39,7 @@ public class Parameter {
   public class NetConstants {
     public static final long GRPC_IDLE_TIME_OUT = 60000L;
     public static final long ADV_TIME_OUT = 20000L;
-    public static final long SYNC_TIME_OUT = 5000L;
+    public static final long SYNC_TIME_OUT = 20000L;
     public static final long HEAD_NUM_MAX_DELTA = 1000L;
     public static final long HEAD_NUM_CHECK_TIME = 60000L;
     public static final int MAX_INVENTORY_SIZE_IN_MINUTES = 2;
