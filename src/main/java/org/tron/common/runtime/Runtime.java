@@ -16,6 +16,8 @@ public interface Runtime {
 
   TrxType getTrxType();
 
+  void saveTrace();
+
   void finalization();
 
   ProgramResult getResult();

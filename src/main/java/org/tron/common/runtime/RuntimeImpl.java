@@ -737,6 +737,22 @@ public class RuntimeImpl implements Runtime {
 
   }
 
+  public void saveTrace() {
+    if (config.vmTrace() && program != null) {
+      String traceContent = program.getTrace()
+          .result(result.getHReturn())
+          .error(result.getException())
+          .toString();
+
+      if (config.vmTraceCompressed()) {
+        traceContent = VMUtils.zipAndEncode(traceContent);
+      }
+
+      String txHash = Hex.toHexString(rootInternalTransaction.getHash());
+      VMUtils.saveProgramTraceFile(config, txHash, traceContent);
+    }
+  }
+
   public void checkTokenValueAndId(long tokenValue, long tokenId) throws ContractValidateException {
     if (VMConfig.allowTvmTransferTrc10()) {
       if (VMConfig.allowMultiSign()) { //allowMultiSigns

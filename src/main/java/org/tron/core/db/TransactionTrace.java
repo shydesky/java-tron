@@ -249,6 +249,7 @@ public class TransactionTrace {
           "this tx id: {}, the resultCode in received block: {}, the resultCode in self: {}",
           Hex.toHexString(trx.getTransactionId().getBytes()), trx.getContractRet(),
           receipt.getResult());
+      runtime.saveTrace();
       throw new ReceiptCheckErrException("Different resultCode:" + Hex.toHexString(trx.getTransactionId().getBytes()));
     }
   }
