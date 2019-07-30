@@ -18,6 +18,7 @@
 package org.tron.common.runtime.vm.trace;
 
 import java.math.BigInteger;
+import lombok.Setter;
 import org.tron.common.runtime.vm.OpCode;
 
 public class Op {
@@ -27,6 +28,8 @@ public class Op {
   private int pc;
   private BigInteger energy;
   private OpActions actions;
+  @Setter
+  private long timecost;
 
   public OpCode getCode() {
     return code;

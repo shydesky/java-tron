@@ -1164,9 +1164,17 @@ public class Program {
     }
   }
 
+  private long lastTime = 0;
   public void saveOpTrace() {
     if (this.pc < ops.length) {
-      trace.addOp(ops[pc], pc, getCallDeep(), getEnergyLimitLeft(), traceListener.resetActions());
+//      trace.addOp(ops[pc], pc, getCallDeep(), getEnergyLimitLeft(), traceListener.resetActions());
+//      if (lastTime == 0) {
+//        lastTime = getVmStartInUs();
+//      }
+      long currTime = System.nanoTime() / 1000;
+
+      trace.addOp(ops[pc], pc, getCallDeep(), getEnergyLimitLeft(), traceListener.resetActions(), currTime - lastTime);
+      lastTime = currTime;
     }
   }
 

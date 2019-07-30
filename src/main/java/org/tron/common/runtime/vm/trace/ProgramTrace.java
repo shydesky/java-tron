@@ -103,9 +103,23 @@ public class ProgramTrace {
     return op;
   }
 
-  /**
-   * Used for merging sub calls execution.
-   */
+  public Op addOp(byte code, int pc, int deep, DataWord energy, OpActions actions, long timecost) {
+
+    Op op = new Op();
+    op.setActions(actions);
+    op.setCode(OpCode.code(code));
+    op.setDeep(deep);
+    op.setEnergy(energy.value());
+    op.setPc(pc);
+    op.setTimecost(timecost);
+    ops.add(op);
+
+    return op;
+  }
+
+    /**
+     * Used for merging sub calls execution.
+     */
   public void merge(ProgramTrace programTrace) {
     this.ops.addAll(programTrace.ops);
   }
