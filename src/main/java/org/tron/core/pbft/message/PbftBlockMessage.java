@@ -49,7 +49,7 @@ public class PbftBlockMessage extends PbftBaseMessage {
     builder.setRawData(raw).setSign(ByteString.copyFrom(signature.toByteArray()));
     PbftMessage message = builder.build();
     pbftBlockMessage.setType(MessageTypes.PBFT_BLOCK_MSG.asByte())
-        .setPbftMessage(message).setData(message.toByteArray());
+        .setPbftMessage(message).setData(message.toByteArray()).setSwitch(blockCapsule.isSwitch());
     return pbftBlockMessage;
   }
 

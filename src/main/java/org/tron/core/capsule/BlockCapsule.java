@@ -50,6 +50,17 @@ public class BlockCapsule implements ProtoCapsule<Block> {
   @Setter
   private TransactionRetCapsule result;
 
+  private boolean isSwitch;
+
+  public boolean isSwitch() {
+    return isSwitch;
+  }
+
+  public BlockCapsule setSwitch(boolean aSwitch) {
+    isSwitch = aSwitch;
+    return this;
+  }
+
   public static class BlockId extends Sha256Hash {
 
     @Override

@@ -31,7 +31,7 @@ import org.tron.core.pbft.message.PbftBaseMessage;
 @Component
 public class PbftMessageHandle {
 
-  public static final int TIME_OUT = 9100;
+  public static final int TIME_OUT = 60000;
   public final int agreeNodeCount = Args.getInstance().getAgreeNodeCount();
   //Pre-preparation stage voting information
   private Set<String> preVotes = Sets.newConcurrentHashSet();
@@ -73,6 +73,9 @@ public class PbftMessageHandle {
 
   public void onPrePrepare(PbftBaseMessage message) {
     String key = message.getNo();
+    if (message.isSwitch()) {//if is block chain switch,remove the before proposal
+      remove(key);
+    }
     if (preVotes.contains(key)) {
       //The description has been initiated, can not be repeated, can only initiate a vote at the same height
       return;

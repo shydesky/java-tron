@@ -25,6 +25,8 @@ public abstract class PbftBaseMessage extends Message {
 
   protected PbftMessage pbftMessage;
 
+  private boolean isSwitch;
+
   public PbftBaseMessage() {
   }
 
@@ -47,6 +49,15 @@ public abstract class PbftBaseMessage extends Message {
 
   public PbftBaseMessage setPbftMessage(PbftMessage pbftMessage) {
     this.pbftMessage = pbftMessage;
+    return this;
+  }
+
+  public boolean isSwitch() {
+    return isSwitch;
+  }
+
+  public PbftBaseMessage setSwitch(boolean aSwitch) {
+    isSwitch = aSwitch;
     return this;
   }
 

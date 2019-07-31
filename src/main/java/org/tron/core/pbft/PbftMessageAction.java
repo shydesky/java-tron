@@ -27,7 +27,7 @@ public class PbftMessageAction {
         long blockNum = blockMessage.getBlockNum();
         if (blockNum - checkPoint >= count) {
           checkPoint = blockNum;
-//          manager.updateLatestSolidifiedBlock(blockNum);
+          manager.getCommonDataBase().saveLatestPbftBlockNum(blockNum);
           logger.info("commit msg block num is:{}", blockNum);
         }
       }

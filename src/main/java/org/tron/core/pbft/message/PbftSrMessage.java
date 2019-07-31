@@ -57,7 +57,7 @@ public class PbftSrMessage extends PbftBaseMessage {
     builder.setRawData(raw).setSign(ByteString.copyFrom(signature.toByteArray()));
     PbftMessage message = builder.build();
     pbftSrMessage.setType(MessageTypes.PBFT_SR_MSG.asByte())
-        .setPbftMessage(message).setData(message.toByteArray());
+        .setPbftMessage(message).setData(message.toByteArray()).setSwitch(block.isSwitch());
     return pbftSrMessage;
   }
 }
