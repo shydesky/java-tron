@@ -62,6 +62,6 @@ public class CommonDataBase extends TronDatabase<byte[]> {
   public long getLatestPbftBlockNum() {
     return Optional.ofNullable(get(LATEST_PBFT_BLOCK_NUM))
         .map(ByteArray::toLong)
-        .orElseThrow(() -> new IllegalArgumentException("not found latest PBFT_BLOCK_NUM"));
+        .orElse(0L);
   }
 }
