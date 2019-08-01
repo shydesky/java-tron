@@ -1,10 +1,7 @@
 package org.tron.core.db;
 
-import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
@@ -110,6 +107,9 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
   private static final byte[] MULTI_SIGN_FEE = "MULTI_SIGN_FEE"
       .getBytes();
 
+  private static final byte[] SHIELDED_TRANSACTION_FEE = "SHIELDED_TRANSACTION_FEE".getBytes();
+  //This value should be not negative
+  private static final byte[] TOTAL_SHIELDED_POOL_VALUE = "TOTAL_SHIELDED_POOL_VALUE".getBytes();
 
   private static final byte[] EXCHANGE_CREATE_FEE = "EXCHANGE_CREATE_FEE".getBytes();
 
@@ -145,6 +145,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
   private static final byte[] ALLOW_UPDATE_ACCOUNT_NAME = "ALLOW_UPDATE_ACCOUNT_NAME".getBytes();
 
   //This value is only allowed to be 0, 1, -1
+  //Note: there is a space in this key name. This space must not be deleted.
   private static final byte[] ALLOW_SAME_TOKEN_NAME = " ALLOW_SAME_TOKEN_NAME".getBytes();
 
   //If the parameter is larger than 0, the contract is allowed to be created.
@@ -165,7 +166,12 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
   //This value is only allowed to be 0, 1, -1
   private static final byte[] ALLOW_TVM_TRANSFER_TRC10 = "ALLOW_TVM_TRANSFER_TRC10".getBytes();
+
+  //If the parameter is larger than 0, allow ZKsnark Transaction
+  private static final byte[] ALLOW_SHIELDED_TRANSACTION = "ALLOW_SHIELDED_TRANSACTION".getBytes();
   private static final byte[] ALLOW_TVM_CONSTANTINOPLE = "ALLOW_TVM_CONSTANTINOPLE".getBytes();
+
+  private static final byte[] ALLOW_TVM_SOLIDITY_059 = "ALLOW_TVM_SOLIDITY_059".getBytes();
 
   //Used only for protobuf data filter , once，value is 0,1
   private static final byte[] ALLOW_PROTO_FILTER_NUM = "ALLOW_PROTO_FILTER_NUM"
@@ -175,8 +181,6 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
   private static final byte[] ACTIVE_DEFAULT_OPERATIONS = "ACTIVE_DEFAULT_OPERATIONS".getBytes();
   //Used only for account state root, once，value is {0,1} allow is 1
   private static final byte[] ALLOW_ACCOUNT_STATE_ROOT = "ALLOW_ACCOUNT_STATE_ROOT".getBytes();
-
-  private static final byte[] CURRENT_SR_LIST = "CURRENT_SR_LIST".getBytes();
 
   @Autowired
   private DynamicPropertiesStore(@Value("properties") String dbName) {
@@ -393,6 +397,18 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     }
 
     try {
+      this.getShieldedTransactionFee();
+    } catch (IllegalArgumentException e) {
+      this.saveShieldedTransactionFee(10_000_000L); // 10
+    }
+
+    try {
+      this.getTotalShieldedPoolValue();
+    } catch (IllegalArgumentException e) {
+      this.saveTotalShieldedPoolValue(0L); // 0
+    }
+
+    try {
       this.getCreateNewAccountFeeInSystemContract();
     } catch (IllegalArgumentException e) {
       this.saveCreateNewAccountFeeInSystemContract(0L); //changed by committee later
@@ -505,6 +521,13 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     } catch (IllegalArgumentException e) {
       this.saveAllowTvmConstantinople(Args.getInstance().getAllowTvmConstantinople());
     }
+
+    try {
+      this.getAllowTvmSolidity059();
+    } catch (IllegalArgumentException e) {
+      this.saveAllowTvmSolidity059(Args.getInstance().getAllowTvmSolidity059());
+    }
+
     try {
       this.getAvailableContractType();
     } catch (IllegalArgumentException e) {
@@ -537,6 +560,12 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
       this.getAllowCreationOfContracts();
     } catch (IllegalArgumentException e) {
       this.saveAllowCreationOfContracts(Args.getInstance().getAllowCreationOfContracts());
+    }
+
+    try {
+      this.getAllowShieldedTransaction();
+    } catch (IllegalArgumentException e) {
+      this.saveAllowShieldedTransaction(Args.getInstance().getAllowShieldedTransaction());
     }
 
     try {
@@ -1022,6 +1051,32 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
         new BytesCapsule(ByteArray.fromLong(fee)));
   }
 
+  public long getShieldedTransactionFee() {
+    return Optional.ofNullable(getUnchecked(SHIELDED_TRANSACTION_FEE))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException("not found SHIELD_TRANSACTION_FEE"));
+  }
+
+  public void saveShieldedTransactionFee(long fee) {
+    this.put(SHIELDED_TRANSACTION_FEE,
+        new BytesCapsule(ByteArray.fromLong(fee)));
+  }
+
+  public long getTotalShieldedPoolValue() {
+    return Optional.ofNullable(getUnchecked(TOTAL_SHIELDED_POOL_VALUE))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException("not found TOTAL_SHIELDED_POOL_Value"));
+  }
+
+  public void saveTotalShieldedPoolValue(long value) {
+    this.put(TOTAL_SHIELDED_POOL_VALUE,
+        new BytesCapsule(ByteArray.fromLong(value)));
+  }
+
   public long getCreateAccountFee() {
     return Optional.ofNullable(getUnchecked(CREATE_ACCOUNT_FEE))
         .map(BytesCapsule::getData)
@@ -1029,7 +1084,6 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
         .orElseThrow(
             () -> new IllegalArgumentException("not found CREATE_ACCOUNT_FEE"));
   }
-
 
   public void saveCreateNewAccountFeeInSystemContract(long fee) {
     this.put(CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT,
@@ -1111,7 +1165,6 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
         .orElseThrow(
             () -> new IllegalArgumentException("not found MULTI_SIGN_FEE"));
   }
-
 
   public void saveExchangeCreateFee(long fee) {
     this.put(EXCHANGE_CREATE_FEE,
@@ -1295,6 +1348,20 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
             () -> new IllegalArgumentException("not found ALLOW_TVM_CONSTANTINOPLE"));
   }
 
+
+  public void saveAllowTvmSolidity059(long value) {
+    this.put(ALLOW_TVM_SOLIDITY_059,
+        new BytesCapsule(ByteArray.fromLong(value)));
+  }
+
+  public long getAllowTvmSolidity059() {
+    return Optional.ofNullable(getUnchecked(ALLOW_TVM_SOLIDITY_059))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(() -> new IllegalArgumentException("not found ALLOW_TVM_SOLIDITY_059"));
+  }
+
+
   public void saveAvailableContractType(byte[] value) {
     this.put(AVAILABLE_CONTRACT_TYPE,
         new BytesCapsule(value));
@@ -1410,6 +1477,23 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
 
   public boolean supportVM() {
     return getAllowCreationOfContracts() == 1L;
+  }
+
+  public void saveAllowShieldedTransaction(long allowShieldedTransaction) {
+    this.put(DynamicPropertiesStore.ALLOW_SHIELDED_TRANSACTION,
+        new BytesCapsule(ByteArray.fromLong(allowShieldedTransaction)));
+  }
+
+  public long getAllowShieldedTransaction() {
+    return Optional.ofNullable(getUnchecked(ALLOW_SHIELDED_TRANSACTION))
+        .map(BytesCapsule::getData)
+        .map(ByteArray::toLong)
+        .orElseThrow(
+            () -> new IllegalArgumentException("not found ALLOW_ZKSNARK_TRANSACTION"));
+  }
+
+  public boolean supportShieldedTransaction() {
+    return getAllowShieldedTransaction() == 1L;
   }
 
   public void saveBlockFilledSlots(int[] blockFilledSlots) {
@@ -1668,15 +1752,4 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     return getAllowAccountStateRoot() == 1;
   }
 
-  public List<String> getCurrentSrList() {
-    return Optional.ofNullable(getUnchecked(CURRENT_SR_LIST))
-        .map(BytesCapsule::getData)
-        .map(ByteArray::toStr)
-        .map(str -> JSON.parseArray(str, String.class))
-        .orElse(Lists.newArrayList());
-  }
-
-  public void saveCurrentSrList(String currentSrList) {
-    this.put(CURRENT_SR_LIST, new BytesCapsule(ByteArray.fromString(currentSrList)));
-  }
 }

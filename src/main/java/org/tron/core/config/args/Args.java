@@ -360,6 +360,10 @@ public class Args {
 
   @Getter
   @Setter
+  private long allowTvmSolidity059; //committee parameter
+
+  @Getter
+  @Setter
   private int tcpNettyWorkThreadNum;
 
   @Getter
@@ -433,6 +437,15 @@ public class Args {
 
   @Getter
   @Setter
+  private long allowShieldedTransaction; //committee parameter
+
+  // full node used this parameter to close shielded transaction
+  @Getter
+  @Setter
+  private boolean fullNodeAllowShieldedTransaction;
+
+  @Getter
+  @Setter
   private long blockNumForEneryLimit;
 
   @Getter
@@ -459,6 +472,11 @@ public class Args {
   @Parameter(names = {"-v", "--version"}, description = "output code version", help = true)
   private boolean version;
 
+
+  @Getter
+  @Setter
+  private String zenTokenId;
+
   @Getter
   @Setter
   private long allowProtoFilterNum;
@@ -478,6 +496,14 @@ public class Args {
   @Getter
   @Setter
   private int checkMsgCount;
+
+  @Getter
+  @Setter
+  private int shieldedTransInPendingMaxCounts;
+
+  @Getter
+  @Setter
+  private RateLimiterInitialization rateLimiterInitialization;
 
   public static void clearParam() {
     INSTANCE.outputDirectory = "output-directory";
@@ -533,6 +559,7 @@ public class Args {
     INSTANCE.allowTvmConstantinople = 0;
     INSTANCE.allowDelegateResource = 0;
     INSTANCE.allowSameTokenName = 0;
+    INSTANCE.allowTvmSolidity059 = 0;
     INSTANCE.tcpNettyWorkThreadNum = 0;
     INSTANCE.udpNettyWorkThreadNum = 0;
     INSTANCE.p2pNodeId = "";
@@ -550,14 +577,18 @@ public class Args {
     INSTANCE.minTimeRatio = 0.0;
     INSTANCE.maxTimeRatio = 5.0;
     INSTANCE.longRunningTime = 10;
+    INSTANCE.allowShieldedTransaction = 0;
     INSTANCE.maxHttpConnectNumber = 50;
     INSTANCE.allowMultiSign = 0;
     INSTANCE.trxExpirationTimeInMilliseconds = 0;
+    INSTANCE.fullNodeAllowShieldedTransaction = true;
+    INSTANCE.zenTokenId = "000000";
     INSTANCE.allowProtoFilterNum = 0;
     INSTANCE.allowAccountStateRoot = 0;
     INSTANCE.validContractProtoThreadNum = 1;
     INSTANCE.agreeNodeCount = MAX_ACTIVE_WITNESS_NUM * 2 / 3 + 1;
     INSTANCE.checkMsgCount = 1;
+    INSTANCE.shieldedTransInPendingMaxCounts = 10;
   }
 
   /**
@@ -650,6 +681,17 @@ public class Args {
         }
       }
       INSTANCE.localWitnesses.setPrivateKeys(privateKeys);
+
+      if (config.hasPath("localWitnessAccountAddress")) {
+        byte[] bytes = Wallet.decodeFromBase58Check(config.getString("localWitnessAccountAddress"));
+        if (bytes != null) {
+          INSTANCE.localWitnesses.setWitnessAccountAddress(bytes);
+          logger.debug("Got localWitnessAccountAddress from config.conf");
+        } else {
+          logger.warn("The localWitnessAccountAddress format is incorrect, ignored");
+        }
+      }
+      INSTANCE.localWitnesses.initWitnessAccountAddress();
       logger.debug("Got privateKey from keystore");
     }
 
@@ -751,12 +793,6 @@ public class Args {
     INSTANCE.nodeConnectionTimeout =
         config.hasPath("node.connection.timeout") ? config.getInt("node.connection.timeout") * 1000
             : 0;
-
-    INSTANCE.activeNodes = getNodes(config, "node.active");
-
-    INSTANCE.passiveNodes = getNodes(config, "node.passive");
-
-    INSTANCE.fastForwardNodes = getNodes(config, "node.fastForward");
 
     INSTANCE.nodeChannelReadTimeout =
         config.hasPath("node.channel.read.timeout") ? config.getInt("node.channel.read.timeout")
@@ -885,6 +921,10 @@ public class Args {
         config.hasPath("committee.allowTvmConstantinople") ? config
             .getInt("committee.allowTvmConstantinople") : 0;
 
+    INSTANCE.allowTvmSolidity059 =
+            config.hasPath("committee.allowTvmSolidity059") ? config
+                    .getInt("committee.allowTvmSolidity059") : 0;
+
     INSTANCE.tcpNettyWorkThreadNum = config.hasPath("node.tcpNettyWorkThreadNum") ? config
         .getInt("node.tcpNettyWorkThreadNum") : 0;
 
@@ -942,12 +982,23 @@ public class Args {
     INSTANCE.saveInternalTx =
         config.hasPath("vm.saveInternalTx") && config.getBoolean("vm.saveInternalTx");
 
+    INSTANCE.allowShieldedTransaction =
+        config.hasPath("committee.allowShieldedTransaction") ? config
+            .getInt("committee.allowShieldedTransaction") : 0;
+
     INSTANCE.eventPluginConfig =
         config.hasPath("event.subscribe") ?
             getEventPluginConfig(config) : null;
 
     INSTANCE.eventFilter =
         config.hasPath("event.subscribe.filter") ? getEventFilter(config) : null;
+
+    INSTANCE.fullNodeAllowShieldedTransaction =
+            !config.hasPath("node.fullNodeAllowShieldedTransaction")
+             || config.getBoolean("node.fullNodeAllowShieldedTransaction");
+
+    INSTANCE.zenTokenId = config.hasPath("node.zenTokenId") ?
+        config.getString("node.zenTokenId") : "000000";
 
     INSTANCE.allowProtoFilterNum =
         config.hasPath("committee.allowProtoFilterNum") ? config
@@ -972,6 +1023,23 @@ public class Args {
     INSTANCE.checkMsgCount = config.hasPath("node.checkMsgCount") ? config
         .getInt("node.checkMsgCount") : 1;
 
+    INSTANCE.activeNodes = getNodes(config, "node.active");
+
+    INSTANCE.passiveNodes = getNodes(config, "node.passive");
+
+    INSTANCE.fastForwardNodes = getNodes(config, "node.fastForward");
+    INSTANCE.shieldedTransInPendingMaxCounts =
+        config.hasPath("node.shieldedTransInPendingMaxCounts") ? config
+            .getInt("node.shieldedTransInPendingMaxCounts") : 10;
+
+    if (INSTANCE.isWitness()) {
+      INSTANCE.fullNodeAllowShieldedTransaction = true;
+    }
+
+    INSTANCE.rateLimiterInitialization =
+        config.hasPath("rate.limiter") ? getRateLimiterFromConfig(config)
+            : new RateLimiterInitialization();
+
     initBackupProperty(config);
     if ("ROCKSDB".equals(Args.getInstance().getStorage().getDbEngine().toUpperCase())) {
       initRocksDbBackupProperty(config);
@@ -979,6 +1047,7 @@ public class Args {
     }
 
     logConfig();
+
   }
 
   private static List<Witness> getWitnessesFromConfig(final com.typesafe.config.Config config) {
@@ -1009,6 +1078,25 @@ public class Args {
     account.setAddress(Wallet.decodeFromBase58Check(asset.get("address").unwrapped().toString()));
     account.setBalance(asset.get("balance").unwrapped().toString());
     return account;
+  }
+
+  private static RateLimiterInitialization getRateLimiterFromConfig(
+      final com.typesafe.config.Config config) {
+
+    RateLimiterInitialization initialization = new RateLimiterInitialization();
+    ArrayList<RateLimiterInitialization.HttpRateLimiterItem> list1 = config
+        .getObjectList("rate.limiter.http").stream()
+        .map(RateLimiterInitialization::createHttpItem)
+        .collect(Collectors.toCollection(ArrayList::new));
+    initialization.setHttpMap(list1);
+
+    ArrayList<RateLimiterInitialization.RpcRateLimiterItem> list2 = config
+        .getObjectList("rate.limiter.rpc").stream()
+        .map(RateLimiterInitialization::createRpcItem)
+        .collect(Collectors.toCollection(ArrayList::new));
+
+    initialization.setRpcMap(list2);
+    return initialization;
   }
 
   public static Args getInstance() {
@@ -1047,7 +1135,12 @@ public class Args {
     List<String> list = config.getStringList(path);
     for (String configString : list) {
       Node n = Node.instanceOf(configString);
-      ret.add(n);
+      if (!(INSTANCE.nodeDiscoveryBindIp.equals(n.getHost()) ||
+          INSTANCE.nodeExternalIp.equals(n.getHost()) ||
+          "127.0.0.1".equals(n.getHost())) ||
+          INSTANCE.nodeListenPort != n.getPort()) {
+        ret.add(n);
+      }
     }
     return ret;
   }
@@ -1342,6 +1435,7 @@ public class Args {
     logger.info("Discover enable: {}", args.isNodeDiscoveryEnable());
     logger.info("Active node size: {}", args.getActiveNodes().size());
     logger.info("Passive node size: {}", args.getPassiveNodes().size());
+    logger.info("FastForward node size: {}", args.getFastForwardNodes().size());
     logger.info("Seed node size: {}", args.getSeedNode().getIpList().size());
     logger.info("Max connection: {}", args.getNodeMaxActiveNodes());
     logger.info("Max connection with same IP: {}", args.getNodeMaxActiveNodesWithSameIp());
