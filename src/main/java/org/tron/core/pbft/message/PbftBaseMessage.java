@@ -131,9 +131,13 @@ public abstract class PbftBaseMessage extends Message {
     return "PbftMsgType:" + pbftMessage.getRawData().getPbftMsgType()
         + ", node address:" + Hex.toHexString(pbftMessage.getRawData().getPublicKey().toByteArray())
         + ", block num:" + pbftMessage.getRawData().getBlockNum()
-        + ", data:" + (getType() == MessageTypes.PBFT_SR_MSG ? decode()
-        : Hex.toHexString(pbftMessage.getRawData().getData().toByteArray()))
+        + ", data:" + getDataString()
         + ", " + super.toString();
+  }
+
+  public String getDataString() {
+    return getType() == MessageTypes.PBFT_SR_MSG ? decode()
+        : Hex.toHexString(pbftMessage.getRawData().getData().toByteArray());
   }
 
   private String decode() {

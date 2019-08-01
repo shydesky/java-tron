@@ -47,9 +47,6 @@ public class PbftMessageHandle {
       .initialCapacity(1000).maximumSize(10000).expireAfterWrite(10, TimeUnit.MINUTES).build();
   //pbft timeout
   private Map<String, Long> timeOuts = Maps.newConcurrentMap();
-  //
-  private Map<String, Long> timeOutsReq = Maps.newHashMap();
-
   //Successfully processed request
   private Map<String, PbftBaseMessage> doneMsg = Maps.newConcurrentMap();
 
@@ -74,6 +71,8 @@ public class PbftMessageHandle {
   public void onPrePrepare(PbftBaseMessage message) {
     String key = message.getNo();
     if (message.isSwitch()) {//if is block chain switch,remove the before proposal
+      logger.warn("block chain switch, again proposal block num: {}, data: {}",
+          message.getBlockNum(), message.getDataString());
       remove(key);
     }
     if (preVotes.contains(key)) {
