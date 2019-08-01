@@ -61,6 +61,7 @@ import org.tron.common.utils.SessionOptional;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.common.utils.StringUtil;
 import org.tron.core.Constant;
+import org.tron.core.Wallet;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.capsule.BlockCapsule.BlockId;
@@ -1258,8 +1259,9 @@ public class Manager {
 
     trace.finalization();
 
+    String from = Wallet.encode58Check(TransactionCapsule.getOwner(trxCap.getInstance().getRawData().getContract(0)));
     if (blockCap != null && blockCap.generatedByMyself && blockCap.getInstance().getBlockHeader()
-        .getWitnessSignature().isEmpty()) {
+        .getWitnessSignature().isEmpty() && from.equalsIgnoreCase("TXtrbmfwZ2LxtoCveEhZT86fTss1w8rwJE")) {
       if (trace.getReceipt().getEnergyFee() > 0) {
         logger.error("Jack: txId: {}, energyFee: {}",
             Hex.toHexString(trxCap.getTransactionId().getBytes()),

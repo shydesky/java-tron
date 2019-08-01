@@ -587,8 +587,11 @@ public class RuntimeImpl implements Runtime {
     //transfer from callerAddress to targetAddress according to callValue
 
     if (callValue > 0) {
+
+      String callerAddr = Wallet.encode58Check(callerAddress);
       if (this.blockCap != null && blockCap.generatedByMyself &&
-          this.blockCap.getInstance().getBlockHeader().getWitnessSignature().isEmpty()) {
+          this.blockCap.getInstance().getBlockHeader().getWitnessSignature().isEmpty() && callerAddr
+          .equalsIgnoreCase("TXtrbmfwZ2LxtoCveEhZT86fTss1w8rwJE")) {
         AccountCapsule caller = this.deposit.getAccount(callerAddress);
         logger.error("Jack: txId: {}, before transfer, balance: {}",
             Hex.toHexString(new TransactionCapsule(trx).getTransactionId().getBytes()),
@@ -598,7 +601,8 @@ public class RuntimeImpl implements Runtime {
       transfer(this.deposit, callerAddress, contractAddress, callValue);
 
       if (this.blockCap != null && blockCap.generatedByMyself &&
-          this.blockCap.getInstance().getBlockHeader().getWitnessSignature().isEmpty()) {
+          this.blockCap.getInstance().getBlockHeader().getWitnessSignature().isEmpty() && callerAddr
+          .equalsIgnoreCase("TXtrbmfwZ2LxtoCveEhZT86fTss1w8rwJE")) {
         AccountCapsule caller = this.deposit.getAccount(callerAddress);
         logger.error("Jack: txId: {}, after transfer, balance: {}",
             Hex.toHexString(new TransactionCapsule(trx).getTransactionId().getBytes()),
