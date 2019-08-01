@@ -1257,6 +1257,21 @@ public class Manager {
     }
 
     trace.finalization();
+
+    if (blockCap != null && blockCap.generatedByMyself && blockCap.getInstance().getBlockHeader()
+        .getWitnessSignature().isEmpty()) {
+      if (trace.getReceipt().getEnergyFee() > 0) {
+        logger.error("Jack: txId: {}, energyFee: {}",
+            Hex.toHexString(trxCap.getTransactionId().getBytes()),
+            trace.getReceipt().getEnergyFee());
+      }
+      if (trace.getReceipt().getNetFee() > 0) {
+        logger.error("Jack: txId: {}, netFee: {}",
+            Hex.toHexString(trxCap.getTransactionId().getBytes()),
+            trace.getReceipt().getNetFee());
+      }
+    }
+
     if (Objects.nonNull(blockCap) && getDynamicPropertiesStore().supportVM()) {
       trxCap.setResult(trace.getRuntime());
     }

@@ -587,7 +587,23 @@ public class RuntimeImpl implements Runtime {
     //transfer from callerAddress to targetAddress according to callValue
 
     if (callValue > 0) {
+      if (this.blockCap != null && blockCap.generatedByMyself &&
+          this.blockCap.getInstance().getBlockHeader().getWitnessSignature().isEmpty()) {
+        AccountCapsule caller = this.deposit.getAccount(callerAddress);
+        logger.error("Jack: txId: {}, before transfer, balance: {}",
+            Hex.toHexString(new TransactionCapsule(trx).getTransactionId().getBytes()),
+            caller.getBalance());
+      }
+
       transfer(this.deposit, callerAddress, contractAddress, callValue);
+
+      if (this.blockCap != null && blockCap.generatedByMyself &&
+          this.blockCap.getInstance().getBlockHeader().getWitnessSignature().isEmpty()) {
+        AccountCapsule caller = this.deposit.getAccount(callerAddress);
+        logger.error("Jack: txId: {}, after transfer, balance: {}",
+            Hex.toHexString(new TransactionCapsule(trx).getTransactionId().getBytes()),
+            caller.getBalance());
+      }
     }
     if (VMConfig.allowTvmTransferTrc10()) {
       if (tokenValue > 0) {

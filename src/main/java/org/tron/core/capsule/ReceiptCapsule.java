@@ -3,6 +3,7 @@ package org.tron.core.capsule;
 import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.tron.common.runtime.config.VMConfig;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.common.utils.StringUtil;
@@ -13,6 +14,7 @@ import org.tron.core.exception.BalanceInsufficientException;
 import org.tron.protos.Protocol.ResourceReceipt;
 import org.tron.protos.Protocol.Transaction.Result.contractResult;
 
+@Slf4j(topic = "TransactionTrace")
 public class ReceiptCapsule {
 
   private ResourceReceipt receipt;
