@@ -112,6 +112,9 @@ public class PublicMethed {
   //private WalletSolidityGrpc.WalletSolidityBlockingStub blockingStubSolidity = null;
   public static Map<Long, ShieldNoteInfo>  utxoMapNote = new ConcurrentHashMap();
   public static List<ShieldNoteInfo> spendUtxoList = new ArrayList<>();
+  public static final String mainGateWay = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.gateway_address");
+
 
   /**
    * constructor.
@@ -485,7 +488,10 @@ public class PublicMethed {
     transaction = TransactionUtils.setTimestamp(transaction);
     logger.info("Txid in sign is " + ByteArray.toHexString(Sha256Hash.hash(transaction
         .getRawData().toByteArray())));
-    return TransactionUtils.sign(transaction, ecKey);
+    boolean isSideChain = false;
+    return TransactionUtils
+        .sign(transaction, ecKey, Wallet.decodeFromBase58Check(mainGateWay), isSideChain);
+    //return TransactionUtils.sign(transaction, ecKey);
   }
 
   /**
@@ -3736,7 +3742,7 @@ public class PublicMethed {
       return false;
     }
     transaction = TransactionUtils.setTimestamp(transaction);
-    transaction = TransactionUtils.sign(transaction, ecKey);
+    transaction = signTransaction(ecKey, transaction);
     GrpcAPI.Return response = broadcastTransaction(transaction, blockingStubFull);
     return response.getResult();
   }

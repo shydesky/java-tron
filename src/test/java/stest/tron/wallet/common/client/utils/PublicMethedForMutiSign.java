@@ -41,7 +41,6 @@ import org.tron.common.crypto.Hash;
 import org.tron.common.utils.Base58;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
-import org.tron.common.utils.Utils;
 import org.tron.core.Wallet;
 import org.tron.core.exception.CancelException;
 import org.tron.core.zen.address.ExpandedSpendingKey;
@@ -64,6 +63,7 @@ import org.tron.protos.Protocol.Transaction;
 import org.tron.protos.Protocol.Transaction.Contract.ContractType;
 import org.tron.protos.Protocol.Transaction.Result;
 import org.tron.protos.Protocol.Transaction.raw;
+import stest.tron.wallet.common.client.Configuration;
 import stest.tron.wallet.common.client.Parameter.CommonConstant;
 import stest.tron.wallet.common.client.WalletClient;
 
@@ -72,6 +72,8 @@ public class PublicMethedForMutiSign {
 
   Wallet wallet = new Wallet();
   private static final Logger logger = LoggerFactory.getLogger("TestLogger");
+  public static final String mainGateWay = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.gateway_address");
 
   /**
    * constructor.
@@ -376,14 +378,20 @@ public class PublicMethedForMutiSign {
    * constructor.
    */
 
-  public static Transaction signTransaction(ECKey ecKey,
-      Transaction transaction) {
+  public static Protocol.Transaction signTransaction(ECKey ecKey,
+      Protocol.Transaction transaction) {
     Wallet.setAddressPreFixByte(CommonConstant.ADD_PRE_FIX_BYTE_MAINNET);
     if (ecKey == null || ecKey.getPrivKey() == null) {
+      //logger.warn("Warning: Can't sign,there is no private key !!");
       return null;
     }
     transaction = TransactionUtils.setTimestamp(transaction);
-    return TransactionUtils.sign(transaction, ecKey);
+    logger.info("Txid in sign is " + ByteArray.toHexString(Sha256Hash.hash(transaction
+        .getRawData().toByteArray())));
+    boolean isSideChain = false;
+    return TransactionUtils
+        .sign(transaction, ecKey, Wallet.decodeFromBase58Check(mainGateWay), isSideChain);
+    //return TransactionUtils.sign(transaction, ecKey);
   }
 
   /**
@@ -413,8 +421,11 @@ public class PublicMethedForMutiSign {
         ex.printStackTrace();
       }
       ECKey ecKey = temKey;
+      boolean isSideChain = false;
+      transaction = TransactionUtils
+          .sign(transaction, ecKey, Wallet.decodeFromBase58Check(mainGateWay), isSideChain);
 
-      transaction = TransactionUtils.sign(transaction, ecKey);
+      //transaction = signTransaction(ecKey, transaction);
       TransactionSignWeight weight = blockingStubFull.getTransactionSignWeight(transaction);
       if (weight.getResult().getCode()
           == TransactionSignWeight.Result.response_code.ENOUGH_PERMISSION) {
