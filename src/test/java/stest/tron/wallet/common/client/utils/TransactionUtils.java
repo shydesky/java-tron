@@ -21,13 +21,14 @@ import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.tron.api.GrpcAPI;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.crypto.ECKey.ECDSASignature;
 import org.tron.common.utils.Sha256Hash;
-//import org.tron.protos.Protocol.DeferredStage;
+import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Transaction;
 import org.tron.protos.Protocol.Transaction.Contract;
+
+//import org.tron.protos.Protocol.DeferredStage;
 
 
 public class TransactionUtils {
@@ -159,6 +160,35 @@ public class TransactionUtils {
   /**
    * constructor.
    */
+  public static Transaction sign(Transaction transaction, ECKey myKey, byte[] chainId,
+      boolean isMainChain) {
+    Transaction.Builder transactionBuilderSigned = transaction.toBuilder();
+    byte[] hash = Sha256Hash.hash(transaction.getRawData().toByteArray());
+
+    byte[] newHash;
+    if (isMainChain) {
+      newHash = hash;
+    } else {
+      byte[] hashWithChainId = Arrays.copyOf(hash, hash.length + chainId.length);
+      System.arraycopy(chainId, 0, hashWithChainId, hash.length, chainId.length);
+      newHash = Sha256Hash.hash(hashWithChainId);
+    }
+
+    ECDSASignature signature = myKey.sign(newHash);
+    ByteString bsSign = ByteString.copyFrom(signature.toByteArray());
+    transactionBuilderSigned.addSignature(bsSign);
+    transaction = transactionBuilderSigned.build();
+    return transaction;
+  }
+
+
+  /*
+   */
+
+  /**
+   * constructor.
+   */
+
 
   public static Transaction sign(Transaction transaction, ECKey myKey) {
     ByteString lockSript = ByteString.copyFrom(myKey.getAddress());
@@ -174,7 +204,10 @@ public class TransactionUtils {
     }
 
     transaction = transactionBuilderSigned.build();
-    return transaction;
+    String mainGateWay = "TYYrjz9W9ii98zMEF7KoL24KhGRXqWpjEJ";
+    boolean isSideChain = false;
+    return TransactionUtils
+        .sign(transaction, myKey, Wallet.decodeFromBase58Check(mainGateWay), isSideChain);
   }
 
   /**
