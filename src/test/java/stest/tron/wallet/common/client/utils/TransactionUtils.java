@@ -27,6 +27,7 @@ import org.tron.common.utils.Sha256Hash;
 import org.tron.core.Wallet;
 import org.tron.protos.Protocol.Transaction;
 import org.tron.protos.Protocol.Transaction.Contract;
+import stest.tron.wallet.common.client.Configuration;
 
 //import org.tron.protos.Protocol.DeferredStage;
 
@@ -38,6 +39,8 @@ public class TransactionUtils {
   public static final int NORMALTRANSACTION = 0;
   public static final int UNEXECUTEDDEFERREDTRANSACTION = 1;
   public static final int EXECUTINGDEFERREDTRANSACTION = 2;
+  public static final String mainGateWay = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.gateway_address");
 
   /**
    * constructor.
@@ -204,7 +207,6 @@ public class TransactionUtils {
     }
 
     transaction = transactionBuilderSigned.build();
-    String mainGateWay = "TYYrjz9W9ii98zMEF7KoL24KhGRXqWpjEJ";
     boolean isSideChain = false;
     return TransactionUtils
         .sign(transaction, myKey, Wallet.decodeFromBase58Check(mainGateWay), isSideChain);

@@ -69,7 +69,7 @@ public class MultiSign19 {
       .getString("defaultParameter.assetUrl");
 
   public static final String DEFAULT_OPERATION =
-      "7fff1fc0033e0000000000000000000000000000000000000000000000000000";
+      "3f3d1ec0032001000000000000000000000000000000000000000000000000c0";
 
 
   @BeforeSuite
