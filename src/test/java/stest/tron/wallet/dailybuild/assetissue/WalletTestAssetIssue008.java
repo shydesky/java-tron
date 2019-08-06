@@ -71,7 +71,7 @@ public class WalletTestAssetIssue008 {
    * constructor.
    */
 
-  @BeforeClass(enabled = true)
+  @BeforeClass(enabled = false)
   public void beforeClass() {
     logger.info(ByteArray.toHexString(ecKey.getPrivKeyBytes()));
     channelFull = ManagedChannelBuilder.forTarget(fullnode)
@@ -86,7 +86,7 @@ public class WalletTestAssetIssue008 {
   }
 
 
-  @Test(enabled = true, description = "Get asset issue list from Solidity")
+  @Test(enabled = false, description = "Get asset issue list from Solidity")
   public void testGetAllAssetIssueFromSolidity() {
     Assert.assertTrue(PublicMethed.sendcoin(queryAssetIssueFromSoliAddress, 2048000000, fromAddress,
         testKey002, blockingStubFull));

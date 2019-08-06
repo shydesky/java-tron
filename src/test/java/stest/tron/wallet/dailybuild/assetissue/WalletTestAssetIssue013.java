@@ -16,7 +16,6 @@ import org.tron.common.crypto.ECKey;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Utils;
 import org.tron.core.Wallet;
-import org.tron.protos.Protocol.Account;
 import stest.tron.wallet.common.client.Configuration;
 import stest.tron.wallet.common.client.Parameter.CommonConstant;
 import stest.tron.wallet.common.client.utils.PublicMethed;
@@ -30,7 +29,12 @@ public class WalletTestAssetIssue013 {
       .getString("foundationAccount.key2");
   private final byte[] fromAddress = PublicMethed.getFinalAddress(testKey002);
   private final byte[] toAddress = PublicMethed.getFinalAddress(testKey003);
-
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
+  private static ByteString assetAccountId = null;
 
   private static final long now = System.currentTimeMillis();
   private static String name = "AssetIssue013_" + Long.toString(now);
@@ -76,20 +80,6 @@ public class WalletTestAssetIssue013 {
         .usePlaintext(true)
         .build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
-  }
-
-  @Test(enabled = true, description = "Use transfer net when token owner has no enough net")
-  public void testWhenNoEnoughFreeAssetNetLimitUseTransferNet() {
-
-    //get account
-    ECKey ecKey1 = new ECKey(Utils.getRandom());
-    byte[] asset013Address = ecKey1.getAddress();
-    final String testKeyForAssetIssue013 = ByteArray.toHexString(ecKey1.getPrivKeyBytes());
-
-    ECKey ecKey2 = new ECKey(Utils.getRandom());
-    final byte[] transferAssetAddress = ecKey2.getAddress();
-    final String transferAssetCreateKey = ByteArray.toHexString(ecKey2.getPrivKeyBytes());
-
     logger.info(testKeyForAssetIssue013);
     logger.info(transferAssetCreateKey);
 
@@ -99,18 +89,16 @@ public class WalletTestAssetIssue013 {
     Assert.assertTrue(PublicMethed
         .freezeBalance(asset013Address, 100000000L, 3, testKeyForAssetIssue013,
             blockingStubFull));
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    org.junit.Assert
+        .assertTrue(PublicMethed.transferAsset(asset013Address, assetAccountId.toByteArray(),
+            10000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
-    Long start = System.currentTimeMillis() + 2000;
-    Long end = System.currentTimeMillis() + 1000000000;
-    Assert.assertTrue(PublicMethed
-        .createAssetIssue(asset013Address, name, totalSupply, 1, 1, start, end, 1, description,
-            url, freeAssetNetLimit, publicFreeAssetNetLimit, 1L, 1L, testKeyForAssetIssue013,
-            blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
+  }
 
-    Account getAssetIdFromThisAccount;
-    getAssetIdFromThisAccount = PublicMethed.queryAccount(asset013Address, blockingStubFull);
-    ByteString assetAccountId = getAssetIdFromThisAccount.getAssetIssuedID();
+  @Test(enabled = true, description = "Use transfer net when token owner has no enough net")
+  public void testWhenNoEnoughFreeAssetNetLimitUseTransferNet() {
+
 
     //Transfer asset to an account.
     Assert.assertTrue(PublicMethed.transferAsset(

@@ -43,10 +43,10 @@ public class ContractTrcToken001 {
   private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
   private final String tokenId = Configuration.getByPath("testng.conf")
       .getString("defaultParameter.slideTokenId");
-
+  private static ByteString assetAccountId = null;
   private static final long now = System.currentTimeMillis();
   private static String tokenName = "testAssetIssue_" + Long.toString(now);
-  private static ByteString assetAccountId = null;
+
   private static final long TotalSupply = 1000L;
   private byte[] transferTokenContractAddress = null;
 

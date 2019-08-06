@@ -81,7 +81,7 @@ public class WalletTestAssetIssue016 {
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
   }
 
-  @Test(enabled = true, description = "Get asset issue net resource")
+  @Test(enabled = false, description = "Get asset issue net resource")
   public void testGetAssetIssueNet() {
     //get account
     ecKey1 = new ECKey(Utils.getRandom());
