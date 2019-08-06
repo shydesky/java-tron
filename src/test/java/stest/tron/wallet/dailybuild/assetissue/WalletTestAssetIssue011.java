@@ -40,6 +40,12 @@ public class WalletTestAssetIssue011 {
   Long publicFreeAssetNetLimit = 10000L;
   String description = "just-test";
   String url = "https://github.com/tronprotocol/wallet-cli/";
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
+  private static ByteString assetAccountId = null;
 
 
   private ManagedChannel channelFull = null;
@@ -69,17 +75,6 @@ public class WalletTestAssetIssue011 {
 
   @BeforeClass(enabled = true)
   public void beforeClass() {
-    PublicMethed.printAddress(testKeyForAssetIssue011);
-    PublicMethed.printAddress(transferAssetCreateKey);
-
-    channelFull = ManagedChannelBuilder.forTarget(fullnode)
-        .usePlaintext(true)
-        .build();
-    blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
-  }
-
-  @Test(enabled = true, description = "Transfer asset to create account")
-  public void testTransferAssetCreateAccount() {
     //get account
     ecKey1 = new ECKey(Utils.getRandom());
     asset011Address = ecKey1.getAddress();
@@ -88,6 +83,14 @@ public class WalletTestAssetIssue011 {
     ecKey2 = new ECKey(Utils.getRandom());
     transferAssetCreateAddress = ecKey2.getAddress();
     transferAssetCreateKey = ByteArray.toHexString(ecKey2.getPrivKeyBytes());
+    PublicMethed.printAddress(testKeyForAssetIssue011);
+    PublicMethed.printAddress(transferAssetCreateKey);
+
+
+    channelFull = ManagedChannelBuilder.forTarget(fullnode)
+        .usePlaintext(true)
+        .build();
+    blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
 
     Assert.assertTrue(PublicMethed
         .sendcoin(asset011Address, sendAmount, fromAddress, testKey002, blockingStubFull));
@@ -95,19 +98,15 @@ public class WalletTestAssetIssue011 {
     Assert.assertTrue(PublicMethed
         .freezeBalance(asset011Address, 100000000L, 3, testKeyForAssetIssue011,
             blockingStubFull));
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    org.junit.Assert
+        .assertTrue(PublicMethed.transferAsset(asset011Address, assetAccountId.toByteArray(),
+            10000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
-    Long start = System.currentTimeMillis() + 2000;
-    Long end = System.currentTimeMillis() + 1000000000;
-    Assert.assertTrue(PublicMethed
-        .createAssetIssue(asset011Address, name, totalSupply, 1, 1, start, end, 1, description,
-            url, freeAssetNetLimit, publicFreeAssetNetLimit, 1L, 1L, testKeyForAssetIssue011,
-            blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
+  }
 
-    Account getAssetIdFromThisAccount;
-    getAssetIdFromThisAccount = PublicMethed.queryAccount(asset011Address, blockingStubFull);
-    ByteString assetAccountId = getAssetIdFromThisAccount.getAssetIssuedID();
-
+  @Test(enabled = true, description = "Transfer asset to create account")
+  public void testTransferAssetCreateAccount() {
     //Transfer asset to create an account.
     Assert.assertTrue(PublicMethed
         .transferAsset(transferAssetCreateAddress, assetAccountId.toByteArray(), 1L,
@@ -118,6 +117,7 @@ public class WalletTestAssetIssue011 {
     Assert.assertTrue(queryTransferAssetAccount.getAssetV2Count() == 1);
     Assert.assertTrue(PublicMethed.updateAccount(asset011Address, Long.toString(now)
         .getBytes(), testKeyForAssetIssue011, blockingStubFull));
+    PublicMethed.printAddress(transferAssetCreateKey);
     Assert.assertTrue(PublicMethed.updateAccount(transferAssetCreateAddress, updateMostLongName
         .getBytes(), transferAssetCreateKey, blockingStubFull));
     queryTransferAssetAccount = PublicMethed.queryAccount(transferAssetCreateKey, blockingStubFull);

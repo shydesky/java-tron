@@ -70,7 +70,7 @@ public class WalletTestAssetIssue004 {
    * constructor.
    */
 
-  @BeforeClass(enabled = true)
+  @BeforeClass(enabled = false)
   public void beforeClass() {
     channelFull = ManagedChannelBuilder.forTarget(fullnode)
         .usePlaintext(true)
@@ -96,7 +96,7 @@ public class WalletTestAssetIssue004 {
 
   }
 
-  @Test(enabled = true, description = "Get asset issue by account")
+  @Test(enabled = false, description = "Get asset issue by account")
   public void testGetAssetIssueByAccount() {
     ByteString addressBs = ByteString.copyFrom(fromAddress);
     Account request = Account.newBuilder().setAddress(addressBs).build();
@@ -140,7 +140,7 @@ public class WalletTestAssetIssue004 {
    * constructor.
    */
 
-  @AfterClass(enabled = true)
+  @AfterClass(enabled = false)
   public void shutdown() throws InterruptedException {
     if (channelFull != null) {
       channelFull.shutdown().awaitTermination(5, TimeUnit.SECONDS);

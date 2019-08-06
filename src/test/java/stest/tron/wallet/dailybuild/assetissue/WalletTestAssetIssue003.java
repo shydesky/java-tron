@@ -91,7 +91,7 @@ public class WalletTestAssetIssue003 {
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
   }
 
-  @Test(enabled = true, description = "Create token with exception condition")
+  @Test(enabled = false, description = "Create token with exception condition")
   public void testExceptionOfAssetIssuew() {
     PublicMethed.sendcoin(asset003Address, 2048000000L, fromAddress, testKey002, blockingStubFull);
     PublicMethed.waitProduceNextBlock(blockingStubFull);
@@ -196,7 +196,7 @@ public class WalletTestAssetIssue003 {
     PublicMethed.waitProduceNextBlock(blockingStubFull);
   }
 
-  @Test(enabled = true, description = "Get asset issue list")
+  @Test(enabled = false, description = "Get asset issue list")
   public void testGetAllAssetIssue() {
     GrpcAPI.AssetIssueList assetIssueList = blockingStubFull
         .getAssetIssueList(GrpcAPI.EmptyMessage.newBuilder().build());

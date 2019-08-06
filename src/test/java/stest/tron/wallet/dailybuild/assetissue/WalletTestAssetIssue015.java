@@ -31,7 +31,12 @@ public class WalletTestAssetIssue015 {
   private final byte[] fromAddress = PublicMethed.getFinalAddress(testKey002);
   private final byte[] toAddress = PublicMethed.getFinalAddress(testKey003);
 
-
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
+  private static ByteString assetAccountId = null;
   private static final long now = System.currentTimeMillis();
   private static String name = "AssetIssue015_" + Long.toString(now);
   private static final long totalSupply = now;
@@ -42,8 +47,6 @@ public class WalletTestAssetIssue015 {
   Long publicFreeAssetNetLimit = 30000L;
   String description = "for case assetissue015";
   String url = "https://stest.assetissue015.url";
-  ByteString assetAccountId;
-
 
   private ManagedChannel channelFull = null;
   private WalletGrpc.WalletBlockingStub blockingStubFull = null;
@@ -85,36 +88,19 @@ public class WalletTestAssetIssue015 {
         .usePlaintext(true)
         .build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
+    Assert.assertTrue(PublicMethed
+        .sendcoin(asset015Address, sendAmount, fromAddress, testKey002, blockingStubFull));
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    org.junit.Assert
+        .assertTrue(PublicMethed.transferAsset(asset015Address, assetAccountId.toByteArray(),
+            10000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
+    PublicMethed.waitProduceNextBlock(blockingStubFull);
+
   }
 
   @Test(enabled = true, description = "Use transfer net when token owner has not enough bandwidth")
   public void atestWhenCreatorHasNoEnoughBandwidthUseTransferNet() {
-    ecKey1 = new ECKey(Utils.getRandom());
-    asset015Address = ecKey1.getAddress();
-    testKeyForAssetIssue015 = ByteArray.toHexString(ecKey1.getPrivKeyBytes());
 
-    ecKey2 = new ECKey(Utils.getRandom());
-    transferAssetAddress = ecKey2.getAddress();
-    transferAssetCreateKey = ByteArray.toHexString(ecKey2.getPrivKeyBytes());
-
-    ecKey3 = new ECKey(Utils.getRandom());
-    newAddress = ecKey3.getAddress();
-    testKeyForNewAddress = ByteArray.toHexString(ecKey3.getPrivKeyBytes());
-
-    Assert.assertTrue(PublicMethed
-        .sendcoin(asset015Address, sendAmount, fromAddress, testKey002, blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-    Long start = System.currentTimeMillis() + 2000;
-    Long end = System.currentTimeMillis() + 1000000000;
-    Assert.assertTrue(PublicMethed
-        .createAssetIssue(asset015Address, name, totalSupply, 1, 1, start, end, 1, description,
-            url, freeAssetNetLimit, publicFreeAssetNetLimit, 1L, 1L, testKeyForAssetIssue015,
-            blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-
-    Account getAssetIdFromThisAccount;
-    getAssetIdFromThisAccount = PublicMethed.queryAccount(asset015Address, blockingStubFull);
-    assetAccountId = getAssetIdFromThisAccount.getAssetIssuedID();
 
     //Transfer asset to an account.
     Assert.assertTrue(PublicMethed

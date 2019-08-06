@@ -83,7 +83,7 @@ public class WalletTestAssetIssue010 {
    * constructor.
    */
 
-  @BeforeClass(enabled = true)
+  @BeforeClass(enabled = false)
   public void beforeClass() {
     channelFull = ManagedChannelBuilder.forTarget(fullnode)
         .usePlaintext(true)
@@ -91,7 +91,7 @@ public class WalletTestAssetIssue010 {
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
   }
 
-  @Test(enabled = true, description = "Update asset issue")
+  @Test(enabled = false, description = "Update asset issue")
   public void testUpdateAssetIssue() {
     ecKey = new ECKey(Utils.getRandom());
     asset010Address = ecKey.getAddress();
@@ -147,7 +147,7 @@ public class WalletTestAssetIssue010 {
         .assertTrue(assetIssueByName.getPublicFreeAssetNetLimit() == updatePublicFreeAssetNetLimit);
   }
 
-  @Test(enabled = true, description = "Update asset issue with exception condition")
+  @Test(enabled = false, description = "Update asset issue with exception condition")
   public void testUpdateAssetIssueException() {
     //Test update asset issue for wrong parameter
     //publicFreeAssetNetLimit is -1

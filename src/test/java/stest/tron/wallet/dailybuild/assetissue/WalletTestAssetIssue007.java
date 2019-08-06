@@ -71,7 +71,7 @@ public class WalletTestAssetIssue007 {
    * constructor.
    */
 
-  @BeforeClass(enabled = true)
+  @BeforeClass(enabled = false)
   public void beforeClass() {
     PublicMethed.printAddress(testKeyForAssetIssue007);
     PublicMethed.printAddress(participateAssetCreateKey);
@@ -82,7 +82,7 @@ public class WalletTestAssetIssue007 {
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
   }
 
-  @Test(enabled = true, description = "Participate asset issue use participate bandwidth")
+  @Test(enabled = false, description = "Participate asset issue use participate bandwidth")
   public void testParticipateAssetIssueUseParticipateBandwidth() {
     Assert.assertTrue(PublicMethed
         .sendcoin(asset007Address, sendAmount, fromAddress, testKey002, blockingStubFull));

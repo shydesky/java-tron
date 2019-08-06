@@ -59,7 +59,7 @@ public class WalletTestAssetIssue002 {
    * constructor.
    */
 
-  @BeforeClass(enabled = true)
+  @BeforeClass(enabled = false)
   public void beforeClass() {
     channelFull = ManagedChannelBuilder.forTarget(fullnode)
         .usePlaintext(true)
@@ -69,7 +69,7 @@ public class WalletTestAssetIssue002 {
 
   }
 
-  @Test(enabled = true, description = "Participate token")
+  @Test(enabled = false, description = "Participate token")
   public void testParticipateAssetissue() {
     //get account
     ECKey ecKey1 = new ECKey(Utils.getRandom());

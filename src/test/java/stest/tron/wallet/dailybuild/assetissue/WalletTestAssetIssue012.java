@@ -16,7 +16,6 @@ import org.tron.common.crypto.ECKey;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Utils;
 import org.tron.core.Wallet;
-import org.tron.protos.Protocol.Account;
 import stest.tron.wallet.common.client.Configuration;
 import stest.tron.wallet.common.client.Parameter.CommonConstant;
 import stest.tron.wallet.common.client.utils.PublicMethed;
@@ -30,6 +29,14 @@ public class WalletTestAssetIssue012 {
       .getString("foundationAccount.key2");
   private final byte[] fromAddress = PublicMethed.getFinalAddress(testKey002);
   private final byte[] toAddress = PublicMethed.getFinalAddress(testKey003);
+
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
+  private static ByteString assetAccountId = null;
+
 
 
   private static final long now = System.currentTimeMillis();
@@ -78,10 +85,6 @@ public class WalletTestAssetIssue012 {
         .usePlaintext(true)
         .build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
-  }
-
-  @Test(enabled = true, description = "Transfer asset use token owner net")
-  public void testTransferAssetUseCreatorNet() {
     //get account
     ecKey1 = new ECKey(Utils.getRandom());
     asset012Address = ecKey1.getAddress();
@@ -97,23 +100,19 @@ public class WalletTestAssetIssue012 {
     Assert.assertTrue(PublicMethed
         .sendcoin(asset012Address, sendAmount, fromAddress, testKey002, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
     Assert.assertTrue(PublicMethed
         .freezeBalance(asset012Address, 100000000L, 3, testKeyForAssetIssue012,
             blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-    Long start = System.currentTimeMillis() + 2000;
-    Long end = System.currentTimeMillis() + 1000000000;
-    Assert.assertTrue(PublicMethed
-        .createAssetIssue(asset012Address, name, totalSupply, 1, 1, start, end, 1, description,
-            url, freeAssetNetLimit, publicFreeAssetNetLimit, 1L, 1L, testKeyForAssetIssue012,
-            blockingStubFull));
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    org.junit.Assert
+        .assertTrue(PublicMethed.transferAsset(asset012Address, assetAccountId.toByteArray(),
+            100000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
-    Account getAssetIdFromThisAccount;
-    getAssetIdFromThisAccount = PublicMethed.queryAccount(asset012Address, blockingStubFull);
-    ByteString assetAccountId = getAssetIdFromThisAccount.getAssetIssuedID();
+  }
 
+  @Test(enabled = true, description = "Transfer asset use token owner net")
+  public void testTransferAssetUseCreatorNet() {
     //Transfer asset to an account.
     Assert.assertTrue(PublicMethed.transferAsset(
         transferAssetAddress, assetAccountId.toByteArray(), 10000000L, asset012Address,
