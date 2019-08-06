@@ -140,6 +140,7 @@ public class WalletTestWitness003 {
       //too long url, update failed
       Assert.assertFalse(updateWitness(updateAddress, tooLongUrl.getBytes(), testUpdateWitnessKey));
       //Content space and special char, update success
+      PublicMethed.printAddress(testUpdateWitnessKey);
       Assert.assertTrue(updateWitness(updateAddress, updateSpaceUrl, testUpdateWitnessKey));
       //update success
       Assert.assertTrue(updateWitness(updateAddress, updateUrl, testUpdateWitnessKey));
@@ -210,7 +211,7 @@ public class WalletTestWitness003 {
       logger.info("transaction == null");
       return false;
     }
-    transaction = signTransaction(ecKey, transaction);
+    transaction = PublicMethed.signTransaction(ecKey, transaction);
     GrpcAPI.Return response = PublicMethed.broadcastTransaction(transaction, blockingStubFull);
     if (response.getResult() == false) {
       logger.info(ByteArray.toStr(response.getMessage().toByteArray()));

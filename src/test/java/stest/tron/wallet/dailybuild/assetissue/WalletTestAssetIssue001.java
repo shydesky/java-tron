@@ -38,6 +38,11 @@ public class WalletTestAssetIssue001 {
       .getString("foundationAccount.key2");
   private final byte[] fromAddress = PublicMethed.getFinalAddress(testKey002);
   private final byte[] toAddress = PublicMethed.getFinalAddress(testKey003);
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
 
 
   private static final long now = System.currentTimeMillis();
@@ -50,7 +55,7 @@ public class WalletTestAssetIssue001 {
 
   private ManagedChannel channelFull = null;
   private WalletGrpc.WalletBlockingStub blockingStubFull = null;
-
+  ByteString assetAccountId;
   private String fullnode = Configuration.getByPath("testng.conf").getStringList("fullnode.ip.list")
       .get(0);
   ECKey ecKey = new ECKey(Utils.getRandom());
@@ -74,60 +79,53 @@ public class WalletTestAssetIssue001 {
         .usePlaintext(true)
         .build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
-  }
-
-  @Test(enabled = true, description = "Transfer asset use Bandwitch")
-  public void testTransferAssetBandwitchDecreaseWithin10Second() {
     //get account
     ecKey = new ECKey(Utils.getRandom());
     noBandwitchAddress = ecKey.getAddress();
     noBandwitch = ByteArray.toHexString(ecKey.getPrivKeyBytes());
 
     PublicMethed.printAddress(noBandwitch);
-
+    PublicMethed.printAddress(testKey002);
     Assert.assertTrue(PublicMethed.sendcoin(noBandwitchAddress, 2048000000, fromAddress,
         testKey002, blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-    Long start = System.currentTimeMillis() + 5000;
-    Long end = System.currentTimeMillis() + 1000000000;
-
-    //Create a new AssetIssue success.
-    Assert.assertTrue(PublicMethed.createAssetIssue(noBandwitchAddress, name, totalSupply, 1,
-        100, start, end, 1, description, url, 10000L, 10000L,
-        1L, 1L, noBandwitch, blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-
     Account getAssetIdFromThisAccount;
-    getAssetIdFromThisAccount = PublicMethed.queryAccount(noBandwitch, blockingStubFull);
-    ByteString assetAccountId = getAssetIdFromThisAccount.getAssetIssuedID();
+    getAssetIdFromThisAccount = PublicMethed.queryAccount(tokenOnwerAddress, blockingStubFull);
+    assetAccountId = getAssetIdFromThisAccount.getAssetIssuedID();
+    PublicMethed.printAddress(tokenOwnerKey);
+    Assert.assertTrue(transferAsset(noBandwitchAddress, tokenId.getBytes(), 100L,
+        tokenOnwerAddress, tokenOwnerKey));
+    PublicMethed.waitProduceNextBlock(blockingStubFull);
+  }
 
-    Assert.assertTrue(transferAsset(toAddress, assetAccountId.toByteArray(), 100L,
+  @Test(enabled = true, description = "Transfer asset use Bandwitch")
+  public void testTransferAssetBandwitchDecreaseWithin10Second() {
+    Assert.assertTrue(transferAsset(toAddress, tokenId.getBytes(), 100L,
         noBandwitchAddress, noBandwitch));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
     //Transfer Asset failed when transfer to yourself
-    Assert.assertFalse(transferAsset(toAddress, assetAccountId.toByteArray(), 100L,
+    Assert.assertFalse(transferAsset(toAddress, tokenId.getBytes(), 100L,
         toAddress, testKey003));
     //Transfer Asset failed when the transfer amount is large than the asset balance you have.
     Assert.assertFalse(
-        transferAsset(fromAddress, assetAccountId.toByteArray(), 9100000000000000000L,
+        transferAsset(fromAddress, tokenId.getBytes(), 9100000000000000000L,
             toAddress, testKey003));
     //Transfer Asset failed when the transfer amount is 0
-    Assert.assertFalse(transferAsset(fromAddress, assetAccountId.toByteArray(), 0L,
+    Assert.assertFalse(transferAsset(fromAddress, tokenId.getBytes(), 0L,
         toAddress, testKey003));
     //Transfer Asset failed when the transfer amount is -1
-    Assert.assertFalse(transferAsset(fromAddress, assetAccountId.toByteArray(), -1L,
+    Assert.assertFalse(transferAsset(fromAddress, tokenId.getBytes(), -1L,
         toAddress, testKey003));
 
     //Transfer success.
-    Assert.assertTrue(transferAsset(fromAddress, assetAccountId.toByteArray(), 1L,
+    Assert.assertTrue(transferAsset(fromAddress, tokenId.getBytes(), 1L,
         toAddress, testKey003));
 
     //No freeze asset, try to unfreeze asset failed.
-    Assert.assertFalse(unFreezeAsset(noBandwitchAddress, noBandwitch));
+    //Assert.assertFalse(unFreezeAsset(noBandwitchAddress, noBandwitch));
 
     //Not create asset, try to unfreeze asset failed.No exception.
-    Assert.assertFalse(unFreezeAsset(toAddress, testKey003));
+    //Assert.assertFalse(unFreezeAsset(toAddress, testKey003));
 
 
   }
@@ -281,7 +279,7 @@ public class WalletTestAssetIssue001 {
       logger.info("transaction == null || transaction.getRawData().getContractCount() == 0");
       return false;
     }
-    transaction = signTransaction(ecKey, transaction);
+    transaction = PublicMethed.signTransaction(ecKey, transaction);
     Return response = blockingStubFull.broadcastTransaction(transaction);
     if (response.getResult() == false) {
       logger.info(ByteArray.toStr(response.getMessage().toByteArray()));

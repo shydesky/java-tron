@@ -300,7 +300,7 @@ public class MultiSign19 {
 
     Assert.assertFalse(response.getResult());
     Assert.assertEquals(CONTRACT_VALIDATE_ERROR, response.getCode());
-    Assert.assertEquals("contract validate error : 99 isn't a validate ContractType",
+    Assert.assertEquals("contract validate error : 6 isn't a validate ContractType",
         response.getMessage().toStringUtf8());
 
     // operation's length is less then 64,
@@ -327,7 +327,7 @@ public class MultiSign19 {
 
     Assert.assertFalse(response.getResult());
     Assert.assertEquals(CONTRACT_VALIDATE_ERROR, response.getCode());
-    Assert.assertEquals("contract validate error : 21 isn't a validate ContractType",
+    Assert.assertEquals("contract validate error : 9 isn't a validate ContractType",
         response.getMessage().toStringUtf8());
 
     // operation's length is less then 64,
@@ -436,7 +436,7 @@ public class MultiSign19 {
 
     Assert.assertFalse(response.getResult());
     Assert.assertEquals(CONTRACT_VALIDATE_ERROR, response.getCode());
-    Assert.assertEquals("contract validate error : 21 isn't a validate ContractType",
+    Assert.assertEquals("contract validate error : 9 isn't a validate ContractType",
         response.getMessage().toStringUtf8());
 
     // operation = ""
