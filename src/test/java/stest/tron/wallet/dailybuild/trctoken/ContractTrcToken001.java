@@ -38,6 +38,11 @@ public class ContractTrcToken001 {
       .getStringList("fullnode.ip.list").get(0);
   private long maxFeeLimit = Configuration.getByPath("testng.conf")
       .getLong("defaultParameter.maxFeeLimit");
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
 
   private static final long now = System.currentTimeMillis();
   private static String tokenName = "testAssetIssue_" + Long.toString(now);
@@ -72,10 +77,6 @@ public class ContractTrcToken001 {
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
 
     PublicMethed.printAddress(dev001Key);
-  }
-
-  @Test(enabled = true, description = "DeployContract with correct tokenValue and tokenId")
-  public void deployTransferTokenContract() {
     Assert.assertTrue(PublicMethed.sendcoin(dev001Address, 3100_000_000L, fromAddress,
         testKey002, blockingStubFull));
 
@@ -89,21 +90,17 @@ public class ContractTrcToken001 {
     Assert.assertTrue(PublicMethed.freezeBalanceForReceiver(fromAddress, 10_000_000L,
         0, 0, ByteString.copyFrom(dev001Address),
         testKey002, blockingStubFull));
-
+    //assetAccountId = ByteString.copyFrom(ByteArray.fromString(tokenId));
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    Assert.assertTrue(PublicMethed.transferAsset(dev001Address, assetAccountId.toByteArray(),
+        10000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
-    long start = System.currentTimeMillis() + 2000;
-    long end = System.currentTimeMillis() + 1000000000;
 
-    //Create a new AssetIssue success.
-    Assert.assertTrue(PublicMethed.createAssetIssue(dev001Address, tokenName, TotalSupply, 1,
-        10000, start, end, 1, description, url, 100000L,
-        100000L, 1L, 1L, dev001Key, blockingStubFull));
+  }
 
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-
-    assetAccountId = PublicMethed.queryAccount(dev001Address, blockingStubFull).getAssetIssuedID();
-
+  @Test(enabled = true, description = "DeployContract with correct tokenValue and tokenId")
+  public void deployTransferTokenContract() {
     logger.info("The token name: " + tokenName);
     logger.info("The token ID: " + assetAccountId.toStringUtf8());
 
@@ -129,7 +126,7 @@ public class ContractTrcToken001 {
     String code = retMap.get("byteCode").toString();
     String abi = retMap.get("abI").toString();
 
-    String tokenId = assetAccountId.toStringUtf8();
+    //String tokenId = assetAccountId.toStringUtf8();
     long tokenValue = 100;
     long callValue = 5;
 

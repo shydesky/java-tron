@@ -88,9 +88,6 @@ public class WalletTestAssetIssue001 {
     PublicMethed.printAddress(testKey002);
     Assert.assertTrue(PublicMethed.sendcoin(noBandwitchAddress, 2048000000, fromAddress,
         testKey002, blockingStubFull));
-    Account getAssetIdFromThisAccount;
-    getAssetIdFromThisAccount = PublicMethed.queryAccount(tokenOnwerAddress, blockingStubFull);
-    assetAccountId = getAssetIdFromThisAccount.getAssetIssuedID();
     PublicMethed.printAddress(tokenOwnerKey);
     Assert.assertTrue(transferAsset(noBandwitchAddress, tokenId.getBytes(), 100L,
         tokenOnwerAddress, tokenOwnerKey));
