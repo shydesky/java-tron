@@ -189,14 +189,6 @@ public class WitnessService implements Service {
 
     final int participation = this.controller.calculateParticipationRate();
     if (participation < MIN_PARTICIPATION_RATE) {
-      logger.warn(
-          "Participation[" + participation + "] <  MIN_PARTICIPATION_RATE[" + MIN_PARTICIPATION_RATE
-              + "]");
-
-      if (logger.isDebugEnabled()) {
-        this.controller.dumpParticipationLog();
-      }
-
       return BlockProductionCondition.LOW_PARTICIPATION;
     }
 
