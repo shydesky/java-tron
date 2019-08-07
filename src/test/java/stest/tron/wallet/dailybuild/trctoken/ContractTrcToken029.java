@@ -56,6 +56,12 @@ public class ContractTrcToken029 {
   private static ByteString assetAccountId = null;
   byte[] transferTokenContractAddress;
 
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
+
   @BeforeSuite
   public void beforeSuite() {
     Wallet wallet = new Wallet();
@@ -73,6 +79,10 @@ public class ContractTrcToken029 {
         .usePlaintext(true)
         .build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
+
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    Assert.assertTrue(PublicMethed.transferAsset(dev001Address, assetAccountId.toByteArray(),
+        10000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
 
   }
 
@@ -100,15 +110,6 @@ public class ContractTrcToken029 {
         0, 1, user001Key, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
     PublicMethed.waitProduceNextBlock(blockingStubFull);
-
-    long start = System.currentTimeMillis() + 2000;
-    long end = System.currentTimeMillis() + 1000000000;
-    //Create a new AssetIssue success.
-    Assert.assertTrue(PublicMethed.createAssetIssue(dev001Address, tokenName, TotalSupply, 1,
-        100, start, end, 1, description, url, 10000L,
-        10000L, 1L, 1L, dev001Key, blockingStubFull));
-
-    assetAccountId = PublicMethed.queryAccount(dev001Address, blockingStubFull).getAssetIssuedID();
 
     // deploy transferTokenContract
     int originEnergyLimit = 50000;
@@ -177,8 +178,7 @@ public class ContractTrcToken029 {
     logger.info("beforeUserBalance:" + beforeUserBalance);
 
     // user trigger A to transfer token to B
-    ByteString assetAccountDev = PublicMethed
-        .queryAccount(dev001Address, blockingStubFull).getAssetIssuedID();
+    ByteString assetAccountDev = ByteString.copyFromUtf8(tokenId);
     ByteString fakeTokenId = ByteString
         .copyFromUtf8(Long.toString(Long.valueOf(assetAccountDev.toStringUtf8()) + 100));
     String param = "\"" + fakeTokenId.toStringUtf8() + "\",\"1\"";

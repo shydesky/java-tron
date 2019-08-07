@@ -62,6 +62,12 @@ public class ContractTrcToken014 {
   private byte[] user001Address = ecKey2.getAddress();
   private String user001Key = ByteArray.toHexString(ecKey2.getPrivKeyBytes());
 
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
+
   @BeforeSuite
   public void beforeSuite() {
     Wallet wallet = new Wallet();
@@ -81,6 +87,9 @@ public class ContractTrcToken014 {
 
     PublicMethed.printAddress(dev001Key);
     PublicMethed.printAddress(user001Key);
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    Assert.assertTrue(PublicMethed.transferAsset(dev001Address, assetAccountId.toByteArray(),
+        10000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
   }
 
   @Test(enabled = true, description = "TransferToken with tokenId in exception condition,"
@@ -101,27 +110,7 @@ public class ContractTrcToken014 {
         0, 0, ByteString.copyFrom(dev001Address),
         testKey002, blockingStubFull));
 
-    long start = System.currentTimeMillis() + 2000;
-    long end = System.currentTimeMillis() + 1000000000;
-    //dev Create a new AssetIssue success.
-    Assert.assertTrue(PublicMethed.createAssetIssue(dev001Address, tokenName, TotalSupply,
-        1, 10000, start, end, 1, description, url, 100000L,
-        100000L, 1L, 1L, dev001Key, blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-    assetAccountId = PublicMethed.queryAccount(
-        dev001Address, blockingStubFull).getAssetIssuedID();
-    logger.info("The assetAccountId token name: " + tokenName);
-    logger.info("The assetAccountId token ID: " + assetAccountId.toStringUtf8());
-
-    start = System.currentTimeMillis() + 2000;
-    end = System.currentTimeMillis() + 1000000000;
-    //user Create a new AssetIssue success.
-    Assert.assertTrue(PublicMethed.createAssetIssue(user001Address, tokenName, TotalSupply,
-        1, 10000, start, end, 1, description, url, 100000L,
-        100000L, 1L, 1L, user001Key, blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-    assetAccountUser = PublicMethed.queryAccount(
-        user001Address, blockingStubFull).getAssetIssuedID();
+    assetAccountUser = ByteString.copyFromUtf8(tokenId);
     logger.info("The assetAccountUser token name: " + tokenName);
     logger.info("The assetAccountUser token ID: " + assetAccountUser.toStringUtf8());
 
@@ -315,7 +304,7 @@ public class ContractTrcToken014 {
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
     // transfer a not exist TokenId, to a contract
-    String tokenId = assetAccountUser.toStringUtf8();
+    String tokenId = "1000008";
     Long tokenValue = Long.valueOf(1);
     Long callValue = Long.valueOf(0);
 
@@ -343,7 +332,7 @@ public class ContractTrcToken014 {
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
     // transfer a not exist TokenId, to a normal account
-    tokenId = assetAccountUser.toStringUtf8();
+    tokenId = "10000005";
     tokenValue = Long.valueOf(1);
     callValue = Long.valueOf(0);
 
