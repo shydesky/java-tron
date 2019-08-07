@@ -110,8 +110,7 @@ public class ContractTrcToken014 {
         0, 0, ByteString.copyFrom(dev001Address),
         testKey002, blockingStubFull));
 
-    assetAccountUser = PublicMethed.queryAccount(
-        user001Address, blockingStubFull).getAssetIssuedID();
+    assetAccountUser = ByteString.copyFromUtf8(tokenId);
     logger.info("The assetAccountUser token name: " + tokenName);
     logger.info("The assetAccountUser token ID: " + assetAccountUser.toStringUtf8());
 
@@ -305,7 +304,7 @@ public class ContractTrcToken014 {
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
     // transfer a not exist TokenId, to a contract
-    String tokenId = assetAccountUser.toStringUtf8();
+    String tokenId = "1000008";
     Long tokenValue = Long.valueOf(1);
     Long callValue = Long.valueOf(0);
 
@@ -333,7 +332,7 @@ public class ContractTrcToken014 {
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
     // transfer a not exist TokenId, to a normal account
-    tokenId = assetAccountUser.toStringUtf8();
+    tokenId = "10000005";
     tokenValue = Long.valueOf(1);
     callValue = Long.valueOf(0);
 
