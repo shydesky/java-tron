@@ -203,16 +203,16 @@ public class HttpMethed {
   /**
    * constructor.
    */
-  public static HttpResponse withdrawBalance(String httpNode, byte[] witnessAddress) {
+  public static HttpResponse withdrawBalance(String httpNode, byte[] witnessAddress, String witnessKey) {
     try {
       final String requestUrl = "http://" + httpNode + "/wallet/withdrawbalance";
       JsonObject userBaseObj2 = new JsonObject();
       userBaseObj2.addProperty("owner_address", ByteArray.toHexString(witnessAddress));
       response = createConnect(requestUrl, userBaseObj2);
       logger.info(userBaseObj2.toString());
-      //transactionString = EntityUtils.toString(response.getEntity());
-      //transactionSignString = gettransactionsign(httpNode,transactionString,fromKey);
-      //response = broadcastTransaction(httpNode,transactionSignString);
+      transactionString = EntityUtils.toString(response.getEntity());
+      transactionSignString = gettransactionsign(httpNode,transactionString,witnessKey);
+      response = broadcastTransaction(httpNode,transactionSignString);
     } catch (Exception e) {
       e.printStackTrace();
       httppost.releaseConnection();

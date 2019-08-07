@@ -76,7 +76,7 @@ public class WalletTestAssetIssue012 {
    * constructor.
    */
 
-  @BeforeClass(enabled = true)
+  @BeforeClass(enabled = false)
   public void beforeClass() {
     logger.info(testKeyForAssetIssue012);
     logger.info(transferAssetCreateKey);
@@ -111,7 +111,7 @@ public class WalletTestAssetIssue012 {
 
   }
 
-  @Test(enabled = true, description = "Transfer asset use token owner net")
+  @Test(enabled = false, description = "Transfer asset use token owner net")
   public void testTransferAssetUseCreatorNet() {
     //Transfer asset to an account.
     Assert.assertTrue(PublicMethed.transferAsset(
@@ -138,10 +138,12 @@ public class WalletTestAssetIssue012 {
         .getAccountNet(asset012Address, blockingStubFull);
     assetTransferNet = PublicMethed
         .getAccountNet(transferAssetAddress, blockingStubFull);
+    PublicMethed.printAddress(testKeyForAssetIssue012);
+    PublicMethed.printAddress(transferAssetCreateKey);
     Long creatorAfterNetUsed = assetCreatorNet.getNetUsed();
     Long transferAfterFreeNetUsed = assetTransferNet.getFreeNetUsed();
-    logger.info(Long.toString(creatorAfterNetUsed));
-    logger.info(Long.toString(transferAfterFreeNetUsed));
+    logger.info("creatorAfterNetUsed:" + creatorAfterNetUsed);
+    logger.info("creatorBeforeNetUsed:" + creatorBeforeNetUsed);
 
     Assert.assertTrue(creatorAfterNetUsed - creatorBeforeNetUsed > netCostMeasure);
     Assert.assertTrue(transferAfterFreeNetUsed - transferBeforeFreeNetUsed < netCostMeasure);

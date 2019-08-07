@@ -3334,14 +3334,17 @@ public class PublicMethedForMutiSign {
     raw.clearContract();
     raw.addContract(contract);
     transaction = transaction.toBuilder().setRawData(raw).build();
-
     Transaction.Builder transactionBuilderSigned = transaction.toBuilder();
     byte[] hash = Sha256Hash.hash(transaction.getRawData().toByteArray());
     ECKey ecKey = temKey;
-    ECDSASignature signature = ecKey.sign(hash);
+ /*    ECDSASignature signature = ecKey.sign(hash);
     ByteString bsSign = ByteString.copyFrom(signature.toByteArray());
     transactionBuilderSigned.addSignature(bsSign);
-    transaction = transactionBuilderSigned.build();
+    transaction = transactionBuilderSigned.build();*/
+    boolean isSideChain = false;
+    transaction = TransactionUtils
+        .sign(transaction, ecKey, Wallet.decodeFromBase58Check(mainGateWay), isSideChain);
+
     return transaction;
   }
 

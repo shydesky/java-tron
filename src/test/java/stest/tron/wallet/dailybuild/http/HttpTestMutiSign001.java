@@ -77,6 +77,8 @@ public class HttpTestMutiSign001 {
   private final String manager4Key = Configuration.getByPath("testng.conf")
       .getString("witness.key2");
   private final byte[] manager4Address = PublicMethed.getFinalAddress(manager4Key);
+  private final String operations = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.operations");
 
   @BeforeSuite
   public void beforeSuite() {
@@ -140,8 +142,7 @@ public class HttpTestMutiSign001 {
     activeObject.addProperty("type", 2);
     activeObject.addProperty("permission_name", "active0");
     activeObject.addProperty("threshold", 2);
-    activeObject.addProperty("operations",
-        "7fff1fc0037e0000000000000000000000000000000000000000000000000000");
+    activeObject.addProperty("operations", operations);
     activeObject.add("keys", activeKeys);
 
     response = HttpMethed.accountPermissionUpdate(httpnode, ownerAddress, ownerObject,
@@ -187,7 +188,7 @@ public class HttpTestMutiSign001 {
   /**
    * constructor.
    */
-  @Test(enabled = true, description = "Add broadcasthex http interface to "
+  @Test(enabled = false, description = "Add broadcasthex http interface to "
       + "broadcast hex transaction string")
   public void test3Broadcasthex() {
     PublicMethed.printAddress(hexTestKey);
