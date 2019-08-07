@@ -178,8 +178,7 @@ public class ContractTrcToken029 {
     logger.info("beforeUserBalance:" + beforeUserBalance);
 
     // user trigger A to transfer token to B
-    ByteString assetAccountDev = PublicMethed
-        .queryAccount(dev001Address, blockingStubFull).getAssetIssuedID();
+    ByteString assetAccountDev = ByteString.copyFromUtf8(tokenId);
     ByteString fakeTokenId = ByteString
         .copyFromUtf8(Long.toString(Long.valueOf(assetAccountDev.toStringUtf8()) + 100));
     String param = "\"" + fakeTokenId.toStringUtf8() + "\",\"1\"";

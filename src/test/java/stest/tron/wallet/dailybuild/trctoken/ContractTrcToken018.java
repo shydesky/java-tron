@@ -77,9 +77,7 @@ public class ContractTrcToken018 {
   public void beforeSuite() {
     Wallet wallet = new Wallet();
     Wallet.setAddressPreFixByte(CommonConstant.ADD_PRE_FIX_BYTE_MAINNET);
-    assetAccountId = ByteString.copyFromUtf8(tokenId);
-    Assert.assertTrue(PublicMethed.transferAsset(dev001Address, assetAccountId.toByteArray(),
-        10000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
+
   }
 
   /**
@@ -95,6 +93,9 @@ public class ContractTrcToken018 {
 
     PublicMethed.printAddress(dev001Key);
     PublicMethed.printAddress(user001Key);
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    Assert.assertTrue(PublicMethed.transferAsset(dev001Address, assetAccountId.toByteArray(),
+        10000000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
   }
 
   @Test(enabled = true, description = "Transfer token to an inactive account")
@@ -113,13 +114,6 @@ public class ContractTrcToken018 {
         0, 0, ByteString.copyFrom(dev001Address), testKey002, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
-    long start = System.currentTimeMillis() + 2000;
-    long end = System.currentTimeMillis() + 1000000000;
-    //Create a new AssetIssue success.
-    Assert.assertTrue(PublicMethed.createAssetIssue(dev001Address, tokenName, TotalSupply, 1,
-        10000, start, end, 1, description, url, 100000L,
-        100000L, 1L, 1L, dev001Key, blockingStubFull));
-    assetAccountId = PublicMethed.queryAccount(dev001Address, blockingStubFull).getAssetIssuedID();
     logger.info("The token name: " + tokenName);
     logger.info("The token ID: " + assetAccountId.toStringUtf8());
 
