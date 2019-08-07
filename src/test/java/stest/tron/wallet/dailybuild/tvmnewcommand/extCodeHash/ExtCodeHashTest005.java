@@ -422,7 +422,7 @@ public class ExtCodeHashTest005 {
     logger.info(smartContract.getBytecode().toStringUtf8());
   }
 
-  @Test(enabled = true, description = "Get codehash of a empty address by uint")
+  @Test(enabled = false, description = "Get codehash of a empty address by uint")
   public void test05GetEmptyAddressCodeHash() {
     Assert.assertTrue(PublicMethed.sendcoin(user001Address, 100_000_000L, fromAddress,
         testKey002, blockingStubFull));
@@ -454,7 +454,12 @@ public class ExtCodeHashTest005 {
 
     Long callValue = Long.valueOf(0);
 
-    String fakeAddress = "";
+    //String fakeAddress = "";
+
+    ECKey ecKey3 = new ECKey(Utils.getRandom());
+    byte[] neTtestAddress = ecKey3.getAddress();
+    String testKey = ByteArray.toHexString(ecKey3.getPrivKeyBytes());
+    String fakeAddress = Wallet.encode58Check(neTtestAddress);
 
     logger.info("realAddress: " + fakeAddress);
     byte[] fullHexAddr = new DataWord(fakeAddress).getData();
@@ -498,6 +503,7 @@ public class ExtCodeHashTest005 {
       Assert.fail(
           "transaction failed with message: " + infoById.get().getResMessage().toStringUtf8());
     }
+    System.out.println(infoById.toString());
 
     List<String> retList = PublicMethed
         .getStrings(transactionInfo.getContractResult(0).toByteArray());
