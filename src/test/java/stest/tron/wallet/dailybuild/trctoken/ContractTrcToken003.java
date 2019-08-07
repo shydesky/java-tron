@@ -58,6 +58,18 @@ public class ContractTrcToken003 {
   private byte[] user001Address = ecKey2.getAddress();
   private String user001Key = ByteArray.toHexString(ecKey2.getPrivKeyBytes());
 
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
+
+  private final String tokenOwnerKey2 = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey2");
+  private final byte[] tokenOnwerAddress2 = PublicMethed.getFinalAddress(tokenOwnerKey2);
+  private final String tokenId2 = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId2");
+
   @BeforeSuite
   public void beforeSuite() {
     Wallet wallet = new Wallet();
@@ -75,7 +87,16 @@ public class ContractTrcToken003 {
         .build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
 
-    PublicMethed.printAddress(dev001Key);
+    assetAccountDev = ByteString.copyFromUtf8(tokenId);
+    Assert.assertTrue(PublicMethed.transferAsset(dev001Address, assetAccountDev.toByteArray(),
+        1000, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
+
+    PublicMethed.waitProduceNextBlock(blockingStubFull);
+
+    PublicMethed.printAddress(tokenOwnerKey2);
+    assetAccountUser = ByteString.copyFromUtf8(tokenId2);
+    Assert.assertTrue(PublicMethed.transferAsset(user001Address, assetAccountUser.toByteArray(),
+        1000, tokenOnwerAddress2, tokenOwnerKey2, blockingStubFull));
 
   }
 
@@ -93,32 +114,6 @@ public class ContractTrcToken003 {
     Assert.assertTrue(PublicMethed.freezeBalanceForReceiver(fromAddress, 10_000_000L,
         0, 0, ByteString.copyFrom(dev001Address), testKey002, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
-
-    long start = System.currentTimeMillis() + 2000;
-    long end = System.currentTimeMillis() + 1000000000;
-    //dev Create a new AssetIssue
-    Assert.assertTrue(PublicMethed.createAssetIssue(dev001Address, tokenName, TotalSupply, 1,
-        10000, start, end, 1, description, url, 100000L, 100000L,
-        1L, 1L, dev001Key, blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-
-    assetAccountDev = PublicMethed
-        .queryAccount(dev001Address, blockingStubFull).getAssetIssuedID();
-    logger.info("The assetAccountDev token name: " + tokenName);
-    logger.info("The assetAccountDev token ID: " + assetAccountDev.toStringUtf8());
-
-    start = System.currentTimeMillis() + 2000;
-    end = System.currentTimeMillis() + 1000000000;
-    //user Create a new AssetIssue
-    Assert.assertTrue(PublicMethed.createAssetIssue(user001Address, tokenName, TotalSupply, 1,
-        10000, start, end, 1, description, url, 100000L, 100000L,
-        1L, 1L, user001Key, blockingStubFull));
-    PublicMethed.waitProduceNextBlock(blockingStubFull);
-    assetAccountUser = PublicMethed
-        .queryAccount(user001Address, blockingStubFull).getAssetIssuedID();
-    logger.info("The assetAccountUser token name: " + tokenName);
-    logger.info("The assetAccountUser token ID: " + assetAccountUser.toStringUtf8());
-
     //before deploy, check account resource
     AccountResourceMessage accountResource = PublicMethed.getAccountResource(dev001Address,
         blockingStubFull);
