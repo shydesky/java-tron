@@ -10,7 +10,6 @@ import org.tron.core.Wallet;
 import org.tron.core.actuator.TransferActuator;
 import org.tron.core.actuator.TransferAssetActuator;
 import org.tron.core.capsule.AccountCapsule;
-import org.tron.core.config.args.Account;
 import org.tron.core.exception.ContractValidateException;
 import org.tron.protos.Protocol;
 
