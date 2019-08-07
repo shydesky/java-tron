@@ -45,7 +45,7 @@ public class HttpRateLimite001 {
   /**
    * constructor.
    */
-  @Test(enabled = true, description = "Rate limit QpsStrategy for ListWitness interface")
+  @Test(enabled = false, description = "Rate limit QpsStrategy for ListWitness interface")
   public void test1QpsStrategyForListWitnessInterface() {
     Long startTimeStamp = System.currentTimeMillis();
     Integer repeatTimes = 0;
@@ -60,7 +60,7 @@ public class HttpRateLimite001 {
   /**
    * constructor.
    */
-  @Test(enabled = true, description = "Rate limit IpQpsStrategy for ListNodes interface")
+  @Test(enabled = false, description = "Rate limit IpQpsStrategy for ListNodes interface")
   public void test2IpQpsStrategyForListNodesInterface() {
     Long startTimeStamp = System.currentTimeMillis();
     Integer repeatTimes = 0;
@@ -75,7 +75,7 @@ public class HttpRateLimite001 {
   /**
    * constructor.
    */
-  @Test(enabled = true, description = "Rate limit IpQpsStrategy for GetBlockByLatestNumOnSolidity "
+  @Test(enabled = false, description = "Rate limit IpQpsStrategy for GetBlockByLatestNumOnSolidity "
       + "interface on fullnode's solidity service")
   public void test3IpQpsStrategyForGetBlockByLatestNumOnSolidityInterface() {
     Long startTimeStamp = System.currentTimeMillis();
@@ -91,7 +91,7 @@ public class HttpRateLimite001 {
   /**
    * constructor.
    */
-  @Test(enabled = true, description = "Rate limit QpsStrategy for getBlockByNum "
+  @Test(enabled = false, description = "Rate limit QpsStrategy for getBlockByNum "
       + "interface on fullnode's solidity service")
   public void test4QpsStrategyForgetBlockByNumResourceInterfaceOnFullnodeSolidityService() {
     Long startTimeStamp = System.currentTimeMillis();
@@ -105,7 +105,7 @@ public class HttpRateLimite001 {
   }
 
 
-  @Test(enabled = true, description = "Rate limit IpQpsStrategy for "
+  @Test(enabled = false, description = "Rate limit IpQpsStrategy for "
       + "getTransactionsFromThisFromSolidity "
       + "interface on real solidity")
   public void test5IpQpsStrategyForgetTransactionsFromThisFromSolidity() {
@@ -123,7 +123,7 @@ public class HttpRateLimite001 {
 
 
 
-  @Test(enabled = true, description = "Rate limit QpsStrategy for "
+  @Test(enabled = false, description = "Rate limit QpsStrategy for "
       + "getTransactionsFromThisFromSolidity "
       + "interface on real solidity")
   public void test6QpsStrategyForgetTransactionsToThisFromSolidity() {
