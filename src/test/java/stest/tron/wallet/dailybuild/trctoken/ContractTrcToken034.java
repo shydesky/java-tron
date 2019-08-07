@@ -58,6 +58,11 @@ public class ContractTrcToken034 {
   String user001Key = ByteArray.toHexString(ecKey2.getPrivKeyBytes());
   byte[] transferTokenContractAddress;
 
+  private final String tokenOwnerKey = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenOwnerKey");
+  private final byte[] tokenOnwerAddress = PublicMethed.getFinalAddress(tokenOwnerKey);
+  private final String tokenId = Configuration.getByPath("testng.conf")
+      .getString("defaultParameter.slideTokenId");
   @BeforeSuite
   public void beforeSuite() {
     Wallet wallet = new Wallet();
@@ -75,6 +80,9 @@ public class ContractTrcToken034 {
         .usePlaintext(true)
         .build();
     blockingStubFull = WalletGrpc.newBlockingStub(channelFull);
+    assetAccountId = ByteString.copyFromUtf8(tokenId);
+    Assert.assertTrue(PublicMethed.transferAsset(dev001Address, assetAccountId.toByteArray(),
+        10000L, tokenOnwerAddress, tokenOwnerKey, blockingStubFull));
 
   }
 
@@ -102,14 +110,8 @@ public class ContractTrcToken034 {
         0, 1, user001Key, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
 
-    long start = System.currentTimeMillis() + 2000;
-    long end = System.currentTimeMillis() + 1000000000;
-    //Create a new AssetIssue success.
-    Assert.assertTrue(PublicMethed.createAssetIssue(dev001Address, tokenName, TotalSupply, 1,
-        100, start, end, 1, description, url, 10000L,
-        10000L, 1L, 1L, dev001Key, blockingStubFull));
+
     PublicMethed.waitProduceNextBlock(blockingStubFull);
-    assetAccountId = PublicMethed.queryAccount(dev001Address, blockingStubFull).getAssetIssuedID();
 
     // deploy transferTokenContract
     int originEnergyLimit = 50000;
@@ -133,6 +135,7 @@ public class ContractTrcToken034 {
             blockingStubFull);
 
     PublicMethed.waitProduceNextBlock(blockingStubFull);
+
   }
 
   @Test(enabled = true, description = "Trigger after transfertoken execute require contract")
@@ -166,8 +169,7 @@ public class ContractTrcToken034 {
     logger.info("beforeAssetIssueUserAddress:" + beforeAssetIssueUserAddress);
 
     // user trigger A to transfer token to B
-    ByteString assetAccountDev = PublicMethed
-        .queryAccount(dev001Address, blockingStubFull).getAssetIssuedID();
+    ByteString assetAccountDev = ByteString.copyFromUtf8(tokenId);
     ByteString fakeTokenId = ByteString
         .copyFromUtf8(Long.toString(Long.valueOf(assetAccountDev.toStringUtf8()) + 100));
     String param =
@@ -177,7 +179,7 @@ public class ContractTrcToken034 {
 
     final String triggerTxid = PublicMethed.triggerContract(transferTokenContractAddress,
         "failTransferTokenRevert(address,uint256,trcToken)",
-        param, false, 0, 1000000000L, "0",
+        param, false, 0, 100000000L, "0",
         0, dev001Address, dev001Key,
         blockingStubFull);
     PublicMethed.waitProduceNextBlock(blockingStubFull);
