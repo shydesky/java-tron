@@ -62,7 +62,6 @@ import org.tron.api.GrpcAPI.TransactionExtention;
 import org.tron.api.WalletGrpc;
 import org.tron.api.WalletSolidityGrpc;
 import org.tron.common.crypto.ECKey;
-import org.tron.common.crypto.ECKey.ECDSASignature;
 import org.tron.common.crypto.Hash;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
@@ -4032,10 +4031,13 @@ public class PublicMethed {
     Transaction.Builder transactionBuilderSigned = transaction.toBuilder();
     byte[] hash = Sha256Hash.hash(transaction.getRawData().toByteArray());
 
-    ECDSASignature signature = ecKey.sign(hash);
+/*    ECDSASignature signature = ecKey.sign(hash);
     ByteString bsSign = ByteString.copyFrom(signature.toByteArray());
     transactionBuilderSigned.addSignature(bsSign);
-    transaction = transactionBuilderSigned.build();
+    transaction = transactionBuilderSigned.build();*/
+    boolean isSideChain = false;
+    transaction = TransactionUtils
+        .sign(transaction, ecKey, Wallet.decodeFromBase58Check(mainGateWay), isSideChain);
     return transaction;
   }
 

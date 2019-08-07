@@ -77,7 +77,7 @@ public class MultiSign35 {
   }
 
   @Test(enabled = true, description = "Test perimissionID is "
-      + "7fff1fc0037e0000000000000000000000000000000000000000000000000000")
+      + "3f3d1ec0036001000000000000000000000000000000000000000000000000c0")
   public void testMultiUpdatepermissions_45() {
     ECKey ecKey = new ECKey(Utils.getRandom());
     byte[] test001Address = ecKey.getAddress();
@@ -111,7 +111,7 @@ public class MultiSign35 {
             + "\",\"weight\":1}]},"
             + "\"active_permissions\":[{\"type\":2,\"permission_name\":\"active0\","
             + "\"threshold\":1,\"operations\":\""
-            + "7fff1fc0037e0000000000000000000000000000000000000000000000000000\","
+            + "3f3d1ec0036001000000000000000000000000000000000000000000000000c0\","
             + "\"keys\":[{\"address\":\"" + PublicMethed.getAddressString(sendAccountKey4)
             + "\",\"weight\":1}]}]} ";
 
