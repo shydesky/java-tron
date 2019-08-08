@@ -1815,14 +1815,6 @@ public class Manager {
     return assetIssueV2Store;
   }
 
-  public AssetIssueStore getAssetIssueStoreFinal() {
-    if (getDynamicPropertiesStore().getAllowSameTokenName() == 0) {
-      return getAssetIssueStore();
-    } else {
-      return getAssetIssueV2Store();
-    }
-  }
-
   public void setAssetIssueStore(AssetIssueStore assetIssueStore) {
     this.assetIssueStore = assetIssueStore;
   }
