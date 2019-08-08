@@ -1,5 +1,7 @@
 package org.tron.core.capsule;
 
+import static org.tron.common.utils.Commons.computeAddress;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +27,7 @@ public class WitnessCapsule implements ProtoCapsule<Witness>, Comparable<Witness
     final Witness.Builder witnessBuilder = Witness.newBuilder();
     this.witness = witnessBuilder
         .setPubKey(pubKey)
-        .setAddress(ByteString.copyFrom(ECKey.computeAddress(pubKey.toByteArray())))
+        .setAddress(ByteString.copyFrom(computeAddress(pubKey.toByteArray())))
         .setUrl(url).build();
   }
 

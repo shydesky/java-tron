@@ -133,7 +133,8 @@ public final class VMUtils {
     if (deposit.getAssetIssue(tokenIdWithoutLeadingZero) == null) {
       throw new ContractValidateException("No asset !");
     }
-    if (!deposit.getDbManager().getAssetIssueStoreFinal().has(tokenIdWithoutLeadingZero)) {
+    if (Commons.getAssetIssueStoreFinal(deposit.getDbManager().getDynamicPropertiesStore(),
+        deposit.getDbManager().getAssetIssueStore(), deposit.getDbManager().getAssetIssueV2Store()).has(tokenIdWithoutLeadingZero)) {
       throw new ContractValidateException("No asset !");
     }
 

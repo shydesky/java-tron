@@ -15,6 +15,7 @@ import org.tron.common.runtime.vm.DataWord;
 import org.tron.common.runtime.vm.program.Storage;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
+import org.tron.common.utils.Commons;
 import org.tron.common.utils.StringUtil;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.AssetIssueCapsule;
@@ -361,7 +362,8 @@ public class DepositImpl implements Deposit {
     if (this.parent != null) {
       assetIssueCapsule = parent.getAssetIssue(tokenIdWithoutLeadingZero);
     } else {
-      assetIssueCapsule = this.dbManager.getAssetIssueStoreFinal().get(tokenIdWithoutLeadingZero);
+      assetIssueCapsule = Commons.getAssetIssueStoreFinal(dbManager.getDynamicPropertiesStore(),
+          dbManager.getAssetIssueStore(), dbManager.getAssetIssueV2Store()).get(tokenIdWithoutLeadingZero);
     }
     if (assetIssueCapsule != null) {
       assetIssueCache.put(key, Value.create(assetIssueCapsule.getData()));

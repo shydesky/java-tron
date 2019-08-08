@@ -990,7 +990,7 @@ public class Wallet {
   public AssetIssueList getAssetIssueList() {
     AssetIssueList.Builder builder = AssetIssueList.newBuilder();
 
-    dbManager.getAssetIssueStoreFinal().getAllAssetIssues()
+    Commons.getAssetIssueStoreFinal(dbManager.getDynamicPropertiesStore(), dbManager.getAssetIssueStore(), dbManager.getAssetIssueV2Store()).getAllAssetIssues()
         .forEach(issueCapsule -> builder.addAssetIssue(issueCapsule.getInstance()));
 
     return builder.build();
@@ -1001,7 +1001,8 @@ public class Wallet {
     AssetIssueList.Builder builder = AssetIssueList.newBuilder();
 
     List<AssetIssueCapsule> assetIssueList =
-        dbManager.getAssetIssueStoreFinal().getAssetIssuesPaginated(offset, limit);
+        Commons.getAssetIssueStoreFinal(dbManager.getDynamicPropertiesStore(), dbManager.getAssetIssueStore(), dbManager.getAssetIssueV2Store())
+            .getAssetIssuesPaginated(offset, limit);
 
     if (CollectionUtils.isEmpty(assetIssueList)) {
       return null;
@@ -1017,7 +1018,8 @@ public class Wallet {
     }
 
     List<AssetIssueCapsule> assetIssueCapsuleList =
-        dbManager.getAssetIssueStoreFinal().getAllAssetIssues();
+        Commons.getAssetIssueStoreFinal(dbManager.getDynamicPropertiesStore(),
+            dbManager.getAssetIssueStore(), dbManager.getAssetIssueV2Store()).getAllAssetIssues();
 
     AssetIssueList.Builder builder = AssetIssueList.newBuilder();
     assetIssueCapsuleList.stream()
@@ -1203,7 +1205,8 @@ public class Wallet {
     }
 
     List<AssetIssueCapsule> assetIssueCapsuleList =
-        dbManager.getAssetIssueStoreFinal().getAllAssetIssues();
+        Commons.getAssetIssueStoreFinal(dbManager.getDynamicPropertiesStore(),
+            dbManager.getAssetIssueStore(), dbManager.getAssetIssueV2Store()).getAllAssetIssues();
 
     AssetIssueList.Builder builder = AssetIssueList.newBuilder();
     assetIssueCapsuleList.stream()

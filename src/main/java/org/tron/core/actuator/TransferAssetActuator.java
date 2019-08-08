@@ -143,7 +143,7 @@ public class TransferAssetActuator extends AbstractActuator {
       throw new ContractValidateException("No owner account!");
     }
 
-    if (!this.dbManager.getAssetIssueStoreFinal().has(assetName)) {
+    if (!Commons.getAssetIssueStoreFinal(dbManager.getDynamicPropertiesStore(), dbManager.getAssetIssueStore(), dbManager.getAssetIssueV2Store()).has(assetName)) {
       throw new ContractValidateException("No asset !");
     }
 

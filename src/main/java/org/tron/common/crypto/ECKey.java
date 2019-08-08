@@ -20,6 +20,7 @@ package org.tron.common.crypto;
 
 import static org.tron.common.utils.BIUtil.isLessThan;
 import static org.tron.common.utils.ByteUtil.bigIntegerToBytes;
+import static org.tron.common.utils.Commons.computeAddress;
 
 import java.io.IOException;
 import java.io.Serializable;

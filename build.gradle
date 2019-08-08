@@ -186,8 +186,8 @@ dependencies {
     compile group: 'org.pf4j', name: 'pf4j', version: '2.5.0'
 
     compile group: 'org.zeromq', name: 'jeromq', version: '0.5.0'
+    compile 'com.github.tronprotocol:chainbase:master-SNAPSHOT'
     compile 'com.github.tronprotocol:zksnark-java-sdk:master-SNAPSHOT'
-    compile 'com.github.tronprotocol:chainbase:protected-SNAPSHOT'
 }
 
 check.dependsOn 'lint'
