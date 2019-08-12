@@ -59,7 +59,8 @@ public class ParticipateAssetIssueActuator extends AbstractActuator {
 
       //calculate the exchange amount
       AssetIssueCapsule assetIssueCapsule;
-      assetIssueCapsule = this.dbManager.getAssetIssueStoreFinal().get(key);
+      assetIssueCapsule = Commons.getAssetIssueStoreFinal(dbManager.getDynamicPropertiesStore(), dbManager.getAssetIssueStore(),
+          dbManager.getAssetIssueV2Store()).get(key);
 
       long exchangeAmount = Math.multiplyExact(cost, assetIssueCapsule.getNum());
       exchangeAmount = Math.floorDiv(exchangeAmount, assetIssueCapsule.getTrxNum());
@@ -149,7 +150,8 @@ public class ParticipateAssetIssueActuator extends AbstractActuator {
 
       //Whether have the mapping
       AssetIssueCapsule assetIssueCapsule;
-      assetIssueCapsule = this.dbManager.getAssetIssueStoreFinal().get(assetName);
+      assetIssueCapsule = Commons.getAssetIssueStoreFinal(dbManager.getDynamicPropertiesStore(),
+          dbManager.getAssetIssueStore(), dbManager.getAssetIssueV2Store()).get(assetName);
       if (assetIssueCapsule == null) {
         throw new ContractValidateException("No asset named " + ByteArray.toStr(assetName));
       }

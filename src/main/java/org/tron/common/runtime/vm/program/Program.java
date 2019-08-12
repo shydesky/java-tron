@@ -31,6 +31,7 @@ import static org.tron.common.runtime.utils.MUtil.transferAllToken;
 import static org.tron.common.utils.BIUtil.isPositive;
 import static org.tron.common.utils.BIUtil.toBI;
 import static org.tron.common.utils.ByteUtil.stripLeadingZeroes;
+import static org.tron.common.utils.DBConfig.allowTvmConstantinople;
 
 import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
@@ -55,6 +56,7 @@ import org.tron.common.runtime.vm.OpCode;
 import org.tron.common.runtime.vm.PrecompiledContracts;
 import org.tron.common.runtime.vm.VM;
 import org.tron.common.runtime.vm.VMConstant;
+import org.tron.common.runtime.vm.VMUtils;
 import org.tron.common.runtime.vm.program.invoke.ProgramInvoke;
 import org.tron.common.runtime.vm.program.invoke.ProgramInvokeFactory;
 import org.tron.common.runtime.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -422,7 +424,7 @@ public class Program {
           transferAllToken(getContractState(), owner, obtainer);
         }
       } catch (ContractValidateException e) {
-        if (VMConfig.allowTvmConstantinople()) {
+        if (allowTvmConstantinople()) {
           throw new TransferException(
               "transfer all token or transfer all trx failed in suicide: %s", e.getMessage());
         }
@@ -471,12 +473,12 @@ public class Program {
     AccountCapsule existingAccount = getContractState().getAccount(newAddress);
     boolean contractAlreadyExists = existingAccount != null;
 
-    if (VMConfig.allowTvmConstantinople()) {
+    if (allowTvmConstantinople()) {
       contractAlreadyExists =
           contractAlreadyExists && isContractExist(existingAccount, getContractState());
     }
     Deposit deposit = getContractState().newDepositChild();
-    if (VMConfig.allowTvmConstantinople()) {
+    if (allowTvmConstantinople()) {
       if (existingAccount == null) {
         deposit.createAccount(newAddress, "CreatedByContract",
             AccountType.Contract);
@@ -513,7 +515,7 @@ public class Program {
     long newBalance = 0L;
     if (!byTestingSuite() && endowment > 0) {
       try {
-        TransferActuator.validateForSmartContract(deposit, senderAddress, newAddress, endowment);
+        VMUtils.validateForSmartContract(deposit, senderAddress, newAddress, endowment);
       } catch (ContractValidateException e) {
         // TODO: unreachable exception
         throw new BytecodeExecutionException(VALIDATE_FOR_SMART_CONTRACT_FAILURE, e.getMessage());
@@ -654,7 +656,7 @@ public class Program {
     try {
       endowment = msg.getEndowment().value().longValueExact();
     } catch (ArithmeticException e) {
-      if (VMConfig.allowTvmConstantinople()) {
+      if (allowTvmConstantinople()) {
         refundEnergy(msg.getEnergy().longValue(), "endowment out of long range");
         throw new TransferException("endowment out of long range");
       } else {
@@ -703,10 +705,10 @@ public class Program {
         && senderAddress != contextAddress && endowment > 0) {
       if (!isTokenTransfer) {
         try {
-          TransferActuator
+          VMUtils
               .validateForSmartContract(deposit, senderAddress, contextAddress, endowment);
         } catch (ContractValidateException e) {
-          if (VMConfig.allowTvmConstantinople()) {
+          if (allowTvmConstantinople()) {
             refundEnergy(msg.getEnergy().longValue(), "refund energy from message call");
             throw new TransferException("transfer trx failed: %s", e.getMessage());
           }
@@ -716,10 +718,10 @@ public class Program {
         contextBalance = deposit.addBalance(contextAddress, endowment);
       } else {
         try {
-          TransferAssetActuator.validateForSmartContract(deposit, senderAddress, contextAddress,
+          VMUtils.validateForSmartContract(deposit, senderAddress, contextAddress,
               tokenId, endowment);
         } catch (ContractValidateException e) {
-          if (VMConfig.allowTvmConstantinople()) {
+          if (allowTvmConstantinople()) {
             refundEnergy(msg.getEnergy().longValue(), "refund energy from message call");
             throw new TransferException("transfer trc10 failed: %s", e.getMessage());
           }
@@ -1427,7 +1429,7 @@ public class Program {
         }
       } else {
         try {
-          TransferAssetActuator
+          VMUtils
               .validateForSmartContract(deposit, senderAddress, contextAddress, tokenId, endowment);
         } catch (ContractValidateException e) {
           throw new BytecodeExecutionException(VALIDATE_FOR_SMART_CONTRACT_FAILURE, e.getMessage());
@@ -1503,7 +1505,7 @@ public class Program {
       try {
         tokenId = msg.getTokenId().sValue().longValueExact();
       } catch (ArithmeticException e) {
-        if (VMConfig.allowTvmConstantinople()) {
+        if (allowTvmConstantinople()) {
           refundEnergy(msg.getEnergy().longValue(), "refund energy from message call");
           throw new TransferException(VALIDATE_FOR_SMART_CONTRACT_FAILURE, INVALID_TOKEN_ID_MSG);
         }
@@ -1514,7 +1516,7 @@ public class Program {
       if ((tokenId <= VMConstant.MIN_TOKEN_ID && tokenId != 0)
           || (tokenId == 0 && msg.isTokenTransferMsg())) {
         // tokenId == 0 is a default value for token id DataWord.
-        if (VMConfig.allowTvmConstantinople()) {
+        if (allowTvmConstantinople()) {
           refundEnergy(msg.getEnergy().longValue(), "refund energy from message call");
           throw new TransferException(VALIDATE_FOR_SMART_CONTRACT_FAILURE, INVALID_TOKEN_ID_MSG);
         }
@@ -1539,7 +1541,7 @@ public class Program {
       try {
         tokenId = tokenIdDataWord.sValue().longValueExact();
       } catch (ArithmeticException e) {
-        if (VMConfig.allowTvmConstantinople()) {
+        if (allowTvmConstantinople()) {
           throw new TransferException(VALIDATE_FOR_SMART_CONTRACT_FAILURE, INVALID_TOKEN_ID_MSG);
         }
         throw e;
