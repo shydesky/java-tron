@@ -1,14 +1,15 @@
 package org.tron.core.consensus.base;
 
-import java.util.List;
 import org.tron.protos.Protocol.Block;
 
 public interface ConsensusInterface {
 
-//  void register(BlockHandle handle, List<byte[]> privateKeys);
+  void start(Param param);
 
-  void init(BlockHandle handle, List<byte[]> privateKeys);
+  void stop();
 
-  boolean processBlock(Block block);
+  boolean validBlock(Block block);
+
+  boolean applyBlock(Block block);
 
 }

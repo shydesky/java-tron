@@ -1,25 +1,37 @@
 package org.tron.core.consensus;
 
-import java.util.List;
-import org.tron.core.consensus.base.BlockHandle;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.tron.core.consensus.base.ConsensusInterface;
+import org.tron.core.consensus.base.Param;
+import org.tron.core.consensus.dpos.DposService;
 import org.tron.protos.Protocol.Block;
 
+@Slf4j(topic = "consensus")
+@Component
 public class Consensus {
 
-  void init(BlockHandle handle, List<byte[]> privateKeys) {
+  @Autowired
+  private DposService dposService;
 
+  private ConsensusInterface consensusInterface;
+
+  public void start(Param param) {
+    consensusInterface = dposService;
+    consensusInterface.start(param);
   }
 
-  void start() {
-
+  public void stop() {
+    consensusInterface.stop();
   }
 
-  void stop() {
-
+  public boolean validBlock(Block block){
+    return consensusInterface.validBlock(block);
   }
 
-  boolean processBlock(Block block) {
-    return true;
+  public boolean applyBlock(Block block) {
+    return consensusInterface.applyBlock(block);
   }
 
 }

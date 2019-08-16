@@ -1,17 +1,16 @@
 package org.tron.core.consensus.base;
 
-import org.tron.core.capsule.BlockCapsule;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.BlockHeader;
 
 public interface BlockHandle {
 
-  Status ready();
+  State getState();
 
   Object getLock();
 
-  BlockCapsule produce();
+  Block produce(BlockHeader.raw blockHead);
 
-  void complete(BlockCapsule block);
+  void complete(Block block);
 
 }

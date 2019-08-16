@@ -1,62 +1,133 @@
 package org.tron.core.consensus.dpos;
 
-import static org.tron.core.witness.BlockProductionCondition.NOT_MY_TURN;
+import static org.tron.core.consensus.base.Constant.SOLIDIFIED_THRESHOLD;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
-import org.tron.common.application.Application;
-import org.tron.common.application.TronApplicationContext;
-import org.tron.common.backup.BackupManager;
-import org.tron.common.backup.BackupManager.BackupStatusEnum;
-import org.tron.common.backup.BackupServer;
-import org.tron.common.crypto.ECKey;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.tron.common.utils.ByteArray;
-import org.tron.common.utils.StringUtil;
-import org.tron.core.capsule.AccountCapsule;
-import org.tron.core.capsule.BlockCapsule;
-import org.tron.core.capsule.WitnessCapsule;
-import org.tron.core.config.Parameter.ChainConstant;
-import org.tron.core.config.args.Args;
+import org.tron.common.utils.Sha256Hash;
+import org.tron.core.consensus.ConsensusDelegate;
 import org.tron.core.consensus.base.BlockHandle;
-import org.tron.core.db.Manager;
-import org.tron.core.exception.AccountResourceInsufficientException;
-import org.tron.core.exception.ContractExeException;
-import org.tron.core.exception.ContractValidateException;
-import org.tron.core.exception.TronException;
-import org.tron.core.exception.UnLinkedBlockException;
-import org.tron.core.exception.ValidateScheduleException;
-import org.tron.core.exception.ValidateSignatureException;
-import org.tron.core.net.TronNetService;
-import org.tron.core.net.message.BlockMessage;
-import org.tron.core.witness.BlockProductionCondition;
-import org.tron.core.witness.WitnessController;
+import org.tron.core.consensus.base.ConsensusInterface;
+import org.tron.core.consensus.base.Param;
+import org.tron.protos.Protocol.Block;
 
 @Slf4j(topic = "consensus")
-public class DposService {
+@Component
+public class DposService implements ConsensusInterface {
+
+  @Autowired
+  private ConsensusDelegate consensusDelegate;
+
+  @Autowired
+  private DposTask dposTask;
+
+  @Autowired
+  private DposSlot dposSlot;
+
+  @Autowired
+  private IncentiveManager incentiveManager;
+
+  @Autowired
+  private StateManager stateManager;
+
+  @Autowired
+  private StatisticManager statisticManager;
+
+  @Autowired
+  private MaintenanceManager maintenanceManager;
 
   @Getter
-  private static volatile boolean needSyncCheck = Args.getInstance().isNeedSyncCheck();
+  @Setter
+  private volatile boolean needSyncCheck;
+  @Getter
+  @Setter
+  private volatile int minParticipationRate;
+  @Getter
+  private BlockHandle blockHandle;
 
   @Getter
-  protected Map<ByteString, WitnessCapsule> witnesses = Maps.newHashMap();
+  protected Set<ByteString> witnesses;
 
-  @Getter
-  private Map<ByteString, byte[]> privateKeys = Maps.newHashMap();
+  @Override
+  public void start(Param param) {
+    this.needSyncCheck = param.isNeedSyncCheck();
+    this.minParticipationRate = param.getMinParticipationRate();
+    this.blockHandle = param.getBlockHandle();
+    this.witnesses = param.getWitnesses();
+    stateManager.setDposService(this);
+    dposTask.setDposService(this);
+    dposTask.init();
+  }
 
-  @Getter
-  private Map<byte[], byte[]> privateKeyToAddressMap = Maps.newHashMap();
+  @Override
+  public void stop() {
 
-  @Getter
-  BlockHandle blockHandle;
+  }
 
+  @Override
+  public boolean validBlock(Block block) {
+    if (consensusDelegate.getLatestBlockHeaderNumber() == 0) {
+      return true;
+    }
+    ByteString witnessAddress = block.getBlockHeader().getRawData().getWitnessAddress();
+    long timeStamp = block.getBlockHeader().getRawData().getTimestamp();
+    long bSlot = dposSlot.getAbSlot(timeStamp);
+    long hSlot = dposSlot.getAbSlot(consensusDelegate.getLatestBlockHeaderTimestamp());
+    if (bSlot <= hSlot) {
+      logger.warn("blockAbSlot is equals with headBlockAbSlot[" + bSlot + "]");
+      return false;
+    }
+
+    long slot = dposSlot.getSlot(timeStamp);
+    final ByteString scheduledWitness = dposSlot.getScheduledWitness(slot);
+    if (!scheduledWitness.equals(witnessAddress)) {
+      logger.warn(
+          "Witness out of order, scheduledWitness[{}],blockWitness[{}],blockTimeStamp[{}],slot[{}]",
+          ByteArray.toHexString(scheduledWitness.toByteArray()),
+          ByteArray.toHexString(witnessAddress.toByteArray()), new DateTime(timeStamp), slot);
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public boolean applyBlock(Block block) {
+    stateManager.applyBlock(block);
+    statisticManager.applyBlock(block);
+    incentiveManager.applyBlock(block);
+    maintenanceManager.applyBlock(block);
+    updateSolidBlock();
+    return true;
+  }
+
+
+  private void updateSolidBlock() {
+    List<Long> numbers = consensusDelegate.getActiveWitnesses().stream()
+        .map(address -> consensusDelegate.getWitnesseByAddress(address).getLatestBlockNum())
+        .sorted()
+        .collect(Collectors.toList());
+    long size = consensusDelegate.getActiveWitnesses().size();
+    int position = (int) (size * (1 - SOLIDIFIED_THRESHOLD * 1.0 / 100));
+    long newSolidNum = numbers.get(position);
+    long oldSolidNum = consensusDelegate.getLatestSolidifiedBlockNum();
+    if (newSolidNum < oldSolidNum) {
+      logger.warn("Update solid block number failed, new:{} < old:{}", newSolidNum, newSolidNum);
+      return;
+    }
+    consensusDelegate.saveLatestSolidifiedBlockNum(newSolidNum);
+    logger.info("Update solid block number to {}", newSolidNum);
+  }
+
+  public static Sha256Hash getBlockHash(Block block) {
+    return Sha256Hash.of(block.getBlockHeader().getRawData().toByteArray());
+  }
 }

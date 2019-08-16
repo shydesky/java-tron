@@ -10,150 +10,111 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.tron.common.utils.ByteArray;
+import org.tron.common.utils.Sha256Hash;
 import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.capsule.WitnessCapsule;
+import org.tron.core.config.Parameter.ChainConstant;
 import org.tron.core.config.args.Args;
+import org.tron.core.consensus.ConsensusDelegate;
 import org.tron.core.consensus.base.BlockHandle;
-import org.tron.core.consensus.base.Status;
-import org.tron.core.db.Manager;
-import org.tron.core.exception.TronException;
-import org.tron.core.witness.BlockProductionCondition;
+import org.tron.core.consensus.base.State;
+import org.tron.protos.Protocol.Block;
+import org.tron.protos.Protocol.BlockHeader;
 
 @Slf4j(topic = "consensus")
+@Component
 public class DposTask {
 
   @Autowired
-  private Manager manager;
-
-  @Autowired
-  private DposStatus dposStatus;
-
-  @Autowired
-  private DposManager dposManager;
+  private ConsensusDelegate consensusDelegate;
 
   @Setter
   private DposService dposService;
 
-  private BlockHandle blockHandle;
+  @Autowired
+  private DposSlot dposSlot;
 
-  private boolean isRunning = true;
+  @Autowired
+  private StateManager stateManager;
 
-  private boolean needSyncCheck = Args.getInstance().isNeedSyncCheck();
+  private Thread produceThread;
 
-  private int minParticipationRate = Args.getInstance().getMinParticipationRate();
+  private volatile boolean isRunning = true;
 
-  private Map<ByteString, byte[]> privateKeys = Maps.newHashMap();
-
-  private Map<ByteString, WitnessCapsule> witnesses = Maps.newHashMap();
-
-  private static final int PRODUCE_TIME_OUT = 500;
-
-  public void init(BlockHandle blockHandle) {
+  public void init() {
 
     Runnable runnable = () -> {
       while (isRunning) {
         try {
-          if (this.needSyncCheck) {
+          if (dposService.isNeedSyncCheck()) {
             Thread.sleep(1000);
-            needSyncCheck = dposManager.getSlotTime(1) < System.currentTimeMillis();
+            dposService.setNeedSyncCheck(dposSlot.getTime(1) < System.currentTimeMillis());
           } else {
-            DateTime time = DateTime.now();
-            long timeToNextSecond = BLOCK_PRODUCED_INTERVAL
-                - (time.getSecondOfMinute() * 1000 + time.getMillisOfSecond())
-                % BLOCK_PRODUCED_INTERVAL;
-//            if (timeToNextSecond < 50) {
-//              timeToNextSecond = timeToNextSecond + ChainConstant.BLOCK_PRODUCED_INTERVAL;
-//            }
-            Thread.sleep(timeToNextSecond);
-            blockProductionLoop();
+            long time = BLOCK_PRODUCED_INTERVAL - System.currentTimeMillis() % BLOCK_PRODUCED_INTERVAL;
+            Thread.sleep(time);
+            State state = produceBlock();
+            if (!State.OK.equals(state)) {
+              logger.info("Produce block failed: {}", state);
+            }
           }
         } catch (Throwable throwable) {
-          logger.error("Generate block error.", throwable);
+          logger.error("Produce block error.", throwable);
         }
       }
     };
-
-    new Thread(runnable, "DPosMiner").start();
+    produceThread = new Thread(runnable, "DPosMiner");
+    produceThread.start();
   }
 
-  private void blockProductionLoop() throws InterruptedException {
-    BlockProductionCondition result = this.tryProduceBlock();
-
-    if (result == null) {
-      logger.warn("Result is null");
-      return;
-    }
-
-    if (result.ordinal() <= NOT_MY_TURN.ordinal()) {
-      logger.debug(result.toString());
-    } else {
-      logger.info(result.toString());
-    }
+  public void stop() {
+    isRunning = false;
+    produceThread.interrupt();
   }
 
-  private Status tryProduceBlock() throws Exception {
+  private State produceBlock() {
 
-    Status status = dposStatus.get();
-    if (!Status.OK.equals(status)) {
+    State status = stateManager.getState();
+    if (!State.OK.equals(status)) {
       return status;
     }
 
-    long now = System.currentTimeMillis() + 50;
+    synchronized (dposService.getBlockHandle().getLock()) {
 
-    BlockCapsule block;
-
-    try {
-
-      if (now < manager.getDynamicPropertiesStore().getLatestBlockHeaderTimestamp()) {
-        return Status.CLOCK_ERROR;
-      }
-
-      long slot = dposManager.getSlotAtTime(now);
+      long slot = dposSlot.getSlot(System.currentTimeMillis() + 50);
       if (slot == 0) {
-        return Status.NOT_TIME_YET;
+        return State.NOT_TIME_YET;
       }
 
-      final ByteString scheduledWitness = dposManager.getScheduledWitness(slot);
-      if (!dposService.getWitnesses().containsKey(scheduledWitness)) {
-        return Status.UNELECTED;
+      final ByteString scheduledWitness = dposSlot.getScheduledWitness(slot);
+      if (!dposService.getWitnesses().contains(scheduledWitness)) {
+        return State.NOT_MY_TURN;
       }
 
-      synchronized (blockHandle.getLock()) {
-        long scheduledTime = dposManager.getSlotTime(slot);
+      BlockHeader.raw raw = BlockHeader.raw.newBuilder()
+          .setWitnessAddress(scheduledWitness)
+          .setTimestamp(dposSlot.getTime(slot))
+          .build();
 
-        if (scheduledTime - now > PRODUCE_TIME_OUT) {
-          return Status.LAG;
-        }
-
-        //controller.setGeneratingBlock(true);
-
-        block = blockHandle.produce();
-        if (block == null) {
-          return Status.EXCEPTION_PRODUCING_BLOCK;
-        }
-
-        block.setWitness(Hex.encodeHexString(scheduledWitness.toByteArray()));
-        block.setWitness();
-
-
-        blockHandle.complete(block);
+      Block block = dposService.getBlockHandle().produce(raw);
+      if (block == null) {
+        return State.PRODUCE_BLOCK_FAILED;
       }
 
-      logger.info(
-          "Produce block successfully, blockNumber:{}, abSlot[{}], blockId:{}, transactionSize:{}, blockTime:{}, parentBlockId:{}",
-          block.getNum(), controller.getAbSlotAtTime(now), block.getBlockId(),
-          block.getTransactions().size(),
-          new DateTime(block.getTimeStamp()),
-          block.getParentHash());
+      stateManager.setCurrentBlock(block);
 
+      dposService.getBlockHandle().complete(block);
 
-      return  Status.OK;
-    } catch (TronException e) {
-      logger.error(e.getMessage(), e);
-      return  Status.EXCEPTION_PRODUCING_BLOCK;
-    } finally {
-      controller.setGeneratingBlock(false);
+      logger.info("Produce block successfully, num:{}, time:{}, witness:{}, hash:{} parentHash:{}",
+          block.getBlockHeader().getRawData().getNumber(),
+          new DateTime(block.getBlockHeader().getRawData().getTimestamp()),
+          block.getBlockHeader().getRawData().getWitnessAddress(),
+          DposService.getBlockHash(block),
+          ByteArray.toHexString(block.getBlockHeader().getRawData().getParentHash().toByteArray()));
     }
+
+    return State.OK;
   }
 
 }
