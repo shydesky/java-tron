@@ -87,6 +87,18 @@ public class Util {
     return jsonObject.toJSONString();
   }
 
+  public static String printBlockListWithNoTx(BlockList list, boolean selfType) {
+    List<Block> blocks = list.getBlockList();
+    JSONObject jsonObject = JSONObject.parseObject(JsonFormat.printToString(list, selfType));
+    JSONArray jsonArray = new JSONArray();
+    blocks.stream().forEach(block -> {
+      jsonArray.add(printBlockToJSONWithNoTx(block, selfType));
+    });
+    jsonObject.put("block", jsonArray);
+
+    return jsonObject.toJSONString();
+  }
+
   public static String printBlock(Block block, boolean selfType) {
     return printBlockToJSON(block, selfType).toJSONString();
   }
@@ -100,6 +112,18 @@ public class Util {
       jsonObject.put("transactions", printTransactionListToJSON(blockCapsule.getTransactions(),
           selfType));
     }
+    return jsonObject;
+  }
+
+  public static JSONObject printBlockToJSONWithNoTx(Block block, boolean selfType) {
+    BlockCapsule blockCapsule = new BlockCapsule(block);
+    String blockID = ByteArray.toHexString(blockCapsule.getBlockId().getBytes());
+    JSONObject jsonObject = JSONObject.parseObject(JsonFormat.printToString(block, selfType));
+    jsonObject.put("blockID", blockID);
+/*    if (!blockCapsule.getTransactions().isEmpty()) {
+      jsonObject.put("transactions", printTransactionListToJSON(blockCapsule.getTransactions(),
+          selfType));
+    }*/
     return jsonObject;
   }
 

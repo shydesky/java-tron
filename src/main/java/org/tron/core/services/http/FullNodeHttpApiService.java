@@ -166,7 +166,8 @@ public class FullNodeHttpApiService implements Service {
   private SetAccountIdServlet setAccountServlet;
   @Autowired
   private GetAccountByIdServlet getAccountByIdServlet;
-
+  @Autowired
+  private GetBlockHeaderByLimitNextServlet getBlockHeaderByLimitNextServlet;
 
   @Override
   public void init() {
@@ -214,6 +215,7 @@ public class FullNodeHttpApiService implements Service {
       context.addServlet(new ServletHolder(getBlockByNumServlet), "/getblockbynum");
       context.addServlet(new ServletHolder(getBlockByIdServlet), "/getblockbyid");
       context.addServlet(new ServletHolder(getBlockByLimitNextServlet), "/getblockbylimitnext");
+      context.addServlet(new ServletHolder(getBlockHeaderByLimitNextServlet), "/getblockheaderbylimitnext");
       context.addServlet(new ServletHolder(getBlockByLatestNumServlet), "/getblockbylatestnum");
       context.addServlet(new ServletHolder(getTransactionByIdServlet), "/gettransactionbyid");
 
