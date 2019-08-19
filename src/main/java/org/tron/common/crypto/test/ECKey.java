@@ -16,30 +16,8 @@
  * along with the ethereumJ library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.tron.common.crypto;
+package org.tron.common.crypto.test;
 
-import static org.tron.common.utils.BIUtil.isLessThan;
-import static org.tron.common.utils.ByteUtil.bigIntegerToBytes;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
-import javax.annotation.Nullable;
-import javax.crypto.KeyAgreement;
 import lombok.extern.slf4j.Slf4j;
 import org.spongycastle.asn1.ASN1InputStream;
 import org.spongycastle.asn1.ASN1Integer;
@@ -49,13 +27,10 @@ import org.spongycastle.asn1.x9.X9ECParameters;
 import org.spongycastle.asn1.x9.X9IntegerConverter;
 import org.spongycastle.crypto.agreement.ECDHBasicAgreement;
 import org.spongycastle.crypto.digests.SHA256Digest;
+import org.spongycastle.crypto.ec.CustomNamedCurves;
 import org.spongycastle.crypto.engines.AESEngine;
 import org.spongycastle.crypto.modes.SICBlockCipher;
-import org.spongycastle.crypto.params.ECDomainParameters;
-import org.spongycastle.crypto.params.ECPrivateKeyParameters;
-import org.spongycastle.crypto.params.ECPublicKeyParameters;
-import org.spongycastle.crypto.params.KeyParameter;
-import org.spongycastle.crypto.params.ParametersWithIV;
+import org.spongycastle.crypto.params.*;
 import org.spongycastle.crypto.signers.ECDSASigner;
 import org.spongycastle.crypto.signers.HMacDSAKCalculator;
 import org.spongycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
@@ -69,12 +44,28 @@ import org.spongycastle.math.ec.ECPoint;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Base64;
 import org.spongycastle.util.encoders.Hex;
-import org.tron.common.crypto.jce.ECKeyAgreement;
-import org.tron.common.crypto.jce.ECKeyFactory;
-import org.tron.common.crypto.jce.ECKeyPairGenerator;
-import org.tron.common.crypto.jce.ECSignatureFactory;
-import org.tron.common.crypto.jce.TronCastleProvider;
+import org.tron.common.crypto.Hash;
+import org.tron.common.crypto.jce.*;
+import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.ByteUtil;
+import org.tron.common.utils.Sha256Hash;
+import org.tron.core.Wallet;
+
+import javax.annotation.Nullable;
+import javax.crypto.KeyAgreement;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.security.*;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
+import java.util.Random;
+
+import static org.tron.common.utils.BIUtil.isLessThan;
+import static org.tron.common.utils.ByteUtil.bigIntegerToBytes;
 
 @Slf4j(topic = "crypto")
 public class ECKey implements Serializable {
@@ -102,7 +93,7 @@ public class ECKey implements Serializable {
 
   static {
     // All clients must agree on the curve to use by agreement.
-    X9ECParameters params = SECNamedCurves.getByName("secp256k1");
+    X9ECParameters params = CustomNamedCurves.getByName("secp256k1");
     CURVE = new ECDomainParameters(params.getCurve(), params.getG(),
         params.getN(), params.getH());
     CURVE_SPEC = new ECParameterSpec(params.getCurve(), params.getG(),
@@ -305,7 +296,7 @@ public class ECKey implements Serializable {
    * @return -
    */
   public static ECKey fromPrivateAndPrecalculatedPublic(BigInteger priv,
-      ECPoint pub) {
+                                                        ECPoint pub) {
     return new ECKey(priv, pub);
   }
 
@@ -690,7 +681,7 @@ public class ECKey implements Serializable {
    */
   @Nullable
   public static ECKey recoverFromSignature(int recId, ECDSASignature sig,
-      byte[] messageHash) {
+                                           byte[] messageHash) {
     final byte[] pubBytes = recoverPubBytesFromSignature(recId, sig,
         messageHash);
     if (pubBytes == null) {
@@ -1248,4 +1239,33 @@ public class ECKey implements Serializable {
 
   }
 
+  public static void main(String[] args) throws SignatureException {
+    byte[] priKey = ByteArray.fromHexString("D95611A9AF2A2A45359106222ED1AFED48853D9A44DEFF8DC7913F5CBA727366");
+    byte[] hash = Sha256Hash.hash(("hello" + new Random().nextInt()).getBytes());
+
+    org.tron.common.crypto.ECKey ecKey = org.tron.common.crypto.ECKey.fromPrivate(priKey);
+    org.tron.common.crypto.ECKey.ECDSASignature sig = ecKey.sign(hash);
+    ECKey.ECDSASignature sig1 = new ECKey.ECDSASignature(sig.r, sig.s);
+    org.tron.common.crypto.test.ECKey.ECDSASignature sig2 = new org.tron.common.crypto.test.ECKey.ECDSASignature(sig.r, sig.s);
+
+    long total1 = 0;
+    long total2 = 0;
+    for(int i = 0; i < 100000; i++) {
+
+
+
+      long time1 = System.currentTimeMillis();
+      byte[] pubkey1 = org.tron.common.crypto.ECKey.recoverPubBytesFromSignature((int)sig.v-27, sig, hash);
+      long time2 = System.currentTimeMillis();
+      byte[] pubkey2 = ECKey.recoverPubBytesFromSignature((int)sig.v-27, sig1, hash);
+      long time3 = System.currentTimeMillis();
+      if (!Arrays.equals(pubkey1, ecKey.getPubKey()) ||  !Arrays.equals(pubkey2, ecKey.getPubKey())) {
+        System.out.println("not eq!");
+        break;
+      }
+      total1 += (time2 - time1);
+      total2 += (time3 - time2);
+    }
+    System.out.printf("total1 = %d, total2 = %d\n", total1, total2);
+  }
 }
