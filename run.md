@@ -171,7 +171,7 @@ Open the configuration panel:
 
 </summary>
 
-![](docs/images/program_configure.png)
+![](framework/docs/images/program_configure.png)
 
 </details>  
 
@@ -182,7 +182,7 @@ In the `Program arguments` option, fill in `--witness`:
 
 </summary>
 
-![](docs/images/set_witness_param.jpeg)
+![](framework/docs/images/set_witness_param.jpeg)
 
 </details> 
   
@@ -190,4 +190,4 @@ Then, run `FullNode::main()` again.
 
 ## Advanced Configurations
 
-Read the [Advanced Configurations](src/main/java/org/tron/core/config/README.md).
+Read the [Advanced Configurations](framework/src/main/java/org/tron/core/config/README.md).

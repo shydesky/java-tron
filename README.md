@@ -64,11 +64,11 @@ TRON enables large-scale development and engagement. With over 2000 transactions
 
 # Quick Start
 
-* [Quick Start](./quickstart.md) TRON Quickstart image setup
+* [Quick Start](quickstart.md) TRON Quickstart image setup
 
 # Deploy
-* [Build](./build.md) Please build java-tron after cloning the project  
-* [Run](./run.md) Run java-tron
+* [Build](build.md) Please build java-tron after cloning the project  
+* [Run](run.md) Run java-tron
 
 # Developer Community
 
