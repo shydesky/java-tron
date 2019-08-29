@@ -3,20 +3,28 @@ package org.tron.program;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.core.Constant;
+import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
+import org.tron.core.db.AccountStore;
+import org.tron.core.db.Manager;
 import org.tron.core.services.RpcApiService;
 import org.tron.core.services.WitnessService;
 import org.tron.core.services.http.FullNodeHttpApiService;
 import org.tron.core.services.interfaceOnSolidity.RpcApiServiceOnSolidity;
 import org.tron.core.services.interfaceOnSolidity.http.solidity.HttpApiOnSolidityService;
+import org.tron.protos.Protocol.Vote;
 
 @Slf4j(topic = "app")
 public class FullNode {
@@ -88,6 +96,40 @@ public class FullNode {
           .getBean(HttpApiOnSolidityService.class);
       appT.addService(httpApiOnSolidityService);
     }
+
+    Manager dbmanager = context.getBean(Manager.class);
+    AccountStore accountStore = dbmanager.getAccountStore();
+    Iterator<Entry<byte[], AccountCapsule>> iterator = accountStore.iterator();
+
+    long allForEnergy = 0L;
+    long allForBandwidth = 0L;
+
+    long voteForEnergy = 0L;
+    long voteorBandwidth = 0L;
+
+    float bandwidth_p = 5.659f;
+    float energy_p = 92.61f;
+
+    AccountCapsule temp;
+    while (iterator.hasNext()) {
+      temp = iterator.next().getValue();
+      if (temp.getFrozenBalance() > 0) {
+        System.out.println(Hex.toHexString(temp.getAddress().toByteArray()) + ":" + String
+            .valueOf(temp.getFrozenBalance()));
+      }
+      allForEnergy += temp.getEnergyFrozenBalance();  //2150000000
+      allForBandwidth += temp.getFrozenBalance(); //10000000
+      List<Vote> list = temp.getVotesList();
+      if (list.size() > 0) {
+        voteForEnergy += temp.getEnergyFrozenBalance();
+        voteorBandwidth += temp.getFrozenBalance();
+      }
+    }
+    System.out.println("total energy:" + allForEnergy / 1000000);
+    System.out.println("total bandwidth:" + allForBandwidth / 1000000);
+
+    System.out.println("vote energy:" + voteForEnergy / 1000000);
+    System.out.println("vote bandwidth:" + voteorBandwidth / 1000000);
 
     appT.initServices(cfgArgs);
     appT.startServices();
