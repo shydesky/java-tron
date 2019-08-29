@@ -113,23 +113,28 @@ public class FullNode {
     AccountCapsule temp;
     while (iterator.hasNext()) {
       temp = iterator.next().getValue();
-      if (temp.getFrozenBalance() > 0) {
+      /*if (temp.getEnergyFrozenBalance() > 0) {
         System.out.println(Hex.toHexString(temp.getAddress().toByteArray()) + ":" + String
-            .valueOf(temp.getFrozenBalance()));
-      }
-      allForEnergy += temp.getEnergyFrozenBalance();  //2150000000
-      allForBandwidth += temp.getFrozenBalance(); //10000000
+            .valueOf(temp.getEnergyFrozenBalance()));
+      }*/
+      allForEnergy += temp.getAllFrozenBalanceForBandwidth();  //2150000000
+      allForBandwidth += temp.getAllFrozenBalanceForEnergy(); //10000000
       List<Vote> list = temp.getVotesList();
       if (list.size() > 0) {
         voteForEnergy += temp.getEnergyFrozenBalance();
         voteorBandwidth += temp.getFrozenBalance();
       }
     }
+
+    dbmanager.getDynamicPropertiesStore().getTotalEnergyWeight();
     System.out.println("total energy:" + allForEnergy / 1000000);
     System.out.println("total bandwidth:" + allForBandwidth / 1000000);
 
     System.out.println("vote energy:" + voteForEnergy / 1000000);
     System.out.println("vote bandwidth:" + voteorBandwidth / 1000000);
+
+    System.out.println("dynamic bandwidth: " + dbmanager.getDynamicPropertiesStore().getTotalNetWeight());
+    System.out.println("dynamic energy: " + dbmanager.getDynamicPropertiesStore().getTotalEnergyWeight());
 
     appT.initServices(cfgArgs);
     appT.startServices();
