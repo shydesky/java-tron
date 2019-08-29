@@ -117,12 +117,12 @@ public class FullNode {
         System.out.println(Hex.toHexString(temp.getAddress().toByteArray()) + ":" + String
             .valueOf(temp.getEnergyFrozenBalance()));
       }*/
-      allForEnergy += temp.getAllFrozenBalanceForBandwidth();  //2150000000
-      allForBandwidth += temp.getAllFrozenBalanceForEnergy(); //10000000
+      allForEnergy += temp.getAllFrozenBalanceForEnergy();  //2150000000
+      allForBandwidth += temp.getAllFrozenBalanceForBandwidth(); //10000000
       List<Vote> list = temp.getVotesList();
       if (list.size() > 0) {
-        voteForEnergy += temp.getEnergyFrozenBalance();
-        voteorBandwidth += temp.getFrozenBalance();
+        voteForEnergy += temp.getAllFrozenBalanceForEnergy();
+        voteorBandwidth += temp.getAllFrozenBalanceForBandwidth();
       }
     }
 
