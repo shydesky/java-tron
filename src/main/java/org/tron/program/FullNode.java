@@ -50,6 +50,10 @@ public class FullNode {
   private static long[] computeBlockEnergy(Block block) throws BadItemException {
     ConcurrentHashMap<Integer,Long> map = new ConcurrentHashMap<>();
 
+    map.put(0,0L);
+    map.put(1,0L);
+    map.put(2,0L);
+    map.put(3,0L);
     long[] result = new long[4];
 
     block.getTransactionsList().parallelStream().forEach(transaction -> {
@@ -72,7 +76,7 @@ public class FullNode {
             }
           }
         }catch (Exception ex){
-          logger.error(ex.getMessage());
+          logger.error(""+ex.getMessage());
         }
 
       }
@@ -169,7 +173,7 @@ public class FullNode {
           try{
             countEnergy(cfgArgs.getStartBlockNumber(), cfgArgs.getBlockNumber());
           }catch (Exception ex){
-            logger.error(ex.getMessage());
+            logger.error(""+ex.getMessage());
           }
           System.exit(0);
         }
