@@ -54,16 +54,35 @@ public class FullNode {
     map.put(1,0L);
     map.put(2,0L);
     map.put(3,0L);
+
+
+    map.put(4,0L);
+    map.put(5,0L);
+
     long[] result = new long[4];
+
 
     block.getTransactionsList().parallelStream().forEach(transaction -> {
       if (transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.TriggerSmartContract
               || transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.CreateSmartContract) {
+
+
         byte[] txid = Sha256Hash.hash(transaction.getRawData().toByteArray());
+
+
+
         try{
+          long start = System.currentTimeMillis();
           TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
+          long middle = System.currentTimeMillis();
+
+          map.put(4,map.get(4)+middle - start);
+
           if (transactionInfoCapsule != null) {
             TransactionInfo transactionInfo = transactionInfoCapsule.getInstance();
+            long end = System.currentTimeMillis();
+            map.put(5,map.get(5)+end - middle);
+
             if (transactionInfo != null) {
               map.put(0,map.get(0)+transactionInfo.getReceipt().getEnergyUsage());
               map.put(1,map.get(1)+transactionInfo.getReceipt().getEnergyFee());
@@ -81,6 +100,9 @@ public class FullNode {
 
       }
     });
+
+    logger.warn("getTransactionInfo:" + map.get(4));
+    logger.warn("deseriesTransactionInfo:" + map.get(5));
 
 //    for (Transaction transaction : block.getTransactionsList()) {
 //      if (transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.TriggerSmartContract
