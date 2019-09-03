@@ -3,6 +3,9 @@ package org.tron.program;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -45,26 +48,58 @@ public class FullNode {
   }
 
   private static long[] computeBlockEnergy(Block block) throws BadItemException {
+    ConcurrentHashMap<Integer,Long> map = new ConcurrentHashMap<>();
+
     long[] result = new long[4];
 
-    for (Transaction transaction : block.getTransactionsList()) {
+    block.getTransactionsList().parallelStream().forEach(transaction -> {
       if (transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.TriggerSmartContract
               || transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.CreateSmartContract) {
         byte[] txid = Sha256Hash.hash(transaction.getRawData().toByteArray());
-        TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
-        if (transactionInfoCapsule == null){
-          continue;
+        try{
+          TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
+          if (transactionInfoCapsule != null) {
+            TransactionInfo transactionInfo = transactionInfoCapsule.getInstance();
+            if (transactionInfo != null) {
+              map.put(0,map.get(0)+transactionInfo.getReceipt().getEnergyUsage());
+              map.put(1,map.get(1)+transactionInfo.getReceipt().getEnergyFee());
+              map.put(2,map.get(2)+transactionInfo.getReceipt().getOriginEnergyUsage());
+              map.put(3,map.get(3)+transactionInfo.getReceipt().getEnergyUsageTotal());
+//              result[0] += transactionInfo.getReceipt().getEnergyUsage();
+//              result[1] += transactionInfo.getReceipt().getEnergyFee();
+//              result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
+//              result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
+            }
+          }
+        }catch (Exception ex){
+          logger.error(ex.getMessage());
         }
-        TransactionInfo transactionInfo = transactionInfoCapsule.getInstance();
-        if (transactionInfo == null){
-          continue;
-        }
-        result[0] += transactionInfo.getReceipt().getEnergyUsage();
-        result[1] += transactionInfo.getReceipt().getEnergyFee();
-        result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
-        result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
+
       }
-    }
+    });
+
+//    for (Transaction transaction : block.getTransactionsList()) {
+//      if (transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.TriggerSmartContract
+//              || transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.CreateSmartContract) {
+//        byte[] txid = Sha256Hash.hash(transaction.getRawData().toByteArray());
+//        TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
+//        if (transactionInfoCapsule == null){
+//          continue;
+//        }
+//        TransactionInfo transactionInfo = transactionInfoCapsule.getInstance();
+//        if (transactionInfo == null){
+//          continue;
+//        }
+//        result[0] += transactionInfo.getReceipt().getEnergyUsage();
+//        result[1] += transactionInfo.getReceipt().getEnergyFee();
+//        result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
+//        result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
+//      }
+//    }
+    result[0] = map.get(0);
+    result[1] = map.get(1);
+    result[2] = map.get(2);
+    result[3] = map.get(3);
 
     return result;
   }
