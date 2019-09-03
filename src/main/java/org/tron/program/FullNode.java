@@ -71,7 +71,8 @@ public class FullNode {
 
 
         try{
-          TransactionInfoCapsule transactionInfoCapsule = db.getTransactionRetStore().getTransactionInfo(txid);
+//          TransactionInfoCapsule transactionInfoCapsule = db.getTransactionRetStore().getTransactionInfo(txid);
+          TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
 
 
           if (transactionInfoCapsule != null) {
