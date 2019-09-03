@@ -55,11 +55,8 @@ public class FullNode {
     map.put(2,0L);
     map.put(3,0L);
 
-
-    map.put(4,0L);
-    map.put(5,0L);
-
     long[] result = new long[4];
+    long start = System.currentTimeMillis();
 
 
     block.getTransactionsList().parallelStream().forEach(transaction -> {
@@ -72,16 +69,11 @@ public class FullNode {
 
 
         try{
-          long start = System.currentTimeMillis();
           TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
-          long middle = System.currentTimeMillis();
 
-          map.put(4,map.get(4)+middle - start);
 
           if (transactionInfoCapsule != null) {
             TransactionInfo transactionInfo = transactionInfoCapsule.getInstance();
-            long end = System.currentTimeMillis();
-            map.put(5,map.get(5)+end - middle);
 
             if (transactionInfo != null) {
               map.put(0,map.get(0)+transactionInfo.getReceipt().getEnergyUsage());
@@ -101,8 +93,9 @@ public class FullNode {
       }
     });
 
-    logger.warn("getTransactionInfo:" + map.get(4));
-    logger.warn("deseriesTransactionInfo:" + map.get(5));
+    long end = System.currentTimeMillis();
+
+    logger.warn("getTransactionInfo = {}", end-start);
 
 //    for (Transaction transaction : block.getTransactionsList()) {
 //      if (transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.TriggerSmartContract
@@ -140,7 +133,9 @@ public class FullNode {
 
     for (int i = 0; i < number; i++){
       logger.info("get block number = {}", startBlock+i);
+      long start = System.currentTimeMillis();
       Block block = getBlock(startBlock+i);
+      logger.warn("get block = {}", System.currentTimeMillis() - start);
       long[] energy = computeBlockEnergy(block);
       energyUsage[i/200] += energy[0];
       energyFee[i/200] += energy[1];
