@@ -69,7 +69,7 @@ public class FullNode {
 
 
         try{
-          TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
+          TransactionInfoCapsule transactionInfoCapsule = db.getTransactionRetStore().getTransactionInfo(txid);
 
 
           if (transactionInfoCapsule != null) {
@@ -84,7 +84,12 @@ public class FullNode {
 //              result[1] += transactionInfo.getReceipt().getEnergyFee();
 //              result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
 //              result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
+            }else {
+              logger.warn(ByteArray.toHexString(txid) + " is not exits");
             }
+
+          }else {
+            logger.warn(ByteArray.toHexString(txid) + " is not exits");
           }
         }catch (Exception ex){
           logger.error(""+ex.getMessage());
