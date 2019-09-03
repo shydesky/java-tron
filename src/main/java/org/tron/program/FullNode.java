@@ -130,7 +130,7 @@ public class FullNode {
       shutdown(appT);
 
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.error(e.getMessage());
     }
 
     System.exit(0);
