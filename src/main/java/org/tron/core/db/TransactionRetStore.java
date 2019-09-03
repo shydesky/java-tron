@@ -1,6 +1,8 @@
 package org.tron.core.db;
 
 import com.google.protobuf.ByteString;
+
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -56,4 +58,17 @@ public class TransactionRetStore extends TronStoreWithRevoking<TransactionRetCap
     return null;
   }
 
+  public List<TransactionInfo> getTransactionInfoList(long blockNumber) throws BadItemException {
+    byte[] value = revokingDB.getUnchecked(ByteArray.fromLong(blockNumber));
+    if (Objects.isNull(value)) {
+      return null;
+    }
+
+    TransactionRetCapsule result = new TransactionRetCapsule(value);
+    if (Objects.isNull(result) || Objects.isNull(result.getInstance())) {
+      return null;
+    }
+
+    return result.getInstance().getTransactioninfoList();
+  }
 }

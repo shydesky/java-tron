@@ -3,6 +3,7 @@ package org.tron.program;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -48,85 +49,22 @@ public class FullNode {
     return db.getBlockByNum(blockNumber).getInstance();
   }
 
-  private static long[] computeBlockEnergy(Block block) throws BadItemException {
-    ConcurrentHashMap<Integer,Long> map = new ConcurrentHashMap<>();
-
-    map.put(0,0L);
-    map.put(1,0L);
-    map.put(2,0L);
-    map.put(3,0L);
-
+  private static long[] computeBlockEnergy(long blockNumber) throws BadItemException {
     long[] result = new long[4];
     long start = System.currentTimeMillis();
 
-
-    block.getTransactionsList().parallelStream().forEach(transaction -> {
-      if (transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.TriggerSmartContract
-              || transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.CreateSmartContract) {
-
-
-        byte[] txid = new TransactionCapsule(transaction).getTransactionId().getBytes();
-//                Sha256Hash.hash(transaction.getRawData().toByteArray());
-
-
-
-        try{
-//          TransactionInfoCapsule transactionInfoCapsule = db.getTransactionRetStore().getTransactionInfo(txid);
-          TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
-
-
-          if (transactionInfoCapsule != null) {
-            TransactionInfo transactionInfo = transactionInfoCapsule.getInstance();
-
-            if (transactionInfo != null) {
-              map.put(0,map.get(0)+transactionInfo.getReceipt().getEnergyUsage());
-              map.put(1,map.get(1)+transactionInfo.getReceipt().getEnergyFee());
-              map.put(2,map.get(2)+transactionInfo.getReceipt().getOriginEnergyUsage());
-              map.put(3,map.get(3)+transactionInfo.getReceipt().getEnergyUsageTotal());
-//              result[0] += transactionInfo.getReceipt().getEnergyUsage();
-//              result[1] += transactionInfo.getReceipt().getEnergyFee();
-//              result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
-//              result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
-            }else {
-              logger.warn(ByteArray.toHexString(txid) + " is not exits");
-            }
-
-          }else {
-            logger.warn(ByteArray.toHexString(txid) + " is not exits");
-          }
-        }catch (Exception ex){
-          logger.error(""+ex.getMessage());
-        }
-
-      }
-    });
+    List<TransactionInfo> infoList = db.getTransactionRetStore().getTransactionInfoList(blockNumber);
+    for (TransactionInfo transactionInfo : infoList) {
+      result[0] += transactionInfo.getReceipt().getEnergyUsage();
+      result[1] += transactionInfo.getReceipt().getEnergyFee();
+      result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
+      result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
+    }
 
     long end = System.currentTimeMillis();
 
     logger.warn("getTransactionInfo = {}", end-start);
 
-//    for (Transaction transaction : block.getTransactionsList()) {
-//      if (transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.TriggerSmartContract
-//              || transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.CreateSmartContract) {
-//        byte[] txid = Sha256Hash.hash(transaction.getRawData().toByteArray());
-//        TransactionInfoCapsule transactionInfoCapsule = db.getTransactionHistoryStore().get(txid);
-//        if (transactionInfoCapsule == null){
-//          continue;
-//        }
-//        TransactionInfo transactionInfo = transactionInfoCapsule.getInstance();
-//        if (transactionInfo == null){
-//          continue;
-//        }
-//        result[0] += transactionInfo.getReceipt().getEnergyUsage();
-//        result[1] += transactionInfo.getReceipt().getEnergyFee();
-//        result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
-//        result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
-//      }
-//    }
-    result[0] = map.get(0);
-    result[1] = map.get(1);
-    result[2] = map.get(2);
-    result[3] = map.get(3);
 
     return result;
   }
@@ -141,10 +79,7 @@ public class FullNode {
 
     for (int i = 0; i < number; i++){
       logger.info("get block number = {}", startBlock+i);
-      long start = System.currentTimeMillis();
-      Block block = getBlock(startBlock+i);
-      logger.warn("get block = {}", System.currentTimeMillis() - start);
-      long[] energy = computeBlockEnergy(block);
+      long[] energy = computeBlockEnergy(startBlock+i);
       energyUsage[i/200] += energy[0];
       energyFee[i/200] += energy[1];
       originEnergyUsage[i/200] += energy[2];
