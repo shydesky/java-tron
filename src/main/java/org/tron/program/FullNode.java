@@ -15,6 +15,7 @@ import org.tron.common.application.TronApplicationContext;
 import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.core.Constant;
+import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.capsule.TransactionInfoCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
@@ -64,7 +65,8 @@ public class FullNode {
               || transaction.getRawData().getContract(0).getType() == Protocol.Transaction.Contract.ContractType.CreateSmartContract) {
 
 
-        byte[] txid = Sha256Hash.hash(transaction.getRawData().toByteArray());
+        byte[] txid = new TransactionCapsule(transaction).getTransactionId().getBytes();
+//                Sha256Hash.hash(transaction.getRawData().toByteArray());
 
 
 
