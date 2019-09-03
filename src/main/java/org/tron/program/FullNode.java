@@ -54,13 +54,18 @@ public class FullNode {
     long start = System.currentTimeMillis();
 
     List<TransactionInfo> infoList = db.getTransactionRetStore().getTransactionInfoList(blockNumber);
-    logger.info("info count = {}", infoList.size());
-    for (TransactionInfo transactionInfo : infoList) {
-      result[0] += transactionInfo.getReceipt().getEnergyUsage();
-      result[1] += transactionInfo.getReceipt().getEnergyFee();
-      result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
-      result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
+    if (infoList != null){
+      logger.info("info count = {}", infoList.size());
+      for (TransactionInfo transactionInfo : infoList) {
+        result[0] += transactionInfo.getReceipt().getEnergyUsage();
+        result[1] += transactionInfo.getReceipt().getEnergyFee();
+        result[2] += transactionInfo.getReceipt().getOriginEnergyUsage();
+        result[3] += transactionInfo.getReceipt().getEnergyUsageTotal();
+      }
+    } else {
+      logger.info("infoList is null");
     }
+
 
     long end = System.currentTimeMillis();
 
@@ -134,7 +139,7 @@ public class FullNode {
           try{
             countEnergy(cfgArgs.getStartBlockNumber(), cfgArgs.getBlockNumber());
           }catch (Exception ex){
-            logger.error(""+ex.getMessage());
+            logger.error(ex.getMessage());
           }
           System.exit(0);
         }
