@@ -78,6 +78,7 @@ public class FullNode {
     long[] energyUsageTatal = new long[(int)(number/200) +1];
 
     for (int i = 0; i < number; i++){
+      logger.info("get block number = {}", startBlock+i);
       Block block = getBlock(startBlock+i);
       long[] energy = computeBlockEnergy(block);
       energyUsage[i/200] += energy[0];
