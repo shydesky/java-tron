@@ -54,6 +54,7 @@ public class FullNode {
     long start = System.currentTimeMillis();
 
     List<TransactionInfo> infoList = db.getTransactionRetStore().getTransactionInfoList(blockNumber);
+    logger.info("info count = {}", infoList.size());
     for (TransactionInfo transactionInfo : infoList) {
       result[0] += transactionInfo.getReceipt().getEnergyUsage();
       result[1] += transactionInfo.getReceipt().getEnergyFee();
