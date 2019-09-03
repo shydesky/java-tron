@@ -62,6 +62,17 @@ public class Args {
 
   private static final Args INSTANCE = new Args();
 
+  @Getter
+  @Setter
+  @Parameter(names = {"-s", "--startNumber"})
+  private long startBlockNumber = 0;
+
+  @Getter
+  @Setter
+  @Parameter(names = {"-b", "--blockNumber"})
+  private long blockNumber = 7*24*1200;
+
+
   @Parameter(names = {"-c", "--config"}, description = "Config File")
   private String shellConfFileName = "";
 

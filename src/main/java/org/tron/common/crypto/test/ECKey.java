@@ -1241,18 +1241,16 @@ public class ECKey implements Serializable {
 
   public static void main(String[] args) throws SignatureException {
     byte[] priKey = ByteArray.fromHexString("D95611A9AF2A2A45359106222ED1AFED48853D9A44DEFF8DC7913F5CBA727366");
-    byte[] hash = Sha256Hash.hash(("hello" + new Random().nextInt()).getBytes());
-
     org.tron.common.crypto.ECKey ecKey = org.tron.common.crypto.ECKey.fromPrivate(priKey);
-    org.tron.common.crypto.ECKey.ECDSASignature sig = ecKey.sign(hash);
-    ECKey.ECDSASignature sig1 = new ECKey.ECDSASignature(sig.r, sig.s);
-    org.tron.common.crypto.test.ECKey.ECDSASignature sig2 = new org.tron.common.crypto.test.ECKey.ECDSASignature(sig.r, sig.s);
 
     long total1 = 0;
     long total2 = 0;
     for(int i = 0; i < 100000; i++) {
 
-
+      byte[] hash = Sha256Hash.hash(("hello" + new Random().nextInt()).getBytes());
+      org.tron.common.crypto.ECKey.ECDSASignature sig = ecKey.sign(hash);
+      ECKey.ECDSASignature sig1 = new ECKey.ECDSASignature(sig.r, sig.s);
+      org.tron.common.crypto.test.ECKey.ECDSASignature sig2 = new org.tron.common.crypto.test.ECKey.ECDSASignature(sig.r, sig.s);
 
       long time1 = System.currentTimeMillis();
       byte[] pubkey1 = org.tron.common.crypto.ECKey.recoverPubBytesFromSignature((int)sig.v-27, sig, hash);
