@@ -126,14 +126,30 @@ public class FullNode {
 
 
       db = appT.getDbManager();
-      countEnergy(cfgArgs.getStartBlockNumber(), cfgArgs.getBlockNumber());
+
+      Thread thread = new Thread(new Runnable() {
+
+        @Override
+        public void run() {
+          try{
+            countEnergy(cfgArgs.getStartBlockNumber(), cfgArgs.getBlockNumber());
+          }catch (Exception ex){
+            logger.error(ex.getMessage());
+          }
+          System.exit(0);
+        }
+
+      });
+
+      thread.start();
+
       shutdown(appT);
 
     } catch (Exception e) {
       logger.error(e.getMessage());
     }
 
-    System.exit(0);
+
 
 /*
     // grpc api server
