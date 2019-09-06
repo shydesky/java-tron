@@ -44,6 +44,8 @@
       </package>
       <package name="stest.tron.wallet.dailybuild.tvmnewcommand.triggerconstant">
       </package>
+      <package name="stest.tron.wallet.dailybuild.zentoken">
+      </package>
     </packages>
   </test>
 </suite>
