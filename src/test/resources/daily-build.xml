@@ -6,7 +6,43 @@
   </listeners>
   <test name="stest">
     <packages>
-      <package name="stest.tron.wallet.dailybuild.*">
+      <package name="stest.tron.wallet.dailybuild.assetissue">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.delaytransaction">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.exceptionfee">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.grammar">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.http">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.internaltransaction">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.manual">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.multisign">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.operationupdate">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.originenergylimit">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.trctoken">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.tvmnewcommand.addressStrictCheck">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.tvmnewcommand.clearabi">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.tvmnewcommand.create2">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.tvmnewcommand.extCodeHash">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.tvmnewcommand.newGrammar">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.tvmnewcommand.shiftcommand">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.tvmnewcommand.transferfailed">
+      </package>
+      <package name="stest.tron.wallet.dailybuild.tvmnewcommand.triggerconstant">
       </package>
     </packages>
   </test>
