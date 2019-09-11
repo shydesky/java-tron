@@ -141,11 +141,12 @@ public class AdvService {
   public void broadcast(Message msg) {
 
     if (fastForward) {
+      logger.info("fastForward drop msg,type: {}, ID: {}.", msg.getType(), msg.getMessageId());
       return;
     }
 
     if (invToSpread.size() > maxSpreadSize) {
-      logger.warn("Drop message, type: {}, ID: {}.", msg.getType(), msg.getMessageId());
+      logger.info("Drop message, type: {}, ID: {}.", msg.getType(), msg.getMessageId());
       return;
     }
 
@@ -265,6 +266,7 @@ public class AdvService {
           peer.getAdvInvSpread().getIfPresent(item) == null) {
         peer.getAdvInvSpread().put(item, Time.getCurrentMillis());
         invSender.add(item, peer);
+        logger.info("===invSender:{}===", item.toString());
       }
       invToSpread.remove(item);
     }));

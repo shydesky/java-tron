@@ -16,9 +16,6 @@ import org.springframework.stereotype.Component;
 import org.tron.common.overlay.message.Message;
 import org.tron.common.overlay.message.PingMessage;
 import org.tron.common.overlay.message.PongMessage;
-import org.tron.core.net.message.InventoryMessage;
-import org.tron.core.net.message.TransactionsMessage;
-import org.tron.protos.Protocol.Inventory.InventoryType;
 import org.tron.protos.Protocol.ReasonCode;
 
 @Slf4j(topic = "net")
@@ -145,16 +142,10 @@ public class MessageQueue {
 
   private boolean needToLog(Message msg) {
     if (msg instanceof PingMessage ||
-        msg instanceof PongMessage ||
-        msg instanceof TransactionsMessage) {
+        msg instanceof PongMessage
+    ) {
       return false;
     }
-
-    if (msg instanceof InventoryMessage &&
-        ((InventoryMessage) msg).getInventoryType().equals(InventoryType.TRX)) {
-      return false;
-    }
-
     return true;
   }
 
