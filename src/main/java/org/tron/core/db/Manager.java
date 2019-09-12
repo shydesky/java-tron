@@ -846,6 +846,8 @@ public class Manager {
           processTransaction(trx, null);
           logger.info("trx id:{} add to pendingTransactions", trx.getTransactionId());
           pendingTransactions.add(trx);
+          logger.info("pendingTransactions {}", pendingTransactions.size());
+
           tmpSession.merge();
         }
         if (isShieldedTransaction(trx.getInstance())) {
@@ -1395,6 +1397,8 @@ public class Manager {
       Boolean lastHeadBlockIsMaintenanceBefore, Boolean needCheckWitnessPermission)
       throws ValidateSignatureException, ContractValidateException, ContractExeException,
       UnLinkedBlockException, ValidateScheduleException, AccountResourceInsufficientException {
+
+    logger.info("gen block queue size: {}", pendingTransactions.size());
 
     //check that the first block after the maintenance period has just been processed
     // if (lastHeadBlockIsMaintenanceBefore != lastHeadBlockIsMaintenance()) {
