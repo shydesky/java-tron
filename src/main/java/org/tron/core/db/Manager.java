@@ -818,10 +818,12 @@ public class Manager {
 
     if (isShieldedTransaction(trx.getInstance()) && !Args.getInstance()
         .isFullNodeAllowShieldedTransaction()) {
+      logger.info("trx id:{} isShieldedTransaction drop", trx.getTransactionId());
       return true;
     }
 
     synchronized (pushTransactionQueue) {
+      logger.info("trx id:{} pushTransactionQueue add", trx.getTransactionId());
       pushTransactionQueue.add(trx);
     }
 
@@ -840,6 +842,7 @@ public class Manager {
         }
 
         try (ISession tmpSession = revokingStore.buildSession()) {
+          logger.info("trx id:{} manager process", trx.getTransactionId());
           processTransaction(trx, null);
           pendingTransactions.add(trx);
           tmpSession.merge();

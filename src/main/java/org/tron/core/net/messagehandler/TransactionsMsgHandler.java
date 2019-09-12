@@ -91,6 +91,8 @@ public class TransactionsMsgHandler implements TronMsgHandler {
       int type = trx.getRawData().getContract(0).getType().getNumber();
       if (type == ContractType.TriggerSmartContract_VALUE
           || type == ContractType.CreateSmartContract_VALUE) {
+        logger.info("trx id:{} add to smartContractQueue",
+            Sha256Hash.of(trx.getRawData().toByteArray()));
         if (!smartContractQueue.offer(new TrxEvent(peer, new TransactionMessage(trx)))) {
           logger.warn("Add smart contract failed, queueSize {}:{}", smartContractQueue.size(),
               queue.size());
@@ -127,12 +129,14 @@ public class TransactionsMsgHandler implements TronMsgHandler {
 
   private void handleTransaction(PeerConnection peer, TransactionMessage trx) {
     if (peer.isDisconnect()) {
+      logger.info("trx id:{} disconnect drop", trx.getTransactionCapsule().getTransactionId());
       logger.warn("Drop trx {} from {}, peer is disconnect.", trx.getMessageId(),
           peer.getInetAddress());
       return;
     }
 
     if (advService.getMessage(new Item(trx.getMessageId(), InventoryType.TRX)) != null) {
+      logger.info("trx id:{} advservice drop", trx.getTransactionCapsule().getTransactionId());
       return;
     }
 
