@@ -1300,12 +1300,16 @@ public class Manager {
     validateTapos(trxCap);
     validateCommon(trxCap);
 
+    logger.info("trx id:{} validateTapos validateCommon pass", trxCap.getTransactionId());
+
     if (trxCap.getInstance().getRawData().getContractList().size() != 1) {
       throw new ContractSizeNotEqualToOneException(
           "act size should be exactly 1, this is extend feature");
     }
 
     validateDup(trxCap);
+
+    logger.info("trx id:{} validateDup pass", trxCap.getTransactionId());
 
     if (!trxCap.validateSignature(this)) {
       throw new ValidateSignatureException("trans sig validate failed");
@@ -1349,6 +1353,8 @@ public class Manager {
     if (Objects.nonNull(blockCap) && getDynamicPropertiesStore().supportVM()) {
       trxCap.setResult(trace.getRuntime());
     }
+    logger.info("trx id:{} exe :{}", trxCap.getTransactionId(), trace.getRuntimeError());
+
     transactionStore.put(trxCap.getTransactionId().getBytes(), trxCap);
 
     Optional.ofNullable(transactionCache)
