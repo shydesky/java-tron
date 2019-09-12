@@ -1,6 +1,5 @@
 package org.tron.core.net.messagehandler;
 
-import com.googlecode.cqengine.query.simple.In;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,6 +11,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.utils.Sha256Hash;
 import org.tron.core.config.args.Args;
 import org.tron.core.exception.P2pException;
 import org.tron.core.exception.P2pException.TypeEnum;
@@ -20,8 +20,8 @@ import org.tron.core.net.message.TransactionMessage;
 import org.tron.core.net.message.TransactionsMessage;
 import org.tron.core.net.message.TronMessage;
 import org.tron.core.net.peer.Item;
-import org.tron.core.net.service.AdvService;
 import org.tron.core.net.peer.PeerConnection;
+import org.tron.core.net.service.AdvService;
 import org.tron.protos.Protocol.Inventory.InventoryType;
 import org.tron.protos.Protocol.ReasonCode;
 import org.tron.protos.Protocol.Transaction;
@@ -87,6 +87,7 @@ public class TransactionsMsgHandler implements TronMsgHandler {
     TransactionsMessage transactionsMessage = (TransactionsMessage) msg;
     check(peer, transactionsMessage);
     for (Transaction trx : transactionsMessage.getTransactions().getTransactionsList()) {
+      logger.info("process message, trx id:{}", Sha256Hash.of(trx.getRawData().toByteArray()));
       int type = trx.getRawData().getContract(0).getType().getNumber();
       if (type == ContractType.TriggerSmartContract_VALUE
           || type == ContractType.CreateSmartContract_VALUE) {
