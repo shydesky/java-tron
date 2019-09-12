@@ -844,6 +844,7 @@ public class Manager {
         try (ISession tmpSession = revokingStore.buildSession()) {
           logger.info("trx id:{} manager process", trx.getTransactionId());
           processTransaction(trx, null);
+          logger.info("trx id:{} add to pendingTransactions", trx.getTransactionId());
           pendingTransactions.add(trx);
           tmpSession.merge();
         }
@@ -1353,7 +1354,7 @@ public class Manager {
     if (Objects.nonNull(blockCap) && getDynamicPropertiesStore().supportVM()) {
       trxCap.setResult(trace.getRuntime());
     }
-    logger.info("trx id:{} exe :{}", trxCap.getTransactionId(), trace.getRuntimeError());
+    logger.info("trx id:{} rest :{}", trxCap.getTransactionId(), trxCap.getContractRet());
 
     transactionStore.put(trxCap.getTransactionId().getBytes(), trxCap);
 
@@ -1448,6 +1449,7 @@ public class Manager {
       } else {
         trx = repushTransactions.poll();
       }
+      logger.info("trx: {} want into block", trx.getTransactionId());
 
       if (DateTime.now().getMillis() - when
           > ChainConstant.BLOCK_PRODUCED_INTERVAL * 0.5
@@ -1460,12 +1462,14 @@ public class Manager {
       // check the block size
       if ((blockCapsule.getInstance().getSerializedSize() + trx.getSerializedSize() + 3)
           > ChainConstant.BLOCK_SIZE) {
+        logger.info("trx: {} ponstponed", trx.getTransactionId());
         postponedTrxCount++;
         continue;
       }
       //shielded transaction
       if (isShieldedTransaction(trx.getInstance())
           && shieldeTransCounts.incrementAndGet() > SHIELDED_TRANS_IN_BLOCK_COUNTS) {
+        logger.info("trx: {} ponstponed", trx.getTransactionId());
         continue;
       }
       //mult sign transaction
@@ -1485,10 +1489,13 @@ public class Manager {
       // apply transaction
       try (ISession tmpSeesion = revokingStore.buildSession()) {
         accountStateCallBack.preExeTrans();
+        logger.info("trx: {} begin process into block", trx.getTransactionId());
         TransactionInfo result = processTransaction(trx, blockCapsule);
         accountStateCallBack.exeTransFinish();
         tmpSeesion.merge();
         // push into block
+        logger.info("trx: {} after process into block{}", trx.getTransactionId(),
+            blockCapsule.getNum());
         blockCapsule.addTransaction(trx);
 
         if (Objects.nonNull(result)) {
