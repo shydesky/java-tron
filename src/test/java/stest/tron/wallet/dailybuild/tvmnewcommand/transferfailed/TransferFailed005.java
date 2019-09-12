@@ -12,8 +12,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import org.tron.api.GrpcAPI.AccountResourceMessage;
-import org.tron.api.GrpcAPI.Return.response_code;
-import org.tron.api.GrpcAPI.TransactionExtention;
 import org.tron.api.WalletGrpc;
 import org.tron.api.WalletSolidityGrpc;
 import org.tron.common.crypto.ECKey;
@@ -90,8 +88,7 @@ public class TransferFailed005 {
       String abi = retMap.get("abI").toString();
 
       contractAddress = PublicMethed
-          .deployContract(contractName, abi, code, "", maxFeeLimit,
-              100L, 100L,
+          .deployContract(contractName, abi, code, "", maxFeeLimit, 0L, 100L,
               null, accountExcKey, accountExcAddress, blockingStubFull);
 
       filePath = "src/test/resources/soliditycode/TransferFailed005.sol";
@@ -165,8 +162,8 @@ public class TransferFailed005 {
     logger.info("beforeNetUsed:" + beforeNetUsed);
     logger.info("beforeFreeNetUsed:" + beforeFreeNetUsed);
 
-    //Assert.assertTrue(PublicMethed
-    //    .sendcoin(contractAddress, 1000100L, accountExcAddress, accountExcKey, blockingStubFull));
+    Assert.assertTrue(PublicMethed
+        .sendcoin(contractAddress, 1000100L, accountExcAddress, accountExcKey, blockingStubFull));
     //Assert.assertTrue(PublicMethed
     //    .sendcoin(contractAddress1, 1, accountExcAddress, accountExcKey, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
@@ -179,7 +176,7 @@ public class TransferFailed005 {
         "callerAddress balance before: " + PublicMethed
             .queryAccount(contractAddress1, blockingStubFull)
             .getBalance());
-    long paramValue = 1;
+    long paramValue = 1000000;
 
     // transfer trx to self`s account
     String param = "\"" + paramValue + "\",\"" + Base58.encode58Check(contractAddress) + "\"";
@@ -195,7 +192,7 @@ public class TransferFailed005 {
     Assert.assertEquals("TRANSFER_FAILED", infoById.get().getReceipt().getResult().toString());
     Assert.assertEquals("transfer trx failed: Cannot transfer trx to yourself.",
         infoById.get().getResMessage().toStringUtf8());
-    Assert.assertEquals(100L,
+    Assert.assertEquals(1000100L,
         PublicMethed.queryAccount(contractAddress, blockingStubFull).getBalance());
     Assert.assertEquals(0L,
         PublicMethed.queryAccount(contractAddress1, blockingStubFull).getBalance());
@@ -212,16 +209,20 @@ public class TransferFailed005 {
     infoById = PublicMethed
         .getTransactionInfoById(triggerTxid, blockingStubFull);
 
-    Assert.assertEquals(infoById.get().getResultValue(), 0);
-    Assert.assertEquals("SUCCESS", infoById.get().getResult().toString());
-
-    Assert.assertEquals(99L,
+    Assert.assertEquals(infoById.get().getResultValue(), 1);
+    Assert.assertEquals("FAILED", infoById.get().getResult().toString());
+    Assert.assertEquals("TRANSFER_FAILED", infoById.get().getReceipt().getResult().toString());
+    Assert.assertEquals(
+        "transfer trx failed: Validate InternalTransfer error, no ToAccount. "
+            + "And not allowed to create account in smart contract.",
+        infoById.get().getResMessage().toStringUtf8());
+    Assert.assertEquals(1000100L,
         PublicMethed.queryAccount(contractAddress, blockingStubFull).getBalance());
     Assert.assertEquals(0L,
         PublicMethed.queryAccount(contractAddress1, blockingStubFull).getBalance());
     Assert.assertTrue(infoById.get().getReceipt().getEnergyUsageTotal() < 10000000);
 
-    // transfer trx to caller, value enough , function success contractResult(call_value) successed
+    // transfer trx to caller, value enough , function success contractResult(call_value) failed
     param = "\"" + paramValue + "\",\"" + Base58.encode58Check(contractAddress1) + "\"";
     triggerTxid = PublicMethed.triggerContract(contractAddress,
         "testCallTrxInsufficientBalance(uint256,address)", param, false, 0L,
@@ -249,15 +250,14 @@ public class TransferFailed005 {
 
     Assert.assertEquals(infoById.get().getResultValue(), 0);
     Assert.assertEquals(infoById.get().getResult().toString(), "SUCESS");
-    Assert.assertEquals(98L,
+    Assert.assertEquals(100L,
         PublicMethed.queryAccount(contractAddress, blockingStubFull).getBalance());
-    Assert.assertEquals(1L,
+    Assert.assertEquals(1000000L,
         PublicMethed.queryAccount(contractAddress1, blockingStubFull).getBalance());
     Assert.assertTrue(infoById.get().getReceipt().getEnergyUsageTotal() < 10000000);
 
     // transfer trx to caller, value not enough, function success
     // but contractResult(call_value) failed
-    param = "\"" + 100 + "\",\"" + Base58.encode58Check(contractAddress1) + "\"";
     triggerTxid = PublicMethed.triggerContract(contractAddress,
         "testCallTrxInsufficientBalance(uint256,address)", param, false, 0L,
         maxFeeLimit, accountExcAddress, accountExcKey, blockingStubFull);
@@ -281,9 +281,9 @@ public class TransferFailed005 {
     Assert.assertEquals(0, contractResult);
     Assert.assertEquals(infoById.get().getResultValue(), 0);
     Assert.assertEquals(infoById.get().getResult().toString(), "SUCESS");
-    Assert.assertEquals(98L,
+    Assert.assertEquals(100L,
         PublicMethed.queryAccount(contractAddress, blockingStubFull).getBalance());
-    Assert.assertEquals(1L,
+    Assert.assertEquals(1000000L,
         PublicMethed.queryAccount(contractAddress1, blockingStubFull).getBalance());
     Assert.assertTrue(infoById.get().getReceipt().getEnergyUsageTotal() < 10000000);
 
@@ -292,8 +292,6 @@ public class TransferFailed005 {
 
   @Test(enabled = true, description = "TransferFailed for create")
   public void triggerContract02() {
-    Long ContractBalance = PublicMethed.queryAccount(contractAddress,
-        blockingStubFull).getBalance();
     Account info = null;
 
     AccountResourceMessage resourceInfo = PublicMethed.getAccountResource(accountExcAddress,
@@ -308,8 +306,8 @@ public class TransferFailed005 {
     logger.info("beforeNetUsed:" + beforeNetUsed);
     logger.info("beforeFreeNetUsed:" + beforeFreeNetUsed);
 
-    //Assert.assertTrue(PublicMethed
-    //    .sendcoin(contractAddress, 1000100L, accountExcAddress, accountExcKey, blockingStubFull));
+    Assert.assertTrue(PublicMethed
+        .sendcoin(contractAddress, 1000100L, accountExcAddress, accountExcKey, blockingStubFull));
     //Assert.assertTrue(PublicMethed
     //    .sendcoin(contractAddress1, 1, accountExcAddress, accountExcKey, blockingStubFull));
     PublicMethed.waitProduceNextBlock(blockingStubFull);
@@ -322,7 +320,7 @@ public class TransferFailed005 {
         "callerAddress balance before: " + PublicMethed
             .queryAccount(contractAddress1, blockingStubFull)
             .getBalance());
-    long paramValue = 1;
+    long paramValue = 1000000;
     String param = "\"" + paramValue + "\"";
 
     String triggerTxid = PublicMethed.triggerContract(contractAddress,
@@ -355,11 +353,10 @@ public class TransferFailed005 {
             .getBalance());
     Assert.assertEquals(infoById.get().getResultValue(), 0);
     Assert.assertFalse(infoById.get().getInternalTransactions(0).getRejected());
-    Assert.assertEquals(ContractBalance - 1,
+    Assert.assertEquals(200L,
         PublicMethed.queryAccount(contractAddress, blockingStubFull).getBalance());
     Assert.assertTrue(infoById.get().getReceipt().getEnergyUsageTotal() < 10000000);
 
-    param = "\"" + (ContractBalance + 1) + "\"";
     triggerTxid = PublicMethed.triggerContract(contractAddress,
         "testCreateTrxInsufficientBalance(uint256)", param, false, 0L,
         maxFeeLimit, accountExcAddress, accountExcKey, blockingStubFull);
@@ -388,8 +385,10 @@ public class TransferFailed005 {
 
     Assert.assertEquals(infoById.get().getResultValue(), 1);
     Assert.assertEquals(infoById.get().getResMessage().toStringUtf8(), "REVERT opcode executed");
-    Assert.assertEquals(ContractBalance - 1,
+    Assert.assertEquals(200L,
         PublicMethed.queryAccount(contractAddress, blockingStubFull).getBalance());
+    Assert.assertEquals(1000000L,
+        PublicMethed.queryAccount(contractAddress1, blockingStubFull).getBalance());
     Assert.assertTrue(infoById.get().getReceipt().getEnergyUsageTotal() < 10000000);
 
 
@@ -397,9 +396,6 @@ public class TransferFailed005 {
 
   @Test(enabled = true, description = "TransferFailed for create2")
   public void triggerContract03() {
-    Long ContractBalance = PublicMethed.queryAccount(contractAddress,
-        blockingStubFull).getBalance();
-
     Account info;
 
     AccountResourceMessage resourceInfo = PublicMethed.getAccountResource(accountExcAddress,
@@ -414,8 +410,8 @@ public class TransferFailed005 {
     logger.info("beforeNetUsed:" + beforeNetUsed);
     logger.info("beforeFreeNetUsed:" + beforeFreeNetUsed);
 
-    //Assert.assertTrue(PublicMethed
-    //    .sendcoin(contractAddress, 15L, accountExcAddress, accountExcKey, blockingStubFull));
+    Assert.assertTrue(PublicMethed
+        .sendcoin(contractAddress, 15L, accountExcAddress, accountExcKey, blockingStubFull));
     logger.info(
         "contractAddress balance before: " + PublicMethed
             .queryAccount(contractAddress, blockingStubFull)
@@ -448,7 +444,7 @@ public class TransferFailed005 {
     logger.info("netFee:" + netFee);
     logger.info("energyUsageTotal:" + energyUsageTotal);
 
-    Long afterBalance = 0L;
+    long afterBalance = 0L;
     afterBalance = PublicMethed.queryAccount(contractAddress, blockingStubFull)
         .getBalance();
     logger.info(
@@ -457,7 +453,7 @@ public class TransferFailed005 {
             .getBalance());
     Assert.assertEquals(0, infoById.get().getResultValue());
     Assert.assertEquals("SUCESS", infoById.get().getResult().toString());
-    Assert.assertEquals(ContractBalance - 10L, afterBalance.longValue());
+    Assert.assertEquals(205L, afterBalance);
     Assert.assertFalse(infoById.get().getInternalTransactions(0).getRejected());
     Assert.assertTrue(infoById.get().getReceipt().getEnergyUsageTotal() < 10000000);
 
@@ -486,38 +482,13 @@ public class TransferFailed005 {
             .getBalance());
     Assert.assertEquals(1, infoById.get().getResultValue());
     Assert.assertEquals("FAILED", infoById.get().getResult().toString());
-    Assert.assertEquals(ContractBalance - 10L, afterBalance.longValue());
+    Assert.assertEquals(205L, afterBalance);
     Assert.assertEquals(0, ByteArray.toInt(
         infoById.get().getContractResult(0).toByteArray()));
     Assert.assertTrue(infoById.get().getReceipt().getEnergyUsageTotal() < 10000000);
 
   }
 
-  @Test(enabled = true, description = "Triggerconstant a transfer function")
-  public void triggerContract04() {
-    Account account = PublicMethed.queryAccount(accountExcAddress, blockingStubFull);
-    Account ContractAccount = PublicMethed.queryAccount(contractAddress, blockingStubFull);
-
-    Long AccountBeforeBalance = account.getBalance();
-    Long ContractAccountBalance = ContractAccount.getBalance();
-
-    TransactionExtention return1 = PublicMethed.triggerConstantContractForExtention(contractAddress,
-        "testTransferTrxInsufficientBalance(uint256)", "1", false, 0L, 1000000000, "0", 0l,
-        accountExcAddress, accountExcKey, blockingStubFull);
-    Assert.assertEquals(response_code.CONTRACT_EXE_ERROR, return1.getResult().getCode());
-    Assert.assertEquals(
-        "class org.tron.common.runtime.vm.program.Program$StaticCallModificationException "
-            + ": Attempt to call a state modifying opcode inside STATICCALL",
-        return1.getResult().getMessage().toStringUtf8());
-
-    logger.info("return1: " + return1);
-
-    account = PublicMethed.queryAccount(accountExcAddress, blockingStubFull);
-    ContractAccount = PublicMethed.queryAccount(contractAddress, blockingStubFull);
-
-    Assert.assertEquals(AccountBeforeBalance.longValue(), account.getBalance());
-    Assert.assertEquals(ContractAccountBalance.longValue(), ContractAccount.getBalance());
-  }
 
   /**
    * constructor.
