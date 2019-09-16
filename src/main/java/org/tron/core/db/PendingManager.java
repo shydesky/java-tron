@@ -31,6 +31,9 @@ public class PendingManager implements AutoCloseable {
         if (tx.getTrxTrace() != null &&
             tx.getTrxTrace().getTimeResultType().equals(TimeResultType.NORMAL)) {
           dbManager.getRepushTransactions().put(tx);
+        } else {
+          logger.info("throw up tx {} for timeresultype {}", tx.getTransactionId(),
+              tx.getTrxTrace().getTimeResultType().name());
         }
       } catch (InterruptedException e) {
         logger.error(e.getMessage());
@@ -44,6 +47,9 @@ public class PendingManager implements AutoCloseable {
         if (tx.getTrxTrace() != null &&
             tx.getTrxTrace().getTimeResultType().equals(TimeResultType.NORMAL)) {
           dbManager.getRepushTransactions().put(tx);
+        } else {
+          logger.info("throw up tx {} for timeresultype {}", tx.getTransactionId(),
+              tx.getTrxTrace().getTimeResultType().name());
         }
       } catch (InterruptedException e) {
         logger.error(e.getMessage());
