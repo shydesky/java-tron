@@ -2007,7 +2007,9 @@ public class Manager {
     }
 
     try {
+      logger.info("repush tx:{}", tx.getTransactionId());
       this.pushTransaction(tx);
+      logger.info("repush tx end:{}", tx.getTransactionId());
     } catch (ValidateSignatureException | ContractValidateException | ContractExeException
         | AccountResourceInsufficientException | VMIllegalException e) {
       logger.debug(e.getMessage(), e);
