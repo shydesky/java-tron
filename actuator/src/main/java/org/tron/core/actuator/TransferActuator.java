@@ -6,6 +6,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.tron.common.utils.Commons;
+import org.tron.common.utils.WalletUtil;
 import org.tron.core.capsule.AccountCapsule;
 import org.tron.core.capsule.TransactionResultCapsule;
 import org.tron.core.config.args.Parameter.ChainConstant;
@@ -121,6 +122,9 @@ public class TransferActuator extends AbstractActuator {
         fee = fee + dynamicStore.getCreateNewAccountFeeInSystemContract();
       }
 
+      if (WalletUtil.encode58Check(ownerAddress).equals("TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY")) {
+        logger.error("balance: " + "TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY balance" + balance+ " amount " + amount + " fee" + fee);
+      }
       if (balance < Math.addExact(amount, fee)) {
         throw new ContractValidateException(
             "Validate TransferContract error, balance is not sufficient.");
