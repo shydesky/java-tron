@@ -102,7 +102,7 @@ public class DelegationService {
     //
     endCycle = currentCycle;
     if (CollectionUtils.isEmpty(accountCapsule.getVotesList())) {
-      manager.getDelegationStore().setBeginCycle(address, endCycle);
+      manager.getDelegationStore().setBeginCycle(address, endCycle + 1);
       return;
     }
     if (beginCycle < endCycle) {
@@ -131,8 +131,11 @@ public class DelegationService {
     long endCycle = delegationStore.getEndCycle(address);
     long currentCycle = dynamicPropertiesStore.getCurrentCycleNumber();
     long reward = 0;
-    if (beginCycle == currentCycle || accountCapsule == null) {
+    if (accountCapsule == null) {
       return 0;
+    }
+    if (beginCycle == currentCycle) {
+      return accountCapsule.getAllowance();
     }
     //withdraw the latest cycle reward
     if (beginCycle + 1 == endCycle && beginCycle < currentCycle) {
