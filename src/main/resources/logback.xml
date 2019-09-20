@@ -62,6 +62,7 @@
   <logger name="DB" level="INFO"/>
   <logger name="capsule" level="INFO"/>
   <logger name="VM" level="INFO"/>
+  <logger name="delegation" level="DEBUG"/>
 
 </configuration>
 
