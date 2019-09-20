@@ -291,7 +291,7 @@ public class DynamicPropertiesStore extends TronStoreWithRevoking<BytesCapsule> 
     try {
       this.getWitnessAllowanceFrozenTime();
     } catch (IllegalArgumentException e) {
-      this.saveWitnessAllowanceFrozenTime(1);
+      this.saveWitnessAllowanceFrozenTime(0);
     }
 
     try {
