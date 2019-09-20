@@ -88,6 +88,12 @@ public class DelegationService {
     if (beginCycle > currentCycle || accountCapsule == null) {
       return;
     }
+    if (beginCycle == currentCycle) {
+      AccountCapsule account = delegationStore.getAccountVote(beginCycle, address);
+      if (account != null) {
+        return;
+      }
+    }
     //withdraw the latest cycle reward
     if (beginCycle + 1 == endCycle && beginCycle < currentCycle) {
       AccountCapsule account = delegationStore.getAccountVote(beginCycle, address);
@@ -164,8 +170,8 @@ public class DelegationService {
       byte[] srAddress = vote.getVoteAddress().toByteArray();
       long totalReward = manager.getDelegationStore().getReward(cycle, srAddress);
       long totalVote = manager.getDelegationStore().getWitnessVote(cycle, srAddress);
-      if (totalVote == DelegationStore.REMARK) {
-        totalVote = manager.getWitnessStore().get(srAddress).getVoteCount();
+      if (totalVote == DelegationStore.REMARK || totalVote == 0) {
+        continue;
       }
       long userVote = vote.getVoteCount();
       double voteRate = (double) userVote / totalVote;

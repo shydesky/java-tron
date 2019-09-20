@@ -5,12 +5,13 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tron.core.services.http.GetAssetIssueByNameServlet;
+import org.tron.core.services.http.GetRewardServlet;
 import org.tron.core.services.interfaceOnSolidity.WalletOnSolidity;
+
 
 @Component
 @Slf4j(topic = "API")
-public class GetAssetIssueByNameOnSolidityServlet extends GetAssetIssueByNameServlet {
+public class GetRewardOnSolidityServlet extends GetRewardServlet {
 
   @Autowired
   private WalletOnSolidity walletOnSolidity;
@@ -20,6 +21,8 @@ public class GetAssetIssueByNameOnSolidityServlet extends GetAssetIssueByNameSer
   }
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
-    walletOnSolidity.futureGet(() -> super.doPost(request, response));
+    walletOnSolidity.futureGet(() -> {
+      super.doPost(request, response);
+    });
   }
 }
