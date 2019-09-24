@@ -80,7 +80,7 @@ public class HttpMethed {
       userBaseObj2.addProperty("account_id", accountId);
       userBaseObj2.addProperty("owner_address",
           Base58.encode58Check(PublicMethed.getFinalAddress(fromKey)));
-      userBaseObj2.addProperty("visible",visable);
+      userBaseObj2.addProperty("visible", visable);
       response = createConnect(requestUrl, userBaseObj2);
       transactionString = EntityUtils.toString(response.getEntity());
       transactionSignString = gettransactionsign(httpNode, transactionString, fromKey);
@@ -94,7 +94,6 @@ public class HttpMethed {
     }
     return response;
   }
-
 
 
   /**
@@ -240,14 +239,14 @@ public class HttpMethed {
    * constructor.
    */
   public static HttpResponse sendCoin(String httpNode, byte[] fromAddress, byte[] toAddress,
-      Long amount, Integer permissionId,String[] managerKeys) {
+      Long amount, Integer permissionId, String[] managerKeys) {
     try {
       final String requestUrl = "http://" + httpNode + "/wallet/createtransaction";
       JsonObject userBaseObj2 = new JsonObject();
       userBaseObj2.addProperty("to_address", ByteArray.toHexString(toAddress));
       userBaseObj2.addProperty("owner_address", ByteArray.toHexString(fromAddress));
       userBaseObj2.addProperty("amount", amount);
-      userBaseObj2.addProperty("Permission_id",permissionId);
+      userBaseObj2.addProperty("Permission_id", permissionId);
       response = createConnect(requestUrl, userBaseObj2);
       transactionSignString = EntityUtils.toString(response.getEntity());
       HttpResponse getSignWeightResponse;
@@ -545,6 +544,97 @@ public class HttpMethed {
     return response;
   }
 
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse updateBrokerage(String httpNode, byte[] ownerAddress, Long brokerage,
+      String fromKey) {
+    try {
+      final String requestUrl = "http://" + httpNode + "/wallet/updateBrokerage";
+      JsonObject userBaseObj2 = new JsonObject();
+      userBaseObj2.addProperty("owner_address", ByteArray.toHexString(ownerAddress));
+      userBaseObj2.addProperty("brokerage", brokerage);
+      response = createConnect(requestUrl, userBaseObj2);
+      transactionString = EntityUtils.toString(response.getEntity());
+      transactionSignString = gettransactionsign(httpNode, transactionString, fromKey);
+      response = broadcastTransaction(httpNode, transactionSignString);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse getReward(String httpNode, byte[] address) {
+    try {
+      String requestUrl = "http://" + httpNode + "/wallet/getReward";
+      JsonObject userBaseObj2 = new JsonObject();
+      userBaseObj2.addProperty("address", ByteArray.toHexString(address));
+      response = createConnect(requestUrl, userBaseObj2);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse getRewardFromSolidity(String httpSolidityNode, byte[] address) {
+    try {
+      String requestUrl = "http://" + httpSolidityNode + "/walletsolidity/getReward";
+      JsonObject userBaseObj2 = new JsonObject();
+      userBaseObj2.addProperty("address", ByteArray.toHexString(address));
+      response = createConnect(requestUrl, userBaseObj2);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse getBrokerage(String httpNode, byte[] address) {
+    try {
+      String requestUrl = "http://" + httpNode + "/wallet/getBrokerage";
+      JsonObject userBaseObj2 = new JsonObject();
+      userBaseObj2.addProperty("address", ByteArray.toHexString(address));
+      response = createConnect(requestUrl, userBaseObj2);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse getBrokerageFromSolidity(String httpSolidityNode, byte[] address) {
+    try {
+      String requestUrl = "http://" + httpSolidityNode + "/walletsolidity/getBrokerage";
+      JsonObject userBaseObj2 = new JsonObject();
+      userBaseObj2.addProperty("address", ByteArray.toHexString(address));
+      response = createConnect(requestUrl, userBaseObj2);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
   /**
    * constructor.
    */
@@ -630,7 +720,6 @@ public class HttpMethed {
       userBaseObj2.addProperty("call_token_value", tokenValue);
       userBaseObj2.addProperty("owner_address", ByteArray.toHexString(ownerAddress));
 
-
       logger.info(userBaseObj2.toString());
       response = createConnect(requestUrl, userBaseObj2);
       transactionString = EntityUtils.toString(response.getEntity());
@@ -672,7 +761,7 @@ public class HttpMethed {
       jsonObject.put("owner_address", ByteArray.toHexString(ownerAddress));
 
       logger.info(jsonObject.toString());
-      response = createConnect1(requestUrl,jsonObject);
+      response = createConnect1(requestUrl, jsonObject);
       /*      transactionString = EntityUtils.toString(response.getEntity());
       logger.info(transactionString);
       transactionSignString = gettransactionsign(httpNode, transactionString, fromKey);
@@ -685,7 +774,6 @@ public class HttpMethed {
     }
     return response;
   }
-
 
 
   /**
@@ -726,8 +814,8 @@ public class HttpMethed {
    * constructor.
    */
   public static HttpResponse triggerConstantContract(String httpNode, byte[] ownerAddress,
-       String contractAddress,String functionSelector, String parameter, Long feeLimit,
-                                                     String fromKey) {
+      String contractAddress, String functionSelector, String parameter, Long feeLimit,
+      String fromKey) {
     try {
       final String requestUrl = "http://" + httpNode + "/wallet/triggerconstantcontract";
       JsonObject userBaseObj2 = new JsonObject();
@@ -971,7 +1059,7 @@ public class HttpMethed {
       String requestUrl = "http://" + httpNode + "/wallet/getaccountbyid";
       JsonObject userBaseObj2 = new JsonObject();
       userBaseObj2.addProperty("account_id", accountId);
-      userBaseObj2.addProperty("visible",visable);
+      userBaseObj2.addProperty("visible", visable);
       response = createConnect(requestUrl, userBaseObj2);
     } catch (Exception e) {
       e.printStackTrace();
@@ -990,7 +1078,7 @@ public class HttpMethed {
       String requestUrl = "http://" + httpSolidityNode + "/walletsolidity/getaccountbyid";
       JsonObject userBaseObj2 = new JsonObject();
       userBaseObj2.addProperty("account_id", accountId);
-      userBaseObj2.addProperty("visible",visable);
+      userBaseObj2.addProperty("visible", visable);
       response = createConnect(requestUrl, userBaseObj2);
     } catch (Exception e) {
       e.printStackTrace();
@@ -1750,7 +1838,6 @@ public class HttpMethed {
   }
 
 
-
   /**
    * constructor.
    */
@@ -1786,7 +1873,6 @@ public class HttpMethed {
   }
 
 
-
   /**
    * constructor.
    */
@@ -1820,7 +1906,6 @@ public class HttpMethed {
     }
     return response;
   }
-
 
 
   /**
@@ -1959,7 +2044,6 @@ public class HttpMethed {
     }
     return response;
   }
-
 
 
   /**
