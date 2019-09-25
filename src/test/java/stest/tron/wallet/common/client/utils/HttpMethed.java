@@ -17,6 +17,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -35,6 +36,7 @@ public class HttpMethed {
 
   static HttpClient httpClient;
   static HttpPost httppost;
+  static HttpGet httpGet;
   static HttpResponse response;
   static Integer connectionTimeout = Configuration.getByPath("testng.conf")
       .getInt("defaultParameter.httpConnectionTimeout");
@@ -2067,6 +2069,25 @@ public class HttpMethed {
   /**
    * constructor.
    */
+  public static HttpResponse createGetConnect(String url) {
+    try {
+      httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT,
+          connectionTimeout);
+      httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, soTimeout);
+      httpGet = new HttpGet(url);
+      httpGet.setHeader("Content-type", "application/json; charset=utf-8");
+      httpGet.setHeader("Connection", "Close");
+      response = httpClient.execute(httpGet);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+  /**
+   * constructor.
+   */
   public static Long createConnectForResponse(String url, JsonObject requestBody, Integer times) {
     try {
 
@@ -2569,4 +2590,88 @@ public class HttpMethed {
     balance = HttpMethed.getBalance(httpNode, fromAddress);
 //    System.out.println("之后资源：" + balance);
   }
+
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse updateBrokerage(String httpNode, byte[] ownerAddress, Long brokerage,
+      String fromKey) {
+    try {
+      final String requestUrl = "http://" + httpNode + "/wallet/updateBrokerage";
+      JsonObject userBaseObj2 = new JsonObject();
+      userBaseObj2.addProperty("owner_address", ByteArray.toHexString(ownerAddress));
+      userBaseObj2.addProperty("brokerage", brokerage);
+      response = createConnect(requestUrl, userBaseObj2);
+      transactionString = EntityUtils.toString(response.getEntity());
+      transactionSignString = gettransactionsign(httpNode, transactionString, fromKey);
+      response = broadcastTransaction(httpNode, transactionSignString);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse getReward(String httpNode, byte[] address) {
+    try {
+      String requestUrl = "http://" + httpNode + "/wallet/getReward?address=" + ByteArray.toHexString(address);
+      response = createGetConnect(requestUrl);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse getRewardFromSolidity(String httpSolidityNode, byte[] address) {
+    try {
+      String requestUrl = "http://" + httpSolidityNode + "/walletsolidity/getReward?address=" + ByteArray.toHexString(address);
+      response = createGetConnect(requestUrl);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse getBrokerage(String httpNode, byte[] address) {
+    try {
+      String requestUrl = "http://" + httpNode + "/wallet/getBrokerage?address=" + ByteArray.toHexString(address);
+      response = createGetConnect(requestUrl);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
+  /**
+   * constructor.
+   */
+  public static HttpResponse getBrokerageFromSolidity(String httpSolidityNode, byte[] address) {
+    try {
+      String requestUrl = "http://" + httpSolidityNode + "/walletsolidity/getBrokerage?address=" + ByteArray.toHexString(address);
+      response = createGetConnect(requestUrl);
+    } catch (Exception e) {
+      e.printStackTrace();
+      httppost.releaseConnection();
+      return null;
+    }
+    return response;
+  }
+
 }
