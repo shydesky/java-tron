@@ -1,5 +1,6 @@
 package org.tron.core.db;
 
+import static org.tron.core.Wallet.decode58Check;
 import static org.tron.core.config.Parameter.ChainConstant.SOLIDIFIED_THRESHOLD;
 import static org.tron.core.config.Parameter.NodeConstant.MAX_TRANSACTION_PENDING;
 
@@ -1056,6 +1057,12 @@ public class Manager {
       TaposException, TooBigTransactionException, TooBigTransactionResultException, DupTransactionException, TransactionExpirationException,
       BadNumberBlockException, BadBlockException, NonCommonBlockException,
       ReceiptCheckErrException, VMIllegalException, ZksnarkException {
+    AccountCapsule accountCapsule  = accountStore.get(decode58Check("TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY"));
+    if (Objects.nonNull(accountCapsule)) {
+      logger.info("### Block Num: {}, balance: {}, allowce: {}", block.getBlockId().getNum(),
+          accountCapsule.getBalance(), accountCapsule.getAllowance());
+    }
+
     long start = System.currentTimeMillis();
     try (PendingManager pm = new PendingManager(this)) {
 

@@ -1,5 +1,7 @@
 package org.tron.core.db;
 
+import static org.tron.core.Wallet.encode58Check;
+
 import com.typesafe.config.ConfigObject;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +29,9 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
   private AccountStateStoreTrie accountStateStoreTrie;
 
   @Autowired
+  private DynamicPropertiesStore dynamicPropertiesStore;
+
+  @Autowired
   private AccountStore(@Value("account") String dbName) {
     super(dbName);
   }
@@ -40,6 +45,11 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
 
   @Override
   public void put(byte[] key, AccountCapsule item) {
+    if (encode58Check(key).equals("TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY")) {
+      logger.info("###balance: " + "TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY balance" + item.getBalance()+ " amount "
+          + item.getAllowance() + " fee" + dynamicPropertiesStore.getLatestBlockHeaderNumber());
+    }
+
     super.put(key, item);
     accountStateCallBack.accountCallBack(key, item);
   }
