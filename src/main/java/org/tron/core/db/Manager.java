@@ -970,6 +970,9 @@ public class Manager {
       TaposException, TooBigTransactionException, TooBigTransactionResultException, DupTransactionException, TransactionExpirationException,
       BadNumberBlockException, BadBlockException, NonCommonBlockException,
       ReceiptCheckErrException, VMIllegalException {
+    if (block.getNum() == 3873937) {
+      throw  new BadBlockException("test");
+    }
     long start = System.currentTimeMillis();
     try (PendingManager pm = new PendingManager(this)) {
 
