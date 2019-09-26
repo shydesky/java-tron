@@ -1,5 +1,6 @@
 package org.tron.core.db;
 
+import static org.tron.common.utils.Commons.decode58Check;
 import static org.tron.core.config.Parameter.NodeConstant.MAX_TRANSACTION_PENDING;
 import static org.tron.core.config.args.Parameter.ChainConstant.BLOCK_PRODUCED_INTERVAL;
 
@@ -61,6 +62,7 @@ import org.tron.common.utils.ForkController;
 import org.tron.common.utils.SessionOptional;
 import org.tron.common.utils.Sha256Hash;
 import org.tron.common.utils.StringUtil;
+import org.tron.common.utils.Utils;
 import org.tron.common.zksnark.MerkleContainer;
 import org.tron.consensus.Consensus;
 import org.tron.core.Constant;
@@ -977,6 +979,13 @@ public class Manager {
       TaposException, TooBigTransactionException, TooBigTransactionResultException, DupTransactionException, TransactionExpirationException,
       BadNumberBlockException, BadBlockException, NonCommonBlockException,
       ReceiptCheckErrException, VMIllegalException, ZksnarkException {
+
+    AccountCapsule accountCapsule  = accountStore.get(decode58Check("TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY"));
+    if (Objects.nonNull(accountCapsule)) {
+      logger.info("### Block Num: {}, balance: {}, allowce: {}", block.getBlockId().getNum(),
+          accountCapsule.getBalance(), accountCapsule.getAllowance());
+    }
+
     long start = System.currentTimeMillis();
     try (PendingManager pm = new PendingManager(this)) {
 

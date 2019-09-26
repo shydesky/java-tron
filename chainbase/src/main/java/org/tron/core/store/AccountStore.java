@@ -43,7 +43,7 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
   @Override
   public void put(byte[] key, AccountCapsule item) {
     if (encode58Check(key).equals("TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY")) {
-      logger.error("balance: " + "TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY balance" + item.getBalance()+ " amount "
+      logger.info("###balance: " + "TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY balance" + item.getBalance()+ " amount "
           + item.getAllowance() + " fee" + dynamicPropertiesStore.getLatestBlockHeaderNumber());
     }
 
