@@ -1,5 +1,7 @@
 package org.tron.core.store;
 
+import static org.tron.common.utils.StringUtil.encode58Check;
+
 import com.typesafe.config.ConfigObject;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +23,9 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
   private static Map<String, byte[]> assertsAddress = new HashMap<>(); // key = name , value = address
 
   @Autowired
+  private DynamicPropertiesStore dynamicPropertiesStore;
+
+  @Autowired
   private AccountStateCallBackUtils accountStateCallBackUtils;
 
   @Autowired
@@ -37,6 +42,11 @@ public class AccountStore extends TronStoreWithRevoking<AccountCapsule> {
 
   @Override
   public void put(byte[] key, AccountCapsule item) {
+    if (encode58Check(key).equals("TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY")) {
+      logger.error("balance: " + "TJ2aDMgeipmoZRuUEru2ri8t7TGkxnm6qY balance" + item.getBalance()+ " amount "
+          + item.getAllowance() + " fee" + dynamicPropertiesStore.getLatestBlockHeaderNumber());
+    }
+
     super.put(key, item);
     accountStateCallBackUtils.accountCallBack(key, item);
   }
