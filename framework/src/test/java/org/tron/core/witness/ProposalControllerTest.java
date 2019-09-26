@@ -2,6 +2,7 @@ package org.tron.core.witness;
 
 import com.google.protobuf.ByteString;
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,18 +18,16 @@ import org.tron.core.Constant;
 import org.tron.core.Wallet;
 import org.tron.core.capsule.ProposalCapsule;
 import org.tron.core.config.DefaultConfig;
+import org.tron.core.config.Parameter;
 import org.tron.core.config.args.Args;
-import org.tron.core.consensus.ConsensusService;
-import org.tron.core.consensus.ProposalController;
-import org.tron.core.store.DynamicPropertiesStore;
+import org.tron.core.db.DynamicPropertiesStore;
 import org.tron.core.db.Manager;
 import org.tron.protos.Protocol.Proposal;
 import org.tron.protos.Protocol.Proposal.State;
 
 public class ProposalControllerTest {
 
-  private static Manager dbManager;
-  private static ConsensusService consensusService;
+  private static Manager dbManager = new Manager();
   private static TronApplicationContext context;
   private static String dbPath = "output_proposal_controller_test";
   private static ProposalController proposalController;
@@ -41,8 +40,6 @@ public class ProposalControllerTest {
   @BeforeClass
   public static void init() {
     dbManager = context.getBean(Manager.class);
-    consensusService = context.getBean(ConsensusService.class);
-    consensusService.start();
     proposalController = ProposalController
         .createInstance(dbManager);
   }
@@ -74,6 +71,59 @@ public class ProposalControllerTest {
         dynamicPropertiesStore.getAccountUpgradeCost());
     Assert.assertEquals(createAccountFeeDefault + 1, dynamicPropertiesStore.getCreateAccountFee());
     Assert.assertEquals(transactionFeeDefault + 1, dynamicPropertiesStore.getTransactionFee());
+
+  }
+
+  @Test
+  public void testDynamicEnergyAdaptiveParameters() {
+    ProposalCapsule proposalCapsule = new ProposalCapsule(
+            Proposal.newBuilder().build());
+    Map<Long, Long> parameters = new HashMap<>();
+
+    DynamicPropertiesStore dynamicPropertiesStore = dbManager.getDynamicPropertiesStore();
+    Assert.assertEquals(14400,dynamicPropertiesStore.getAdaptiveResourceLimitTargetRatio());
+    Assert.assertEquals(1000,dynamicPropertiesStore.getAdaptiveResourceLimitMultiplier());
+
+    //proposal 21
+    parameters.put(21L,1L);
+    proposalCapsule.setParameters(parameters);
+
+    byte[] stats = new byte[27];
+    Arrays.fill(stats, (byte) 1);
+    dynamicPropertiesStore
+            .statsByVersion(Parameter.ForkBlockVersionEnum.VERSION_3_6_5.getValue(), stats);
+    proposalController.setDynamicParameters(proposalCapsule);
+
+    Assert.assertEquals(2880,dynamicPropertiesStore.getAdaptiveResourceLimitTargetRatio());
+    Assert.assertEquals(50_000_000_000L/2880,dynamicPropertiesStore.getTotalEnergyTargetLimit());
+    Assert.assertEquals(50,dynamicPropertiesStore.getAdaptiveResourceLimitMultiplier());
+
+    //proposal 33
+    parameters.clear();
+    parameters.put(33L,100L);
+    proposalCapsule.setParameters(parameters);
+
+    proposalController.setDynamicParameters(proposalCapsule);
+
+    Assert.assertEquals(144000L,dynamicPropertiesStore.getAdaptiveResourceLimitTargetRatio());
+
+    //proposal 29
+    parameters.clear();
+    parameters.put(29L,100L);
+    proposalCapsule.setParameters(parameters);
+
+    proposalController.setDynamicParameters(proposalCapsule);
+
+    Assert.assertEquals(100L,dynamicPropertiesStore.getAdaptiveResourceLimitMultiplier());
+
+    //proposal 19
+    parameters.clear();
+    parameters.put(19L,144000L);
+    proposalCapsule.setParameters(parameters);
+
+    proposalController.setDynamicParameters(proposalCapsule);
+
+    Assert.assertEquals(1L,dynamicPropertiesStore.getTotalEnergyTargetLimit());
 
   }
 
