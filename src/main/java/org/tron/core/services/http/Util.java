@@ -384,6 +384,13 @@ public class Util {
             contractJson = JSONObject
                 .parseObject(JsonFormat.printToString(shieldedTransferContract, selfType));
             break;
+          case UpdateBrokerageContract: {
+            Contract.UpdateBrokerageContract updateBrokerageContract = contractParameter
+                .unpack(Contract.UpdateBrokerageContract.class);
+            contractJson = JSONObject
+                .parseObject(JsonFormat.printToString(updateBrokerageContract, selfType));
+            break;
+          }
           // todo add other contract
           default:
         }
@@ -633,6 +640,14 @@ public class Util {
                     shieldedTransferContractBuilder, selfType);
             any = Any.pack(shieldedTransferContractBuilder.build());
             break;
+          case "UpdateBrokerageContract": {
+            Contract.UpdateBrokerageContract.Builder builder =
+                Contract.UpdateBrokerageContract.newBuilder();
+            JsonFormat.merge(parameter.getJSONObject(VALUE).toJSONString(), builder,
+                selfType);
+            any = Any.pack(builder.build());
+            break;
+          }
           // todo add other contract
           default:
         }
@@ -745,11 +760,19 @@ public class Util {
     return (bigDecimal == null) ? 0L : bigDecimal.longValueExact();
   }
 
+<<<<<<< HEAD
   public static String getMemo(byte[] memo) {
     int index = memo.length;
     for (; index>0; --index) {
       if (memo[index-1] != 0)
+=======
+  public static String getMemo(byte[] meno) {
+    int index = meno.length;
+    for (; index > 0; --index) {
+      if (meno[index - 1] != 0) {
+>>>>>>> f6b4eaaa33f6b11e804535599320ebbf5293d7eb
         break;
+      }
     }
 
     byte[] inputCheck = new byte[index];

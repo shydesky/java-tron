@@ -1,4 +1,4 @@
-package stest.tron.wallet.dailybuild.tvmnewcommand.multiValidateSignContract;
+package stest.tron.wallet.dailybuild.tvmnewcommand.batchValidateSignContract;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -30,7 +30,7 @@ import stest.tron.wallet.common.client.Parameter;
 import stest.tron.wallet.common.client.utils.PublicMethed;
 
 @Slf4j
-public class multiValidateSignContract007 {
+public class batchValidateSignContract007 {
 
   private final String testNetAccountKey = Configuration.getByPath("testng.conf")
       .getString("foundationAccount.key2");
@@ -100,7 +100,7 @@ public class multiValidateSignContract007 {
     logger.info("beforeNetUsed:" + beforeNetUsed);
     logger.info("beforeFreeNetUsed:" + beforeFreeNetUsed);
 
-    String filePath = "src/test/resources/soliditycode/multivalidatesign007.sol";
+    String filePath = "src/test/resources/soliditycode/batchvalidatesign007.sol";
     String contractName = "Demo";
     HashMap retMap = PublicMethed.getBycodeAbi(filePath, contractName);
     String code = retMap.get("byteCode").toString();
@@ -108,7 +108,7 @@ public class multiValidateSignContract007 {
     List<Object> signatures = new ArrayList<>();
     List<Object> addresses = new ArrayList<>();
     byte[] hash = Hash.sha3(txid.getBytes());
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 16; i++) {
       ECKey key = new ECKey();
       byte[] sign = key.sign(hash).toByteArray();
       signatures.add(Hex.toHexString(sign));
@@ -142,7 +142,7 @@ public class multiValidateSignContract007 {
             "testConstructorPure()", "", false,
             0, 0, "0", 0, contractExcAddress, contractExcKey, blockingStubFull);
 
-    Assert.assertEquals("11111111111111111111111111111111", PublicMethed
+    Assert.assertEquals("11111111111111110000000000000000", PublicMethed
         .bytes32ToString(transactionExtention.getConstantResult(0).toByteArray()));
     Assert.assertEquals("SUCCESS", transactionExtention.getResult().getCode().toString());
 
@@ -153,13 +153,13 @@ public class multiValidateSignContract007 {
     PublicMethed.waitProduceNextBlock(blockingStubFull);
     Optional<TransactionInfo> infoById2 = null;
     infoById2 = PublicMethed.getTransactionInfoById(txid, blockingStubFull);
-    if (infoById.get().getResultValue() == 0) {
-      Assert.assertEquals("11111111111111111111111111111111", PublicMethed
-          .bytes32ToString(infoById.get().getContractResult(0).toByteArray()));
+    if (infoById2.get().getResultValue() == 0) {
+      Assert.assertEquals("11111111111111110000000000000000", PublicMethed
+          .bytes32ToString(infoById2.get().getContractResult(0).toByteArray()));
     } else {
       Assert.assertTrue("CPU timeout for 'PUSH1' operation executing"
-          .equals(infoById.get().getResMessage().toStringUtf8())
-          || "Already Time Out".equals(infoById.get().getResMessage().toStringUtf8()));
+          .equals(infoById2.get().getResMessage().toStringUtf8())
+          || "Already Time Out".equals(infoById2.get().getResMessage().toStringUtf8()));
       PublicMethed.waitProduceNextBlock(blockingStubFull);
     }
     Long fee2 = infoById2.get().getFee();

@@ -14,13 +14,11 @@ import org.tron.common.utils.StringUtil;
 import org.tron.core.Wallet;
 import org.tron.core.capsule.ProposalCapsule;
 import org.tron.core.capsule.TransactionResultCapsule;
-import org.tron.core.config.Parameter.ChainParameters;
-import org.tron.core.config.Parameter.ForkBlockVersionConsts;
-import org.tron.core.config.Parameter.ForkBlockVersionEnum;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
 import org.tron.core.exception.ContractExeException;
 import org.tron.core.exception.ContractValidateException;
+import org.tron.core.services.ProposalService;
 import org.tron.protos.Contract.ProposalCreateContract;
 import org.tron.protos.Protocol.Transaction.Result.code;
 
@@ -130,9 +128,6 @@ public class ProposalCreateActuator extends AbstractActuator {
     }
 
     for (Map.Entry<Long, Long> entry : contract.getParametersMap().entrySet()) {
-      if (!validKey(entry.getKey())) {
-        throw new ContractValidateException("Bad chain parameter id");
-      }
       validateValue(entry);
     }
 
@@ -140,6 +135,7 @@ public class ProposalCreateActuator extends AbstractActuator {
   }
 
   private void validateValue(Map.Entry<Long, Long> entry) throws ContractValidateException {
+<<<<<<< HEAD
 
     switch (entry.getKey().intValue()) {
       case (0): {
@@ -366,6 +362,9 @@ public class ProposalCreateActuator extends AbstractActuator {
       default:
         break;
     }
+=======
+    ProposalService.validator(dbManager, entry.getKey(), entry.getValue());
+>>>>>>> f6b4eaaa33f6b11e804535599320ebbf5293d7eb
   }
 
   @Override
@@ -376,10 +375,6 @@ public class ProposalCreateActuator extends AbstractActuator {
   @Override
   public long calcFee() {
     return 0;
-  }
-
-  private boolean validKey(long idx) {
-    return idx >= 0 && idx < ChainParameters.values().length;
   }
 
 }
