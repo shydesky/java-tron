@@ -17,6 +17,8 @@ public class GetTransactionByIdOnSolidityServlet
   private WalletOnSolidity walletOnSolidity;
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
+    logger.error("gettransactionbyidonsolidity  diff solidity time:");
+
     walletOnSolidity.futureGet(() -> super.doGet(request, response));
   }
 

@@ -20,8 +20,14 @@ public class GetNodeInfoServlet extends RateLimiterServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
+      long startTime=System.currentTimeMillis();   //获取开始时间
       NodeInfo nodeInfo = nodeInfoService.getNodeInfo();
       response.getWriter().println(JSON.toJSONString(nodeInfo));
+
+      long endTime=System.currentTimeMillis(); //获取结束时间
+
+      long diff = startTime-endTime;
+      logger.error("node info diff fullnode time: {}", diff);
 
     } catch (Exception e) {
       logger.error("", e);

@@ -20,9 +20,16 @@ public class GetTransactionCountByBlockNumServlet extends RateLimiterServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
+      long startTime=System.currentTimeMillis();   //获取开始时间
+
       long num = Long.parseLong(request.getParameter("num"));
       long count = wallet.getTransactionCountByBlockNum(num);
       response.getWriter().println("{\"count\": " + count + "}");
+
+      long endTime=System.currentTimeMillis(); //获取结束时间
+      long diff = startTime-endTime;
+      logger.error("GetTransactionCountByBlockNumServlet diff fullnode time: {}", diff);
+
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {

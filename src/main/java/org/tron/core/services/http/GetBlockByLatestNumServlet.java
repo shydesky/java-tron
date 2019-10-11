@@ -23,6 +23,8 @@ public class GetBlockByLatestNumServlet extends RateLimiterServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
+      long startTime=System.currentTimeMillis();   //获取开始时间
+
       boolean visible = Util.getVisible(request);
       long getNum = Long.parseLong(request.getParameter("num"));
       if (getNum > 0 && getNum < BLOCK_LIMIT_NUM) {
@@ -33,6 +35,11 @@ public class GetBlockByLatestNumServlet extends RateLimiterServlet {
         }
       }
       response.getWriter().println("{}");
+
+      long endTime=System.currentTimeMillis(); //获取结束时间
+      long diff = startTime-endTime;
+      logger.error("node info diff solidity time: {}", diff);
+
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {

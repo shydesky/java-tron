@@ -28,6 +28,7 @@ public class GetTransactionInfoByIdServlet extends RateLimiterServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
+      long startTime=System.currentTimeMillis();   //获取开始时间
       boolean visible = Util.getVisible(request);
       String input = request.getParameter("value");
       TransactionInfo reply = wallet
@@ -37,6 +38,9 @@ public class GetTransactionInfoByIdServlet extends RateLimiterServlet {
       } else {
         response.getWriter().println("{}");
       }
+      long endTime=System.currentTimeMillis(); //获取结束时间
+      long diff = startTime-endTime;
+      logger.error("GetTransactionInfoByIdServlet diff fullnode time: {}", diff);
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {

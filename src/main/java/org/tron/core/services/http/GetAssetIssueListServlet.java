@@ -20,6 +20,8 @@ public class GetAssetIssueListServlet extends RateLimiterServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
+      long startTime=System.currentTimeMillis();   //获取开始时间
+
       boolean visible = Util.getVisible(request);
       AssetIssueList reply = wallet.getAssetIssueList();
       if (reply != null) {
@@ -27,6 +29,10 @@ public class GetAssetIssueListServlet extends RateLimiterServlet {
       } else {
         response.getWriter().println("{}");
       }
+
+      long endTime=System.currentTimeMillis(); //获取结束时间
+      long diff = startTime-endTime;
+      logger.error("GetAssetIssueListServlet diff fullnode time: {}", diff);
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {

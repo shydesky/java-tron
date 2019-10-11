@@ -24,6 +24,7 @@ public class GetBlockByIdServlet extends RateLimiterServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
+      long startTime=System.currentTimeMillis();   //获取开始时间
       boolean visible = Util.getVisible(request);
       String input = request.getParameter("value");
       Block reply = wallet.getBlockById(ByteString.copyFrom(ByteArray.fromHexString(input)));
@@ -32,6 +33,10 @@ public class GetBlockByIdServlet extends RateLimiterServlet {
       } else {
         response.getWriter().println("{}");
       }
+      long endTime=System.currentTimeMillis(); //获取结束时间
+      long diff = startTime-endTime;
+      logger.error("GetBlockByIdServlet diff fullnode time: {}", diff);
+
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {

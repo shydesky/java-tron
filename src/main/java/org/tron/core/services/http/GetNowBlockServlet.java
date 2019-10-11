@@ -19,6 +19,8 @@ public class GetNowBlockServlet extends RateLimiterServlet {
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
     try {
+      long startTime=System.currentTimeMillis();   //获取开始时间
+
       boolean visible = Util.getVisible(request);
       Block reply = wallet.getNowBlock();
       if (reply != null) {
@@ -26,6 +28,10 @@ public class GetNowBlockServlet extends RateLimiterServlet {
       } else {
         response.getWriter().println("{}");
       }
+      long endTime=System.currentTimeMillis(); //获取结束时间
+      long diff = startTime-endTime;
+      logger.error("GetNowBlockServlet diff fullnode time: {}", diff);
+
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());
       try {

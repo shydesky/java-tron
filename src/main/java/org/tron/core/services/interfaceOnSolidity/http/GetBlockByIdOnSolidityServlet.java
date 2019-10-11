@@ -16,7 +16,9 @@ public class GetBlockByIdOnSolidityServlet extends GetBlockByIdServlet {
   private WalletOnSolidity walletOnSolidity;
 
   protected void doGet(HttpServletRequest request, HttpServletResponse response) {
+    logger.error("getblockbyid  diff solidity time:");
     walletOnSolidity.futureGet(() -> super.doGet(request, response));
+
   }
 
   protected void doPost(HttpServletRequest request, HttpServletResponse response) {
