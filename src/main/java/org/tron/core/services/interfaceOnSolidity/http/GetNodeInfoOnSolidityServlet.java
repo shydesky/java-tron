@@ -29,7 +29,7 @@ public class GetNodeInfoOnSolidityServlet extends RateLimiterServlet {
       response.getWriter().println(JSON.toJSONString(nodeInfo));
 
       long endTime=System.currentTimeMillis(); //获取结束时间
-      long diff = startTime-endTime;
+      long diff = endTime-startTime;
       logger.error("node info diff solidity time: {}", diff);
 
     } catch (Exception e) {

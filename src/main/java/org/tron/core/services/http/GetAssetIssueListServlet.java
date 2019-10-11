@@ -31,7 +31,7 @@ public class GetAssetIssueListServlet extends RateLimiterServlet {
       }
 
       long endTime=System.currentTimeMillis(); //获取结束时间
-      long diff = startTime-endTime;
+      long diff = endTime-startTime;
       logger.error("GetAssetIssueListServlet diff fullnode time: {}", diff);
     } catch (Exception e) {
       logger.debug("Exception: {}", e.getMessage());

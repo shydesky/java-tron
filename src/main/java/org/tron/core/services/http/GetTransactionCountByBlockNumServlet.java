@@ -27,7 +27,7 @@ public class GetTransactionCountByBlockNumServlet extends RateLimiterServlet {
       response.getWriter().println("{\"count\": " + count + "}");
 
       long endTime=System.currentTimeMillis(); //获取结束时间
-      long diff = startTime-endTime;
+      long diff = endTime-startTime;
       logger.error("GetTransactionCountByBlockNumServlet diff fullnode time: {}", diff);
 
     } catch (Exception e) {

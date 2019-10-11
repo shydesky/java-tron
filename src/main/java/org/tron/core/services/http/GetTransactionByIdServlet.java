@@ -37,7 +37,7 @@ public class GetTransactionByIdServlet extends RateLimiterServlet {
       }
 
       long endTime=System.currentTimeMillis(); //获取结束时间
-      long diff = startTime-endTime;
+      long diff = endTime-startTime;
       logger.error("get transactionbyid diff fullnode time: {}", diff);
 
     } catch (Exception e) {
@@ -66,7 +66,7 @@ public class GetTransactionByIdServlet extends RateLimiterServlet {
         response.getWriter().println("{}");
       }
       long endTime=System.currentTimeMillis(); //获取结束时间
-      long diff = startTime-endTime;
+      long diff = endTime-startTime;
       logger.error("get transactionbyid diff fullnode time: {}", diff);
 
     } catch (Exception e) {

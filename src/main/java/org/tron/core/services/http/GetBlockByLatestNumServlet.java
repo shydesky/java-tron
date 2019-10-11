@@ -37,7 +37,7 @@ public class GetBlockByLatestNumServlet extends RateLimiterServlet {
       response.getWriter().println("{}");
 
       long endTime=System.currentTimeMillis(); //获取结束时间
-      long diff = startTime-endTime;
+      long diff = endTime-startTime;
       logger.error("GetBlockByLatestNumServlet solidity time: {}", diff);
 
     } catch (Exception e) {
