@@ -3,6 +3,7 @@ package org.tron.program;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -10,8 +11,10 @@ import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.core.Constant;
+import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
+import org.tron.core.db.Manager;
 import org.tron.core.services.RpcApiService;
 import org.tron.core.services.WitnessService;
 import org.tron.core.services.http.FullNodeHttpApiService;
@@ -89,12 +92,23 @@ public class FullNode {
       appT.addService(httpApiOnSolidityService);
     }
 
+    Manager mng = context.getBean(Manager.class);
+
+    int count = 0;
+    List<BlockCapsule> list = mng.getBlockStore().getLimitNumber(13449374, 13506905 - 13449374);
+    //List<BlockCapsule> list = mng.getBlockStore().getLimitNumber(1, 10000);
+
+    for(BlockCapsule block:list){
+      count += block.getTransactions().size();
+    }
+    logger.error("count:{}", count);
+
     appT.initServices(cfgArgs);
     appT.startServices();
     appT.startup();
 
     rpcApiService.blockUntilShutdown();
-  }
+}
 
   public static void shutdown(final Application app) {
     logger.info("********register application shutdown hook********");
