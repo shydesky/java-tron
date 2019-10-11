@@ -6,12 +6,14 @@ import java.io.File;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.tron.common.application.Application;
 import org.tron.common.application.ApplicationFactory;
 import org.tron.common.application.TronApplicationContext;
 import org.tron.core.Constant;
 import org.tron.core.capsule.BlockCapsule;
+import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.config.DefaultConfig;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.Manager;
@@ -98,8 +100,15 @@ public class FullNode {
     List<BlockCapsule> list = mng.getBlockStore().getLimitNumber(13449374, 13506905 - 13449374);
     //List<BlockCapsule> list = mng.getBlockStore().getLimitNumber(1, 10000);
 
-    for(BlockCapsule block:list){
-      count += block.getTransactions().size();
+    for (BlockCapsule block : list) {
+      int temp = block.getTransactions().size();
+      count += temp;
+      if (temp > 0) {
+        List<TransactionCapsule> listT = block.getTransactions();
+        for (TransactionCapsule capsule : listT) {
+          logger.info("tx600w:{}", Hex.toHexString(capsule.getTransactionId().getBytes()));
+        }
+      }
     }
     logger.error("count:{}", count);
 
@@ -108,7 +117,7 @@ public class FullNode {
     appT.startup();
 
     rpcApiService.blockUntilShutdown();
-}
+  }
 
   public static void shutdown(final Application app) {
     logger.info("********register application shutdown hook********");
