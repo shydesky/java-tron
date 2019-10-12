@@ -159,7 +159,7 @@ public class ContractTrcToken003 {
 
     Assert.assertFalse(response.getResult());
     Assert.assertEquals(CONTRACT_VALIDATE_ERROR, response.getCode());
-    Assert.assertEquals("contract validate error : No asset !",
+    Assert.assertEquals("contract validate error : No asset!",
         response.getMessage().toStringUtf8());
 
     // deployer didn't have any such token
