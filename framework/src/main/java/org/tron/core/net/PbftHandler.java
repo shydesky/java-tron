@@ -1,4 +1,4 @@
-package org.tron.core.pbft;
+package org.tron.core.net;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -12,11 +12,12 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.tron.common.overlay.server.Channel;
 import org.tron.common.overlay.server.MessageQueue;
+import org.tron.consensus.pbft.PbftManager;
+import org.tron.consensus.pbft.message.PbftBaseMessage;
 import org.tron.core.db.Manager;
 import org.tron.core.exception.P2pException;
 import org.tron.core.net.message.MessageTypes;
 import org.tron.core.net.peer.PeerConnection;
-import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.protos.Protocol.PbftMessage.Type;
 
 @Component

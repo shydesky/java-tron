@@ -1,13 +1,12 @@
-package org.tron.core.pbft.message;
+package org.tron.consensus.pbft.message;
 
 import com.google.protobuf.ByteString;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.crypto.ECKey.ECDSASignature;
-import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Sha256Hash;
+import org.tron.consensus.base.Param;
+import org.tron.consensus.base.Param.Miner;
 import org.tron.core.capsule.BlockCapsule;
-import org.tron.core.config.args.Args;
-import org.tron.core.config.args.LocalWitnesses;
 import org.tron.core.net.message.MessageTypes;
 import org.tron.protos.Protocol.PbftMessage;
 import org.tron.protos.Protocol.PbftMessage.Raw;
@@ -33,11 +32,11 @@ public class PbftBlockMessage extends PbftBaseMessage {
 
   public static PbftBaseMessage buildPrePrepareMessage(BlockCapsule blockCapsule) {
     PbftBlockMessage pbftBlockMessage = new PbftBlockMessage();
-    LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
-    ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
-    Raw.Builder rawBuilder = PbftMessage.Raw.newBuilder();
+    Miner miner = Param.getInstance().getMiner();
+    ECKey ecKey = ECKey.fromPrivate(miner.getPrivateKey());
+    Raw.Builder rawBuilder = Raw.newBuilder();
     PbftMessage.Builder builder = PbftMessage.newBuilder();
-    byte[] publicKey = localWitnesses.getPublicKey();
+    byte[] publicKey = ecKey.getAddress();
     rawBuilder.setBlockNum(blockCapsule.getNum())
         .setPbftMsgType(Type.PREPREPARE)
         .setTime(System.currentTimeMillis())

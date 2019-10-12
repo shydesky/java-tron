@@ -2,10 +2,10 @@ package org.tron.core.net.message;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.tron.common.overlay.message.MessageFactory;
+import org.tron.consensus.pbft.message.PbftBaseMessage;
+import org.tron.consensus.pbft.message.PbftBlockMessage;
+import org.tron.consensus.pbft.message.PbftSrMessage;
 import org.tron.core.exception.P2pException;
-import org.tron.core.pbft.message.PbftBaseMessage;
-import org.tron.core.pbft.message.PbftBlockMessage;
-import org.tron.core.pbft.message.PbftSrMessage;
 
 /**
  * msg factory.

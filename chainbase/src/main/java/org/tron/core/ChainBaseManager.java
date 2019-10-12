@@ -4,10 +4,15 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.utils.Sha256Hash;
 import org.tron.common.zksnark.MerkleContainer;
+import org.tron.core.capsule.BlockCapsule;
 import org.tron.core.db.BlockIndexStore;
 import org.tron.core.db.BlockStore;
 import org.tron.core.db.DelegationService;
+import org.tron.core.db.KhaosDatabase;
+import org.tron.core.exception.BadItemException;
+import org.tron.core.exception.ItemNotFoundException;
 import org.tron.core.store.AccountIdIndexStore;
 import org.tron.core.store.AccountIndexStore;
 import org.tron.core.store.AccountStore;
@@ -101,6 +106,9 @@ public class ChainBaseManager {
   @Autowired
   @Getter
   private IncrementalMerkleTreeStore merkleTreeStore;
+  @Autowired
+  @Getter
+  private KhaosDatabase khaosDb;
 
   @Getter
   @Setter
@@ -113,5 +121,14 @@ public class ChainBaseManager {
   @Autowired
   @Getter
   private DelegationStore delegationStore;
+
+  public BlockCapsule getBlock(long blockNum) throws ItemNotFoundException, BadItemException {
+    Sha256Hash hash = blockIndexStore.get(blockNum);
+    BlockCapsule block = this.khaosDb.getBlock(hash);
+    if (block == null) {
+      block = blockStore.get(hash.getBytes());
+    }
+    return block;
+  }
 
 }

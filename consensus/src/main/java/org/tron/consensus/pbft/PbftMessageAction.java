@@ -1,33 +1,32 @@
-package org.tron.core.pbft;
+package org.tron.consensus.pbft;
 
 import com.alibaba.fastjson.JSON;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tron.core.config.args.Args;
-import org.tron.core.db.Manager;
-import org.tron.core.pbft.message.PbftBaseMessage;
-import org.tron.core.pbft.message.PbftBlockMessage;
-import org.tron.core.pbft.message.PbftSrMessage;
+import org.tron.consensus.base.Param;
+import org.tron.consensus.pbft.message.PbftBaseMessage;
+import org.tron.consensus.pbft.message.PbftBlockMessage;
+import org.tron.consensus.pbft.message.PbftSrMessage;
+import org.tron.core.db.CommonDataBase;
 
 @Slf4j(topic = "pbft")
 @Component
 public class PbftMessageAction {
 
   private long checkPoint = 0;
-  private final int count = Args.getInstance().getCheckMsgCount();
 
-  @Setter
-  private Manager manager;
+  @Autowired
+  private CommonDataBase commonDataBase;
 
   public void action(PbftBaseMessage message) {
     switch (message.getType()) {
       case PBFT_BLOCK_MSG: {
         PbftBlockMessage blockMessage = (PbftBlockMessage) message;
         long blockNum = blockMessage.getBlockNum();
-        if (blockNum - checkPoint >= count) {
+        if (blockNum - checkPoint >= Param.getInstance().getCheckMsgCount()) {
           checkPoint = blockNum;
-          manager.getCommonDataBase().saveLatestPbftBlockNum(blockNum);
+          commonDataBase.saveLatestPbftBlockNum(blockNum);
           logger.info("commit msg block num is:{}", blockNum);
         }
       }
@@ -35,7 +34,7 @@ public class PbftMessageAction {
       case PBFT_SR_MSG: {
         PbftSrMessage srMessage = (PbftSrMessage) message;
         String srString = srMessage.getPbftMessage().getRawData().getData().toStringUtf8();
-        manager.getCommonDataBase().saveCurrentSrList(srString);
+        commonDataBase.saveCurrentSrList(srString);
         logger.info("sr commit msg :{}, {}", srMessage.getBlockNum(),
             JSON.parseArray(srString, String.class));
       }

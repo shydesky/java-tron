@@ -110,7 +110,6 @@ import org.tron.core.exception.ValidateScheduleException;
 import org.tron.core.exception.ValidateSignatureException;
 import org.tron.core.exception.ZksnarkException;
 import org.tron.core.net.TronNetService;
-import org.tron.core.pbft.PbftManager;
 import org.tron.core.store.AccountIdIndexStore;
 import org.tron.core.store.AccountIndexStore;
 import org.tron.core.store.AccountStore;
@@ -292,22 +291,12 @@ public class Manager {
   private ChainBaseManager chainBaseManager;
 
   @Autowired
-  private PbftManager pbftManager;
-
-  @Autowired
   @Getter
   private PbftCommitMsgStore pbftCommitMsgStore;
 
   @Autowired
   @Getter
   private CommonDataBase commonDataBase;
-
-  @Getter
-  private final List<ByteString> beforeWitness = new ArrayList<>();
-  @Getter
-  private final List<ByteString> currentWitness = new ArrayList<>();
-  @Getter
-  private long beforeMaintenanceTime;
 
   public WitnessStore getWitnessStore() {
     return this.witnessStore;
@@ -585,7 +574,6 @@ public class Manager {
     //initActuatorCreator
     ActuatorCreator.init();
     TransactionRegister.registerActuator();
-    currentWitness.addAll(witnessScheduleStore.getActiveWitnesses());
   }
 
   public BlockId getGenesisBlockId() {
@@ -986,8 +974,6 @@ public class Manager {
     } else {
       revokingStore.setMaxFlushCount(SnapshotManager.DEFAULT_MIN_FLUSH_COUNT);
     }
-    //pbft
-    pbftManager.blockPrePrepare(block);
   }
 
   private void switchFork(BlockCapsule newHead)
@@ -1592,38 +1578,18 @@ public class Manager {
 
     payReward(block);
 
-    if (isMaintenance(block)) {
-      updateWitnessValue(beforeWitness);
-      beforeMaintenanceTime = dynamicPropertiesStore.getNextMaintenanceTime();
+    if (dynamicPropertiesStore.getNextMaintenanceTime() <= block.getTimeStamp()) {
       proposalController.processProposals();
       forkController.reset();
     }
 
-    if (!consensus.applyBlock(block.getInstance())) {
+    if (!consensus.applyBlock(block)) {
       throw new BadBlockException("consensus apply block failed");
-    }
-    if (isMaintenance(block)) {
-      updateWitnessValue(currentWitness);
-      //pbft msg
-      pbftManager.srPrePrepare(block, currentWitness);
     }
 
     updateTransHashCache(block);
     updateRecentBlock(block);
     updateDynamicProperties(block);
-  }
-
-  private boolean isMaintenance(BlockCapsule block) {
-    if (dynamicPropertiesStore.getNextMaintenanceTime() <= block.getTimeStamp()
-        && block.getNum() != 1) {
-      return true;
-    }
-    return false;
-  }
-
-  private void updateWitnessValue(List<ByteString> srList) {
-    srList.clear();
-    srList.addAll(witnessScheduleStore.getActiveWitnesses());
   }
 
   private void payReward(BlockCapsule block) {

@@ -7,9 +7,9 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.tron.consensus.pbft.message.PbftBaseMessage;
 import org.tron.core.capsule.PbftCommitMsgCapsule;
 import org.tron.core.net.message.MessageTypes;
-import org.tron.core.pbft.message.PbftBaseMessage;
 import org.tron.protos.Protocol.PbftMessage;
 
 @Slf4j(topic = "DB")

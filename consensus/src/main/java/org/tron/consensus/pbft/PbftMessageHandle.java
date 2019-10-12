@@ -1,4 +1,4 @@
-package org.tron.core.pbft;
+package org.tron.consensus.pbft;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -15,24 +15,25 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.PostConstruct;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
-import org.tron.common.overlay.server.SyncPool;
+import org.tron.consensus.base.Param;
+import org.tron.consensus.dpos.MaintenanceManager;
+import org.tron.consensus.pbft.message.PbftBaseMessage;
+import org.tron.core.ChainBaseManager;
 import org.tron.core.capsule.BlockCapsule;
-import org.tron.core.config.args.Args;
-import org.tron.core.db.Manager;
-import org.tron.core.pbft.message.PbftBaseMessage;
+import org.tron.core.store.WitnessScheduleStore;
 
 @Slf4j(topic = "pbft")
 @Component
 public class PbftMessageHandle {
 
   public static final int TIME_OUT = 60000;
-  public final int agreeNodeCount = Args.getInstance().getAgreeNodeCount();
   //Pre-preparation stage voting information
   private Set<String> preVotes = Sets.newConcurrentHashSet();
   //Preparation stage voting information
@@ -50,21 +51,21 @@ public class PbftMessageHandle {
   //Successfully processed request
   private Map<String, PbftBaseMessage> doneMsg = Maps.newConcurrentMap();
 
-  private byte[] witnessAddress = Args.getInstance().getLocalWitnesses().getWitnessAccountAddress();
-
   private Timer timer;
 
-  private SyncPool syncPool;
-  private Manager manager;
   @Autowired
   private PbftMessageAction pbftMessageAction;
   @Autowired
   private ApplicationContext ctx;
+  @Autowired
+  private WitnessScheduleStore witnessScheduleStore;
+  @Autowired
+  private ChainBaseManager chainBaseManager;
+  @Setter
+  private MaintenanceManager maintenanceManager;
 
+  @PostConstruct
   public void init() {
-    syncPool = ctx.getBean(SyncPool.class);
-    manager = ctx.getBean(Manager.class);
-    pbftMessageAction.setManager(manager);
     start();
   }
 
@@ -113,7 +114,7 @@ public class PbftMessageHandle {
     //The number of votes plus 1
     if (!doneMsg.containsKey(message.getNo())) {
       long agCou = agreePare.incrementAndGet(message.getDataKey());
-      if (agCou >= agreeNodeCount) {
+      if (agCou >= Param.getInstance().getAgreeNodeCount()) {
         agreePare.remove(message.getDataKey());
         //Entering the submission stage
         PbftBaseMessage cmMessage = message.buildCommitMessage();
@@ -138,7 +139,7 @@ public class PbftMessageHandle {
     commitVotes.add(key);
     //The number of votes plus 1
     long agCou = agreeCommit.incrementAndGet(message.getDataKey());
-    if (agCou >= agreeNodeCount) {
+    if (agCou >= Param.getInstance().getAgreeNodeCount()) {
       remove(message.getNo());
       //commit,
       if (!isSyncing()) {
@@ -156,12 +157,7 @@ public class PbftMessageHandle {
   }
 
   public void forwardMessage(PbftBaseMessage message) {
-    if (syncPool == null) {
-      return;
-    }
-    syncPool.getActivePeers().forEach(peerConnection -> {
-      peerConnection.sendMessage(message);
-    });
+    Param.getInstance().getPbftInterface().forwardMessage(message);
   }
 
   private void checkPrepareMsgCache(String key) {
@@ -183,12 +179,12 @@ public class PbftMessageHandle {
   }
 
   public boolean checkIsCanSendMsg(PbftBaseMessage msg) {
-    if (!Args.getInstance().isWitness()) {
+    if (!Param.getInstance().isEnable()) {
       return false;
     }
-    if (!manager.getWitnessScheduleStore().getActiveWitnesses().stream().anyMatch(witness -> {
-      return Arrays.equals(witness.toByteArray(), witnessAddress);
-    })) {
+    if (!witnessScheduleStore.getActiveWitnesses().stream()
+        .anyMatch(witness -> Arrays.equals(witness.toByteArray(),
+            Param.getInstance().getMiner().getPrivateKeyAddress().toByteArray()))) {
       return false;
     }
     return !isSyncing();
@@ -196,39 +192,29 @@ public class PbftMessageHandle {
 
   public boolean checkIsWitnessMsg(PbftBaseMessage msg) {
     //check current node is witness node
-    if (manager == null) {
+    if (maintenanceManager == null) {
       return false;
     }
     long blockNum = msg.getPbftMessage().getRawData().getBlockNum();
     List<ByteString> witnessList;
     BlockCapsule blockCapsule = null;
     try {
-      blockCapsule = manager.getBlockByNum(blockNum);
+      blockCapsule = Param.getInstance().getPbftInterface().getBlock(blockNum);
     } catch (Exception e) {
       logger.debug("can not find the block,num is: {}, error reason: {}", blockNum, e.getMessage());
     }
-    if (blockCapsule == null || blockCapsule.getTimeStamp() > manager
+    if (blockCapsule == null || blockCapsule.getTimeStamp() > maintenanceManager
         .getBeforeMaintenanceTime()) {
-      witnessList = manager.getCurrentWitness();
+      witnessList = maintenanceManager.getCurrentWitness();
     } else {
-      witnessList = manager.getBeforeWitness();
+      witnessList = maintenanceManager.getBeforeWitness();
     }
     return witnessList.stream()
         .anyMatch(witness -> witness.equals(msg.getPbftMessage().getRawData().getPublicKey()));
   }
 
   public boolean isSyncing() {
-    if (syncPool == null) {
-      return true;
-    }
-    AtomicBoolean result = new AtomicBoolean(false);
-    syncPool.getActivePeers().forEach(peerConnection -> {
-      if (peerConnection.isNeedSyncFromPeer()) {
-        result.set(true);
-        return;
-      }
-    });
-    return result.get();
+    return Param.getInstance().getPbftInterface().isSyncing();
   }
 
   //Cleanup related status

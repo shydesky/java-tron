@@ -1,4 +1,4 @@
-package org.tron.core.pbft.message;
+package org.tron.consensus.pbft.message;
 
 import com.alibaba.fastjson.JSON;
 import com.google.protobuf.ByteString;
@@ -10,11 +10,10 @@ import org.spongycastle.util.encoders.Hex;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.crypto.ECKey.ECDSASignature;
 import org.tron.common.overlay.message.Message;
-import org.tron.common.utils.ByteArray;
 import org.tron.common.utils.Sha256Hash;
+import org.tron.consensus.base.Param;
+import org.tron.consensus.base.Param.Miner;
 import org.tron.core.capsule.TransactionCapsule;
-import org.tron.core.config.args.Args;
-import org.tron.core.config.args.LocalWitnesses;
 import org.tron.core.exception.P2pException;
 import org.tron.core.net.message.MessageTypes;
 import org.tron.protos.Protocol.PbftMessage;
@@ -106,11 +105,11 @@ public abstract class PbftBaseMessage extends Message {
 
   private PbftBaseMessage buildMessageCapsule(Type type) {
     PbftBaseMessage pbftMessage = createMessage();
-    LocalWitnesses localWitnesses = Args.getInstance().getLocalWitnesses();
-    ECKey ecKey = ECKey.fromPrivate(ByteArray.fromHexString(localWitnesses.getPrivateKey()));
+    Miner miner = Param.getInstance().getMiners().get(0);
+    ECKey ecKey = ECKey.fromPrivate(miner.getPrivateKey());
     PbftMessage.Builder builder = PbftMessage.newBuilder();
-    Raw.Builder rawBuilder = PbftMessage.Raw.newBuilder();
-    byte[] publicKey = localWitnesses.getPublicKey();
+    Raw.Builder rawBuilder = Raw.newBuilder();
+    byte[] publicKey = ecKey.getAddress();
     rawBuilder.setBlockNum(getPbftMessage().getRawData().getBlockNum())
         .setPbftMsgType(type)
         .setTime(System.currentTimeMillis())
