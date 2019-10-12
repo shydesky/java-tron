@@ -57,7 +57,6 @@ public class Param {
   }
 
   public class Miner {
-
     @Getter
     @Setter
     private byte[] privateKey;

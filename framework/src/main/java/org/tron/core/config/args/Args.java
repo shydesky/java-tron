@@ -509,11 +509,6 @@ public class Args {
   @Setter
   private int checkMsgCount;
 
-  public void setFullNodeAllowShieldedTransaction(boolean fullNodeAllowShieldedTransaction) {
-    this.fullNodeAllowShieldedTransaction = fullNodeAllowShieldedTransaction;
-    DBConfig.setFullNodeAllowShieldedTransaction(fullNodeAllowShieldedTransaction);
-  }
-
   public static void clearParam() {
     INSTANCE.outputDirectory = "output-directory";
     INSTANCE.help = false;
@@ -1114,30 +1109,6 @@ public class Args {
     return INSTANCE;
   }
 
-  /**
-   * Get storage path by name of database
-   *
-   * @param dbName name of database
-   * @return path of that database
-   */
-  public String getOutputDirectoryByDbName(String dbName) {
-    String path = storage.getPathByDbName(dbName);
-    if (!StringUtils.isBlank(path)) {
-      return path;
-    }
-    return getOutputDirectory();
-  }
-
-  /**
-   * get output directory.
-   */
-  public String getOutputDirectory() {
-    if (!this.outputDirectory.equals("") && !this.outputDirectory.endsWith(File.separator)) {
-      return this.outputDirectory + File.separator;
-    }
-    return this.outputDirectory;
-  }
-
   private static List<Node> getNodes(final com.typesafe.config.Config config, String path) {
     if (!config.hasPath(path)) {
       return Collections.emptyList();
@@ -1280,7 +1251,6 @@ public class Args {
     return filter;
   }
 
-
   private static String getGeneratedNodePrivateKey() {
     String nodeId;
     try {
@@ -1369,19 +1339,10 @@ public class Args {
     }
   }
 
-  public ECKey getMyKey() {
-    if (StringUtils.isEmpty(INSTANCE.p2pNodeId)) {
-      INSTANCE.p2pNodeId = getGeneratedNodePrivateKey();
-    }
-
-    return ECKey.fromPrivate(Hex.decode(INSTANCE.p2pNodeId));
-  }
-
   private static double calcMaxTimeRatio() {
     //return max(2.0, min(5.0, 5 * 4.0 / max(Runtime.getRuntime().availableProcessors(), 1)));
     return 5.0;
   }
-
 
   private static void initRocksDbSettings(Config config) {
     String prefix = "storage.dbSettings.";
@@ -1466,7 +1427,6 @@ public class Args {
     logger.info("\n");
   }
 
-
   public static void initDBConfig(Args cfgArgs) {
     if (Objects.nonNull(cfgArgs.getStorage())) {
       DBConfig.setDbVersion(cfgArgs.getStorage().getDbVersion());
@@ -1508,5 +1468,42 @@ public class Args {
     DBConfig.setSolidityNode(cfgArgs.isSolidityNode());
     DBConfig.setSupportConstant(cfgArgs.isSupportConstant());
     DBConfig.setLongRunningTime(cfgArgs.getLongRunningTime());
+  }
+
+  public void setFullNodeAllowShieldedTransaction(boolean fullNodeAllowShieldedTransaction) {
+    this.fullNodeAllowShieldedTransaction = fullNodeAllowShieldedTransaction;
+    DBConfig.setFullNodeAllowShieldedTransaction(fullNodeAllowShieldedTransaction);
+  }
+
+  /**
+   * Get storage path by name of database
+   *
+   * @param dbName name of database
+   * @return path of that database
+   */
+  public String getOutputDirectoryByDbName(String dbName) {
+    String path = storage.getPathByDbName(dbName);
+    if (!StringUtils.isBlank(path)) {
+      return path;
+    }
+    return getOutputDirectory();
+  }
+
+  /**
+   * get output directory.
+   */
+  public String getOutputDirectory() {
+    if (!this.outputDirectory.equals("") && !this.outputDirectory.endsWith(File.separator)) {
+      return this.outputDirectory + File.separator;
+    }
+    return this.outputDirectory;
+  }
+
+  public ECKey getMyKey() {
+    if (StringUtils.isEmpty(INSTANCE.p2pNodeId)) {
+      INSTANCE.p2pNodeId = getGeneratedNodePrivateKey();
+    }
+
+    return ECKey.fromPrivate(Hex.decode(INSTANCE.p2pNodeId));
   }
 }

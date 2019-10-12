@@ -35,25 +35,19 @@ public class Channel {
 
   @Autowired
   protected MessageQueue msgQueue;
-
+  protected NodeStatistics nodeStatistics;
   @Autowired
   private MessageCodec messageCodec;
-
   @Autowired
   private NodeManager nodeManager;
-
   @Autowired
   private StaticMessages staticMessages;
-
   @Autowired
   private WireTrafficStats stats;
-
   @Autowired
   private HandshakeHandler handshakeHandler;
-
   @Autowired
   private P2pHandler p2pHandler;
-
   @Autowired
   private TronNetHandler tronNetHandler;
 
@@ -61,19 +55,11 @@ public class Channel {
   private PbftHandler pbftHandler;
 
   private ChannelManager channelManager;
-
   private ChannelHandlerContext ctx;
-
   private InetSocketAddress inetSocketAddress;
-
   private Node node;
-
   private long startTime;
-
   private TronState tronState = TronState.INIT;
-
-  protected NodeStatistics nodeStatistics;
-
   private boolean isActive;
 
   private volatile boolean isDisconnect;
@@ -175,15 +161,6 @@ public class Channel {
     ctx.close();
   }
 
-  public enum TronState {
-    INIT,
-    HANDSHAKE_FINISHED,
-    START_TO_SYNC,
-    SYNCING,
-    SYNC_COMPLETED,
-    SYNC_FAILED
-  }
-
   public Node getNode() {
     return node;
   }
@@ -213,12 +190,12 @@ public class Channel {
     return nodeStatistics;
   }
 
-  public void setStartTime(long startTime) {
-    this.startTime = startTime;
-  }
-
   public long getStartTime() {
     return startTime;
+  }
+
+  public void setStartTime(long startTime) {
+    this.startTime = startTime;
   }
 
   public void setTronState(TronState tronState) {
@@ -241,7 +218,6 @@ public class Channel {
   public boolean isFastForwardPeer() {
     return isFastForwardPeer;
   }
-
 
   @Override
   public boolean equals(Object o) {
@@ -273,6 +249,15 @@ public class Channel {
   @Override
   public String toString() {
     return String.format("%s | %s", inetSocketAddress, getPeerId());
+  }
+
+  public enum TronState {
+    INIT,
+    HANDSHAKE_FINISHED,
+    START_TO_SYNC,
+    SYNCING,
+    SYNC_COMPLETED,
+    SYNC_FAILED
   }
 
 }
