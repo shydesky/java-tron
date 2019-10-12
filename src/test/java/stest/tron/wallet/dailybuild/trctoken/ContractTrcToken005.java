@@ -31,7 +31,7 @@ import stest.tron.wallet.common.client.utils.PublicMethed;
 public class ContractTrcToken005 {
 
   private final String testKey002 = Configuration.getByPath("testng.conf")
-      .getString("foundationAccount.key1");
+      .getString("foundationAccount.key2");
   private final byte[] fromAddress = PublicMethed.getFinalAddress(testKey002);
 
   private ManagedChannel channelFull = null;
@@ -250,7 +250,7 @@ public class ContractTrcToken005 {
 
     Assert.assertFalse(response.getResult());
     Assert.assertEquals(CONTRACT_VALIDATE_ERROR, response.getCode());
-    Assert.assertEquals("contract validate error : Owner no asset!",
+    Assert.assertEquals("contract validate error : Owner account has no asset!",
         response.getMessage().toStringUtf8());
 
     // tokenId is Long.MAX_VALUE
@@ -265,7 +265,7 @@ public class ContractTrcToken005 {
 
     Assert.assertFalse(response.getResult());
     Assert.assertEquals(CONTRACT_VALIDATE_ERROR, response.getCode());
-    Assert.assertEquals("contract validate error : No asset !",
+    Assert.assertEquals("contract validate error : No asset!",
         response.getMessage().toStringUtf8());
 
     Assert.assertTrue(PublicMethed.transferAsset(user001Address,

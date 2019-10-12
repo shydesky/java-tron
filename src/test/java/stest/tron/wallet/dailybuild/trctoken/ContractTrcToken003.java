@@ -174,7 +174,7 @@ public class ContractTrcToken003 {
 
     Assert.assertFalse(response.getResult());
     Assert.assertEquals(CONTRACT_VALIDATE_ERROR, response.getCode());
-    Assert.assertEquals("contract validate error : assetBalance must greater than 0.",
+    Assert.assertEquals("contract validate error : assetBalance must be greater than 0.",
         response.getMessage().toStringUtf8());
 
     // deployer didn't have any Long.MAX_VALUE
@@ -189,7 +189,7 @@ public class ContractTrcToken003 {
 
     Assert.assertFalse(response.getResult());
     Assert.assertEquals(CONTRACT_VALIDATE_ERROR, response.getCode());
-    Assert.assertEquals("contract validate error : No asset !",
+    Assert.assertEquals("contract validate error : No asset!",
         response.getMessage().toStringUtf8());
 
     // the tokenValue is not enough
