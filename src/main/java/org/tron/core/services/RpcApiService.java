@@ -110,6 +110,7 @@ public class RpcApiService implements Service {
   public static final String CONTRACT_VALIDATE_EXCEPTION = "ContractValidateException: {}";
   public static final String CONTRACT_VALIDATE_ERROR = "contract validate error : ";
   private int port = Args.getInstance().getRpcPort();
+  private boolean isOneWitness = Args.getInstance().isOneWitness();
   private Server apiServer;
 
   @Autowired
@@ -1040,13 +1041,18 @@ public class RpcApiService implements Service {
     @Override
     public void createWitness(WitnessCreateContract request,
         StreamObserver<Transaction> responseObserver) {
-      try {
-        responseObserver.onNext(
-            createTransactionCapsule(request, ContractType.WitnessCreateContract).getInstance());
-      } catch (ContractValidateException e) {
-        responseObserver
-            .onNext(null);
-        logger.debug(CONTRACT_VALIDATE_EXCEPTION, e.getMessage());
+      if (!isOneWitness) {
+        try {
+          responseObserver.onNext(
+                  createTransactionCapsule(request, ContractType.WitnessCreateContract).getInstance());
+        } catch (ContractValidateException e) {
+          responseObserver
+                  .onNext(null);
+          logger.debug("ContractValidateException: {}", e.getMessage());
+        }
+      } else {
+        logger.info("Not Allow to create witness (Grpc): " + isOneWitness);
+        responseObserver.onNext(null);
       }
       responseObserver.onCompleted();
     }
@@ -1054,7 +1060,13 @@ public class RpcApiService implements Service {
     @Override
     public void createWitness2(WitnessCreateContract request,
         StreamObserver<TransactionExtention> responseObserver) {
-      createTransactionExtention(request, ContractType.WitnessCreateContract, responseObserver);
+      if (!isOneWitness) {
+        createTransactionExtention(request, ContractType.WitnessCreateContract, responseObserver);
+      } else {
+        logger.info("Not Allow to create witness2 (Grpc): " + isOneWitness);
+        responseObserver.onNext(null);
+        responseObserver.onCompleted();
+      }
     }
 
     @Override
