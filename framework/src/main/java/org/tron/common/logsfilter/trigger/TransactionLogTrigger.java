@@ -73,6 +73,10 @@ public class TransactionLogTrigger extends Trigger {
   @Setter
   private List<InternalTransactionPojo> internalTrananctionList;
 
+  @Getter
+  @Setter
+  private boolean removed;
+
   public TransactionLogTrigger() {
     setTriggerName(Trigger.TRANSACTION_TRIGGER_NAME);
   }
