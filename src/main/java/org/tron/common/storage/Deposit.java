@@ -12,15 +12,17 @@ import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.capsule.VotesCapsule;
 import org.tron.core.capsule.WitnessCapsule;
 import org.tron.core.db.Manager;
-import org.tron.protos.Protocol;
+import org.tron.protos.Protocol.AccountType;
 
 public interface Deposit {
 
   Manager getDbManager();
 
-  AccountCapsule createAccount(byte[] address, Protocol.AccountType type);
+  AccountCapsule createNormalAccount(byte[] address);
 
-  AccountCapsule createAccount(byte[] address, String accountName, Protocol.AccountType type);
+  AccountCapsule createAccount(byte[] address, AccountType type);
+
+  AccountCapsule createAccount(byte[] address, String accountName, AccountType type);
 
   AccountCapsule getAccount(byte[] address);
 
@@ -38,9 +40,13 @@ public interface Deposit {
 
   ContractCapsule getContract(byte[] address);
 
-  void saveCode(byte[] codeHash, byte[] code);
+  void updateContract(byte[] address, ContractCapsule contractCapsule);
 
-  byte[] getCode(byte[] codeHash);
+  void updateAccount(byte[] address, AccountCapsule accountCapsule);
+
+  void saveCode(byte[] address, byte[] code);
+
+  byte[] getCode(byte[] address);
 
   void putStorageValue(byte[] address, DataWord key, DataWord value);
 

@@ -1,6 +1,7 @@
 package org.tron.core.config.args;
 
 import static java.lang.Math.max;
+import static java.lang.System.exit;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -39,13 +40,14 @@ import org.tron.common.logsfilter.EventPluginConfig;
 import org.tron.common.logsfilter.FilterQuery;
 import org.tron.common.logsfilter.TriggerConfig;
 import org.tron.common.overlay.discover.node.Node;
-import org.tron.common.storage.DBSettings;
+import org.tron.common.storage.RocksDbSettings;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.Constant;
 import org.tron.core.Wallet;
 import org.tron.core.config.Configuration;
 import org.tron.core.config.Parameter.ChainConstant;
 import org.tron.core.config.Parameter.NetConstants;
+import org.tron.core.config.Parameter.NodeConstant;
 import org.tron.core.db.AccountStore;
 import org.tron.core.db.backup.DbBackupConfig;
 import org.tron.keystore.CipherException;
@@ -105,6 +107,11 @@ public class Args {
   private int longRunningTime = 10;
 
   @Getter
+  @Setter
+  @Parameter(names = {"--max-connect-number"})
+  private int maxHttpConnectNumber = 50;
+
+  @Getter
   @Parameter(description = "--seed-nodes")
   private List<String> seedNodes = new ArrayList<>();
 
@@ -128,8 +135,12 @@ public class Args {
   private String storageDbEngine = "";
 
   @Parameter(names = {
-      "--storage-db-synchronous"}, description = "Storage db is synchronous or not.(true or flase)")
+      "--storage-db-synchronous"}, description = "Storage db is synchronous or not.(true or false)")
   private String storageDbSynchronous = "";
+
+  @Parameter(names = {
+      "--contract-parse-enable"}, description = "enable contract parses in java-tron or not.(true or false)")
+  private String contractParseEnable = "";
 
   @Parameter(names = {"--storage-index-directory"}, description = "Storage index directory")
   private String storageIndexDirectory = "";
@@ -140,6 +151,10 @@ public class Args {
   @Parameter(names = {
       "--storage-transactionHistory-switch"}, description = "Storage transaction history switch.(on or off)")
   private String storageTransactionHistoreSwitch = "";
+
+  @Getter
+  @Parameter(names = {"--fast-forward"})
+  private boolean fastForward = false;
 
   @Getter
   private Storage storage;
@@ -187,6 +202,10 @@ public class Args {
 
   @Getter
   @Setter
+  private List<Node> fastForwardNodes;
+
+  @Getter
+  @Setter
   private int nodeChannelReadTimeout;
 
   @Getter
@@ -221,9 +240,6 @@ public class Args {
   @Setter
   private long nodeP2pPingInterval;
 
-  //  @Getter
-//  @Setter
-//  private long syncNodeCount;
   @Getter
   @Setter
   @Parameter(names = {"--save-internaltx"})
@@ -339,6 +355,14 @@ public class Args {
 
   @Getter
   @Setter
+  private long allowTvmConstantinople; //committee parameter
+
+  @Getter
+  @Setter
+  private long allowTvmSolidity059; //committee parameter
+
+  @Getter
+  @Setter
   private int tcpNettyWorkThreadNum;
 
   @Getter
@@ -433,7 +457,22 @@ public class Args {
   private DbBackupConfig dbBackupConfig;
 
   @Getter
-  private DBSettings rocksDBCustomSettings;
+  private RocksDbSettings rocksDBCustomSettings;
+
+  @Parameter(names = {"-v", "--version"}, description = "output code version", help = true)
+  private boolean version;
+
+  @Getter
+  @Setter
+  private long allowProtoFilterNum;
+
+  @Getter
+  @Setter
+  private long allowAccountStateRoot;
+
+  @Getter
+  @Setter
+  private int validContractProtoThreadNum;
 
   public static void clearParam() {
     INSTANCE.outputDirectory = "output-directory";
@@ -464,6 +503,7 @@ public class Args {
     INSTANCE.nodeConnectionTimeout = 0;
     INSTANCE.activeNodes = Collections.emptyList();
     INSTANCE.passiveNodes = Collections.emptyList();
+    INSTANCE.fastForwardNodes = Collections.emptyList();
     INSTANCE.nodeChannelReadTimeout = 0;
     INSTANCE.nodeMaxActiveNodes = 30;
     INSTANCE.nodeMaxActiveNodesWithSameIp = 2;
@@ -485,8 +525,10 @@ public class Args {
     INSTANCE.allowCreationOfContracts = 0;
     INSTANCE.allowAdaptiveEnergy = 0;
     INSTANCE.allowTvmTransferTrc10 = 0;
+    INSTANCE.allowTvmConstantinople = 0;
     INSTANCE.allowDelegateResource = 0;
     INSTANCE.allowSameTokenName = 0;
+    INSTANCE.allowTvmSolidity059 = 0;
     INSTANCE.tcpNettyWorkThreadNum = 0;
     INSTANCE.udpNettyWorkThreadNum = 0;
     INSTANCE.p2pNodeId = "";
@@ -504,8 +546,12 @@ public class Args {
     INSTANCE.minTimeRatio = 0.0;
     INSTANCE.maxTimeRatio = 5.0;
     INSTANCE.longRunningTime = 10;
+    INSTANCE.maxHttpConnectNumber = 50;
     INSTANCE.allowMultiSign = 0;
     INSTANCE.trxExpirationTimeInMilliseconds = 0;
+    INSTANCE.allowProtoFilterNum = 0;
+    INSTANCE.allowAccountStateRoot = 0;
+    INSTANCE.validContractProtoThreadNum = 1;
   }
 
   /**
@@ -513,6 +559,12 @@ public class Args {
    */
   public static void setParam(final String[] args, final String confFileName) {
     JCommander.newBuilder().addObject(INSTANCE).build().parse(args);
+    if (INSTANCE.version) {
+      JCommander.getConsole()
+          .println(Version.getVersion() + "\n" + Version.versionName + "\n" + Version.versionCode);
+      exit(0);
+    }
+
     Config config = Configuration.getByFileName(INSTANCE.shellConfFileName, confFileName);
 
     if (config.hasPath("net.type") && "testnet".equalsIgnoreCase(config.getString("net.type"))) {
@@ -583,15 +635,26 @@ public class Args {
           } catch (IOException e) {
             logger.error(e.getMessage());
             logger.error("Witness node start faild!");
-            System.exit(-1);
+            exit(-1);
           } catch (CipherException e) {
             logger.error(e.getMessage());
             logger.error("Witness node start faild!");
-            System.exit(-1);
+            exit(-1);
           }
         }
       }
       INSTANCE.localWitnesses.setPrivateKeys(privateKeys);
+
+      if (config.hasPath("localWitnessAccountAddress")) {
+        byte[] bytes = Wallet.decodeFromBase58Check(config.getString("localWitnessAccountAddress"));
+        if (bytes != null) {
+          INSTANCE.localWitnesses.setWitnessAccountAddress(bytes);
+          logger.debug("Got localWitnessAccountAddress from config.conf");
+        } else {
+          logger.warn("The localWitnessAccountAddress format is incorrect, ignored");
+        }
+      }
+      INSTANCE.localWitnesses.initWitnessAccountAddress();
       logger.debug("Got privateKey from keystore");
     }
 
@@ -625,10 +688,20 @@ public class Args {
         .filter(StringUtils::isNotEmpty)
         .orElse(Storage.getDbEngineFromConfig(config)));
 
+    if ("ROCKSDB".equals(INSTANCE.storage.getDbEngine().toUpperCase())
+        && INSTANCE.storage.getDbVersion() == 1) {
+      throw new RuntimeException("db.version = 1 is not supported by ROCKSDB engine.");
+    }
+
     INSTANCE.storage.setDbSync(Optional.ofNullable(INSTANCE.storageDbSynchronous)
         .filter(StringUtils::isNotEmpty)
         .map(Boolean::valueOf)
         .orElse(Storage.getDbVersionSyncFromConfig(config)));
+
+    INSTANCE.storage.setContractParseSwitch(Optional.ofNullable(INSTANCE.contractParseEnable)
+        .filter(StringUtils::isNotEmpty)
+        .map(Boolean::valueOf)
+        .orElse(Storage.getContractParseSwitchFromConfig(config)));
 
     INSTANCE.storage.setDbDirectory(Optional.ofNullable(INSTANCE.storageDbDirectory)
         .filter(StringUtils::isNotEmpty)
@@ -684,10 +757,6 @@ public class Args {
         config.hasPath("node.connection.timeout") ? config.getInt("node.connection.timeout") * 1000
             : 0;
 
-    INSTANCE.activeNodes = getNodes(config, "node.active");
-
-    INSTANCE.passiveNodes = getNodes(config, "node.passive");
-
     INSTANCE.nodeChannelReadTimeout =
         config.hasPath("node.channel.read.timeout") ? config.getInt("node.channel.read.timeout")
             : 0;
@@ -715,9 +784,6 @@ public class Args {
 
     INSTANCE.nodeP2pPingInterval =
         config.hasPath("node.p2p.pingInterval") ? config.getLong("node.p2p.pingInterval") : 0;
-//
-//    INSTANCE.syncNodeCount =
-//        config.hasPath("sync.node.count") ? config.getLong("sync.node.count") : 0;
 
     INSTANCE.nodeP2pVersion =
         config.hasPath("node.p2p.version") ? config.getInt("node.p2p.version") : 0;
@@ -755,6 +821,10 @@ public class Args {
 
     INSTANCE.blockProducedTimeOut = config.hasPath("node.blockProducedTimeOut") ?
         config.getInt("node.blockProducedTimeOut") : ChainConstant.BLOCK_PRODUCED_TIME_OUT;
+
+    INSTANCE.maxHttpConnectNumber = config.hasPath("node.maxHttpConnectNumber") ?
+        config.getInt("node.maxHttpConnectNumber") : NodeConstant.MAX_HTTP_CONNECT_NUMBER;
+
     if (INSTANCE.blockProducedTimeOut < 30) {
       INSTANCE.blockProducedTimeOut = 30;
     }
@@ -793,6 +863,7 @@ public class Args {
     INSTANCE.allowMultiSign =
         config.hasPath("committee.allowMultiSign") ? config
             .getInt("committee.allowMultiSign") : 0;
+
     INSTANCE.allowAdaptiveEnergy =
         config.hasPath("committee.allowAdaptiveEnergy") ? config
             .getInt("committee.allowAdaptiveEnergy") : 0;
@@ -808,6 +879,14 @@ public class Args {
     INSTANCE.allowTvmTransferTrc10 =
         config.hasPath("committee.allowTvmTransferTrc10") ? config
             .getInt("committee.allowTvmTransferTrc10") : 0;
+
+    INSTANCE.allowTvmConstantinople =
+        config.hasPath("committee.allowTvmConstantinople") ? config
+            .getInt("committee.allowTvmConstantinople") : 0;
+
+    INSTANCE.allowTvmSolidity059 =
+            config.hasPath("committee.allowTvmSolidity059") ? config
+                    .getInt("committee.allowTvmSolidity059") : 0;
 
     INSTANCE.tcpNettyWorkThreadNum = config.hasPath("node.tcpNettyWorkThreadNum") ? config
         .getInt("node.tcpNettyWorkThreadNum") : 0;
@@ -848,8 +927,10 @@ public class Args {
         config.getString("trx.reference.block") : "head";
 
     INSTANCE.trxExpirationTimeInMilliseconds =
-        config.hasPath("trx.expiration.timeInMilliseconds") && config.getLong("trx.expiration.timeInMilliseconds") > 0 ?
-            config.getLong("trx.expiration.timeInMilliseconds") : Constant.TRANSACTION_DEFAULT_EXPIRATION_TIME;
+        config.hasPath("trx.expiration.timeInMilliseconds")
+            && config.getLong("trx.expiration.timeInMilliseconds") > 0 ?
+            config.getLong("trx.expiration.timeInMilliseconds")
+            : Constant.TRANSACTION_DEFAULT_EXPIRATION_TIME;
 
     INSTANCE.minEffectiveConnection = config.hasPath("node.rpc.minEffectiveConnection") ?
         config.getInt("node.rpc.minEffectiveConnection") : 1;
@@ -871,9 +952,30 @@ public class Args {
     INSTANCE.eventFilter =
         config.hasPath("event.subscribe.filter") ? getEventFilter(config) : null;
 
+    INSTANCE.allowProtoFilterNum =
+        config.hasPath("committee.allowProtoFilterNum") ? config
+            .getInt("committee.allowProtoFilterNum") : 0;
+
+    INSTANCE.allowAccountStateRoot =
+        config.hasPath("committee.allowAccountStateRoot") ? config
+            .getInt("committee.allowAccountStateRoot") : 0;
+
+    INSTANCE.validContractProtoThreadNum =
+        config.hasPath("node.validContractProto.threads") ? config
+            .getInt("node.validContractProto.threads")
+            : Runtime.getRuntime().availableProcessors();
+
+    INSTANCE.activeNodes = getNodes(config, "node.active");
+
+    INSTANCE.passiveNodes = getNodes(config, "node.passive");
+
+    INSTANCE.fastForwardNodes = getNodes(config, "node.fastForward");
+
     initBackupProperty(config);
-    initRocksDbBackupProperty(config);
-    initRocksDbSettings(config);
+    if ("ROCKSDB".equals(Args.getInstance().getStorage().getDbEngine().toUpperCase())) {
+      initRocksDbBackupProperty(config);
+      initRocksDbSettings(config);
+    }
 
     logConfig();
   }
@@ -944,7 +1046,12 @@ public class Args {
     List<String> list = config.getStringList(path);
     for (String configString : list) {
       Node n = Node.instanceOf(configString);
-      ret.add(n);
+      if (!(INSTANCE.nodeDiscoveryBindIp.equals(n.getHost()) ||
+          INSTANCE.nodeExternalIp.equals(n.getHost()) ||
+          "127.0.0.1".equals(n.getHost())) ||
+          INSTANCE.nodeListenPort != n.getPort()) {
+        ret.add(n);
+      }
     }
     return ret;
   }
@@ -964,24 +1071,46 @@ public class Args {
   private static EventPluginConfig getEventPluginConfig(final com.typesafe.config.Config config) {
     EventPluginConfig eventPluginConfig = new EventPluginConfig();
 
-    if (config.hasPath("event.subscribe.path")) {
-      String pluginPath = config.getString("event.subscribe.path");
-      if (StringUtils.isNotEmpty(pluginPath)) {
-        eventPluginConfig.setPluginPath(pluginPath.trim());
+    boolean useNativeQueue = false;
+    int bindPort = 0;
+    int sendQueueLength = 0;
+    if (config.hasPath("event.subscribe.native.useNativeQueue")) {
+      useNativeQueue = config.getBoolean("event.subscribe.native.useNativeQueue");
+
+      if (config.hasPath("event.subscribe.native.bindport")) {
+        bindPort = config.getInt("event.subscribe.native.bindport");
       }
+
+      if (config.hasPath("event.subscribe.native.sendqueuelength")) {
+        sendQueueLength = config.getInt("event.subscribe.native.sendqueuelength");
+      }
+
+      eventPluginConfig.setUseNativeQueue(useNativeQueue);
+      eventPluginConfig.setBindPort(bindPort);
+      eventPluginConfig.setSendQueueLength(sendQueueLength);
     }
 
-    if (config.hasPath("event.subscribe.server")) {
-      String serverAddress = config.getString("event.subscribe.server");
-      if (StringUtils.isNotEmpty(serverAddress)) {
-        eventPluginConfig.setServerAddress(serverAddress.trim());
+    // use event plugin
+    if (!useNativeQueue) {
+      if (config.hasPath("event.subscribe.path")) {
+        String pluginPath = config.getString("event.subscribe.path");
+        if (StringUtils.isNotEmpty(pluginPath)) {
+          eventPluginConfig.setPluginPath(pluginPath.trim());
+        }
       }
-    }
 
-    if (config.hasPath("event.subscribe.dbconfig")) {
-      String dbConfig = config.getString("event.subscribe.dbconfig");
-      if (StringUtils.isNotEmpty(dbConfig)) {
-        eventPluginConfig.setDbConfig(dbConfig.trim());
+      if (config.hasPath("event.subscribe.server")) {
+        String serverAddress = config.getString("event.subscribe.server");
+        if (StringUtils.isNotEmpty(serverAddress)) {
+          eventPluginConfig.setServerAddress(serverAddress.trim());
+        }
+      }
+
+      if (config.hasPath("event.subscribe.dbconfig")) {
+        String dbConfig = config.getString("event.subscribe.dbconfig");
+        if (StringUtils.isNotEmpty(dbConfig)) {
+          eventPluginConfig.setDbConfig(dbConfig.trim());
+        }
       }
     }
 
@@ -1156,43 +1285,35 @@ public class Args {
 
   private static void initRocksDbSettings(Config config) {
     String prefix = "storage.dbSettings.";
+    int levelNumber = config.hasPath(prefix + "levelNumber")
+        ? config.getInt(prefix + "levelNumber") : 7;
+    int compactThreads = config.hasPath(prefix + "compactThreads")
+        ? config.getInt(prefix + "compactThreads")
+        : max(Runtime.getRuntime().availableProcessors(), 1);
+    int blocksize = config.hasPath(prefix + "blocksize")
+        ? config.getInt(prefix + "blocksize") : 16;
+    long maxBytesForLevelBase = config.hasPath(prefix + "maxBytesForLevelBase")
+        ? config.getInt(prefix + "maxBytesForLevelBase") : 256;
+    double maxBytesForLevelMultiplier = config.hasPath(prefix + "maxBytesForLevelMultiplier")
+        ? config.getDouble(prefix + "maxBytesForLevelMultiplier") : 10;
+    int level0FileNumCompactionTrigger =
+        config.hasPath(prefix + "level0FileNumCompactionTrigger") ? config
+            .getInt(prefix + "level0FileNumCompactionTrigger") : 2;
+    long targetFileSizeBase = config.hasPath(prefix + "targetFileSizeBase") ? config
+        .getLong(prefix + "targetFileSizeBase") : 64;
+    int targetFileSizeMultiplier = config.hasPath(prefix + "targetFileSizeMultiplier") ? config
+        .getInt(prefix + "targetFileSizeMultiplier") : 1;
 
-    if (Args.getInstance().getStorage().getDbEngine().equals("ROCKSDB")) {
-      int levelNumber = config.hasPath(prefix + "levelNumber")
-          ? config.getInt(prefix + "levelNumber") : 7;
-      int compactThreads = config.hasPath(prefix + "compactThreads")
-          ? config.getInt(prefix + "compactThreads")
-          : max(Runtime.getRuntime().availableProcessors(), 1);
-      int blocksize = config.hasPath(prefix + "blocksize")
-          ? config.getInt(prefix + "blocksize") : 16;
-      long maxBytesForLevelBase = config.hasPath(prefix + "maxBytesForLevelBase")
-          ? config.getInt(prefix + "maxBytesForLevelBase") : 256;
-      double maxBytesForLevelMultiplier = config.hasPath(prefix + "maxBytesForLevelMultiplier")
-          ? config.getDouble(prefix + "maxBytesForLevelMultiplier") : 10;
-      String compressionStr = config.hasPath(prefix + "compressionTypeListStr")
-          ? config.getString(prefix + "compressionTypeListStr") : "no:no:lz4:lz4:lz4:zstd:zstd";
-      int level0FileNumCompactionTrigger =
-          config.hasPath(prefix + "level0FileNumCompactionTrigger") ? config
-              .getInt(prefix + "level0FileNumCompactionTrigger") : 2;
-      long targetFileSizeBase = config.hasPath(prefix + "targetFileSizeBase") ? config
-          .getLong(prefix + "targetFileSizeBase") : 64;
-      int targetFileSizeMultiplier = config.hasPath(prefix + "targetFileSizeMultiplier") ? config
-          .getInt(prefix + "targetFileSizeMultiplier") : 1;
-
-      INSTANCE.rocksDBCustomSettings = DBSettings
-          .initCustomSettings(levelNumber, compactThreads, blocksize, maxBytesForLevelBase,
-              maxBytesForLevelMultiplier, compressionStr, level0FileNumCompactionTrigger,
-              targetFileSizeBase, targetFileSizeMultiplier);
-      DBSettings.loggingSettings();
-    }
+    INSTANCE.rocksDBCustomSettings = RocksDbSettings
+        .initCustomSettings(levelNumber, compactThreads, blocksize, maxBytesForLevelBase,
+            maxBytesForLevelMultiplier, level0FileNumCompactionTrigger,
+            targetFileSizeBase, targetFileSizeMultiplier);
+    RocksDbSettings.loggingSettings();
   }
 
   private static void initRocksDbBackupProperty(Config config) {
-    boolean enable = false;
-    if (Args.getInstance().getStorage().getDbEngine().toUpperCase().equals("ROCKSDB")) {
-      enable =
-          config.hasPath("storage.backup.enable") && config.getBoolean("storage.backup.enable");
-    }
+    boolean enable =
+        config.hasPath("storage.backup.enable") && config.getBoolean("storage.backup.enable");
     String propPath = config.hasPath("storage.backup.propPath")
         ? config.getString("storage.backup.propPath") : "prop.properties";
     String bak1path = config.hasPath("storage.backup.bak1path")
@@ -1204,7 +1325,6 @@ public class Args {
     INSTANCE.dbBackupConfig = DbBackupConfig.getInstance()
         .initArgs(enable, propPath, bak1path, bak2path, frequency);
   }
-
 
   private static void initBackupProperty(Config config) {
     INSTANCE.backupPriority = config.hasPath("node.backup.priority")
@@ -1226,6 +1346,7 @@ public class Args {
     logger.info("Discover enable: {}", args.isNodeDiscoveryEnable());
     logger.info("Active node size: {}", args.getActiveNodes().size());
     logger.info("Passive node size: {}", args.getPassiveNodes().size());
+    logger.info("FastForward node size: {}", args.getFastForwardNodes().size());
     logger.info("Seed node size: {}", args.getSeedNode().getIpList().size());
     logger.info("Max connection: {}", args.getNodeMaxActiveNodes());
     logger.info("Max connection with same IP: {}", args.getNodeMaxActiveNodesWithSameIp());
@@ -1236,6 +1357,8 @@ public class Args {
     logger.info("Backup priority: {}", args.getBackupPriority());
     logger.info("************************ Code version *************************");
     logger.info("Code version : {}", Version.getVersion());
+    logger.info("Version name: {}", Version.versionName);
+    logger.info("Version code: {}", Version.versionCode);
     logger.info("************************ DB config *************************");
     logger.info("DB version : {}", args.getStorage().getDbVersion());
     logger.info("DB engine : {}", args.getStorage().getDbEngine());

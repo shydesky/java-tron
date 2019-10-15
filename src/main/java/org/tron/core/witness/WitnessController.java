@@ -151,12 +151,12 @@ public class WitnessController {
   public boolean validateWitnessSchedule(BlockCapsule block) {
 
     ByteString witnessAddress = block.getInstance().getBlockHeader().getRawData()
-            .getWitnessAddress();
+        .getWitnessAddress();
     long timeStamp = block.getTimeStamp();
-    return validateWitnessSchedule(witnessAddress,timeStamp);
+    return validateWitnessSchedule(witnessAddress, timeStamp);
   }
 
-  public boolean validateWitnessSchedule(ByteString witnessAddress,long timeStamp) {
+  public boolean validateWitnessSchedule(ByteString witnessAddress, long timeStamp) {
 
     //to deal with other condition later
     if (manager.getDynamicPropertiesStore().getLatestBlockHeaderNumber() == 0) {
@@ -294,7 +294,6 @@ public class WitnessController {
         }
       });
 
-
       sizeCount++;
       votesStore.delete(next.getKey());
     }
@@ -341,7 +340,8 @@ public class WitnessController {
           logger.warn(
               "witnessAccount[" + StringUtil.createReadableString(address) + "] not exists");
         } else {
-          witnessCapsule.setVoteCount(witnessCapsule.getVoteCount() + voteCount);
+          long vote = witnessCapsule.getVoteCount() + voteCount;
+          witnessCapsule.setVoteCount(vote);
           witnessStore.put(witnessCapsule.createDbKey(), witnessCapsule);
           logger.info("address is {}  ,countVote is {}", witnessCapsule.createReadableString(),
               witnessCapsule.getVoteCount());
@@ -380,16 +380,29 @@ public class WitnessController {
           "updateWitness,before:{} ", StringUtil.getAddressStringList(currentWits)
               + ",\nafter:{} " + StringUtil.getAddressStringList(newWits));
     }
+    //update the delegation cycle
+    if (manager.getDynamicPropertiesStore().allowChangeDelegation()) {
+      long nextCycle = manager.getDynamicPropertiesStore().getCurrentCycleNumber() + 1;
+      manager.getDynamicPropertiesStore().saveCurrentCycleNumber(nextCycle);
+      witnessStore.getAllWitnesses().forEach(witnessCapsule -> {
+        manager.getDelegationStore().setBrokerage(nextCycle,
+            witnessCapsule.getAddress().toByteArray(),
+            manager.getDelegationStore().getBrokerage(witnessCapsule.getAddress().toByteArray()));
+        manager.getDelegationStore().setWitnessVote(nextCycle,
+            witnessCapsule.getAddress().toByteArray(), witnessCapsule.getVoteCount());
+      });
+    }
   }
 
-  public void tryRemoveThePowerOfTheGr(){
-    if(manager.getDynamicPropertiesStore().getRemoveThePowerOfTheGr() == 1){
+  public void tryRemoveThePowerOfTheGr() {
+    if (manager.getDynamicPropertiesStore().getRemoveThePowerOfTheGr() == 1) {
 
       WitnessStore witnessStore = manager.getWitnessStore();
 
       Args.getInstance().getGenesisBlock().getWitnesses().forEach(witnessInGenesisBlock -> {
         WitnessCapsule witnessCapsule = witnessStore.get(witnessInGenesisBlock.getAddress());
-        witnessCapsule.setVoteCount(witnessCapsule.getVoteCount() - witnessInGenesisBlock.getVoteCount());
+        witnessCapsule
+            .setVoteCount(witnessCapsule.getVoteCount() - witnessInGenesisBlock.getVoteCount());
 
         witnessStore.put(witnessCapsule.createDbKey(), witnessCapsule);
       });
@@ -434,6 +447,9 @@ public class WitnessController {
   }
 
   private void payStandbyWitness(List<ByteString> list) {
+    if (manager.getDynamicPropertiesStore().allowChangeDelegation()) {
+      return;
+    }
     long voteSum = 0;
     long totalPay = manager.getDynamicPropertiesStore().getWitnessStandbyAllowance();
     for (ByteString b : list) {

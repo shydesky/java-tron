@@ -33,6 +33,7 @@ import org.tron.common.runtime.vm.program.InternalTransaction.TrxType;
 import org.tron.common.runtime.vm.program.Program;
 import org.tron.common.runtime.vm.program.Program.JVMStackOverFlowException;
 import org.tron.common.runtime.vm.program.Program.OutOfTimeException;
+import org.tron.common.runtime.vm.program.Program.TransferException;
 import org.tron.common.runtime.vm.program.ProgramPrecompile;
 import org.tron.common.runtime.vm.program.ProgramResult;
 import org.tron.common.runtime.vm.program.invoke.ProgramInvoke;
@@ -59,7 +60,6 @@ import org.tron.protos.Contract.TriggerSmartContract;
 import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.SmartContract;
-import org.tron.protos.Protocol.SmartContract.ABI;
 import org.tron.protos.Protocol.Transaction;
 import org.tron.protos.Protocol.Transaction.Contract.ContractType;
 import org.tron.protos.Protocol.Transaction.Result.contractResult;
@@ -89,7 +89,10 @@ public class RuntimeImpl implements Runtime {
 
   //tx trace
   private TransactionTrace trace;
-  private boolean isStaticCall;
+
+  @Getter
+  @Setter
+  private boolean isConstantCall = false;
 
   @Setter
   private boolean enableEventLinstener;
@@ -133,9 +136,9 @@ public class RuntimeImpl implements Runtime {
    * For constant trx with latest blockCap.
    */
   public RuntimeImpl(Transaction tx, BlockCapsule block, DepositImpl deposit,
-      ProgramInvokeFactory programInvokeFactory, boolean isStaticCall) {
+      ProgramInvokeFactory programInvokeFactory, boolean isConstantCall) {
     this(tx, block, deposit, programInvokeFactory);
-    this.isStaticCall = isStaticCall;
+    this.isConstantCall = isConstantCall;
   }
 
   private RuntimeImpl(Transaction tx, BlockCapsule block, DepositImpl deposit,
@@ -312,6 +315,9 @@ public class RuntimeImpl implements Runtime {
   public long getTotalEnergyLimit(AccountCapsule creator, AccountCapsule caller,
       TriggerSmartContract contract, long feeLimit, long callValue)
       throws ContractValidateException {
+    if (Objects.isNull(creator) && VMConfig.allowTvmConstantinople()) {
+      return getAccountEnergyLimitWithFixRatio(caller, feeLimit, callValue);
+    }
     //  according to version
     if (VMConfig.getEnergyLimitHardFork()) {
       return getTotalEnergyLimitWithFixRatio(creator, caller, contract, feeLimit, callValue);
@@ -445,7 +451,6 @@ public class RuntimeImpl implements Runtime {
           this.blockCap);
       byte[] txId = new TransactionCapsule(trx).getTransactionId().getBytes();
       this.program.setRootTransactionId(txId);
-      this.program.setRootCallConstant(isCallConstant());
       if (enableEventLinstener &&
           (EventPluginLoader.getInstance().isContractEventTriggerEnable()
               || EventPluginLoader.getInstance().isContractLogTriggerEnable())
@@ -465,8 +470,9 @@ public class RuntimeImpl implements Runtime {
 
     deposit.createContract(contractAddress, new ContractCapsule(newSmartContract));
     byte[] code = newSmartContract.getBytecode().toByteArray();
-    deposit.saveCode(contractAddress, ProgramPrecompile.getCode(code));
-
+    if (!VMConfig.allowTvmConstantinople()) {
+      deposit.saveCode(contractAddress, ProgramPrecompile.getCode(code));
+    }
     // transfer from callerAddress to contractAddress according to callValue
     if (callValue > 0) {
       transfer(this.deposit, callerAddress, contractAddress, callValue);
@@ -540,14 +546,14 @@ public class RuntimeImpl implements Runtime {
       }
       AccountCapsule caller = this.deposit.getAccount(callerAddress);
       long energyLimit;
-      if (isCallConstant(contractAddress)) {
-        isStaticCall = true;
+      if (isConstantCall) {
         energyLimit = Constant.ENERGY_LIMIT_IN_CONSTANT_TX;
       } else {
         AccountCapsule creator = this.deposit
             .getAccount(deployedContract.getInstance().getOriginAddress().toByteArray());
         energyLimit = getTotalEnergyLimit(creator, caller, contract, feeLimit, callValue);
       }
+
       long maxCpuTimeOfOneTx = deposit.getDbManager().getDynamicPropertiesStore()
           .getMaxCpuTimeOfOneTx() * Constant.ONE_THOUSAND;
       long thisTxCPULimitInUs =
@@ -558,8 +564,8 @@ public class RuntimeImpl implements Runtime {
           .createProgramInvoke(TrxType.TRX_CONTRACT_CALL_TYPE, executorType, trx,
               tokenValue, tokenId, blockCap.getInstance(), deposit, vmStartInUs,
               vmShouldEndInUs, energyLimit);
-      if (isStaticCall) {
-        programInvoke.setStaticCall();
+      if (isConstantCall) {
+        programInvoke.setConstantCall();
       }
       this.vm = new VM(config);
       rootInternalTransaction = new InternalTransaction(trx, trxType);
@@ -567,7 +573,6 @@ public class RuntimeImpl implements Runtime {
           this.blockCap);
       byte[] txId = new TransactionCapsule(trx).getTransactionId().getBytes();
       this.program.setRootTransactionId(txId);
-      this.program.setRootCallConstant(isCallConstant());
 
       if (enableEventLinstener &&
           (EventPluginLoader.getInstance().isContractEventTriggerEnable()
@@ -611,12 +616,16 @@ public class RuntimeImpl implements Runtime {
         vm.play(program);
         result = program.getResult();
 
-        if (isCallConstant()) {
+        if (isConstantCall) {
           long callValue = TransactionCapsule.getCallValue(trx.getRawData().getContract(0));
           long callTokenValue = TransactionCapsule
               .getCallTokenValue(trx.getRawData().getContract(0));
           if (callValue > 0 || callTokenValue > 0) {
             runtimeError = "constant cannot set call value or call token value.";
+            result.rejectInternalTransactions();
+          }
+          if (result.getException() != null) {
+            runtimeError = result.getException().getMessage();
             result.rejectInternalTransactions();
           }
           return;
@@ -634,6 +643,9 @@ public class RuntimeImpl implements Runtime {
             }
           } else {
             result.spendEnergy(saveCodeEnergy);
+            if (VMConfig.allowTvmConstantinople()) {
+              deposit.saveCode(program.getContractAddress().getNoLeadZeroesData(), code);
+            }
           }
         }
 
@@ -644,7 +656,9 @@ public class RuntimeImpl implements Runtime {
           result.rejectInternalTransactions();
 
           if (result.getException() != null) {
-            program.spendAllEnergy();
+            if (!(result.getException() instanceof TransferException)) {
+              program.spendAllEnergy();
+            }
             runtimeError = result.getException().getMessage();
             throw result.getException();
           } else {
@@ -677,10 +691,10 @@ public class RuntimeImpl implements Runtime {
       result.rejectInternalTransactions();
       runtimeError = result.getException().getMessage();
       logger.info("timeout: {}", result.getException().getMessage());
-    } catch (ContractValidateException e) {
-      logger.info("when check constant, {}", e.getMessage());
     } catch (Throwable e) {
-      program.spendAllEnergy();
+      if (!(e instanceof TransferException)) {
+        program.spendAllEnergy();
+      }
       result = program.getResult();
       result.rejectInternalTransactions();
       if (Objects.isNull(result.getException())) {
@@ -692,7 +706,9 @@ public class RuntimeImpl implements Runtime {
       }
       logger.info("runtime result is :{}", result.getException().getMessage());
     }
-    trace.setBill(result.getEnergyUsed());
+    if (!isConstantCall) {
+      trace.setBill(result.getEnergyUsed());
+    }
   }
 
   private static long getEnergyFee(long callerEnergyUsage, long callerEnergyFrozen,
@@ -702,40 +718,6 @@ public class RuntimeImpl implements Runtime {
     }
     return BigInteger.valueOf(callerEnergyFrozen).multiply(BigInteger.valueOf(callerEnergyUsage))
         .divide(BigInteger.valueOf(callerEnergyTotal)).longValueExact();
-  }
-
-  public boolean isCallConstant() throws ContractValidateException {
-
-    TriggerSmartContract triggerContractFromTransaction = ContractCapsule
-        .getTriggerContractFromTransaction(trx);
-    if (TrxType.TRX_CONTRACT_CALL_TYPE == trxType) {
-
-      ContractCapsule contract = deposit
-          .getContract(triggerContractFromTransaction.getContractAddress().toByteArray());
-      if (contract == null) {
-        logger.info("contract: {} is not in contract store", Wallet
-            .encode58Check(triggerContractFromTransaction.getContractAddress().toByteArray()));
-        throw new ContractValidateException("contract: " + Wallet
-            .encode58Check(triggerContractFromTransaction.getContractAddress().toByteArray())
-            + " is not in contract store");
-      }
-      ABI abi = contract.getInstance().getAbi();
-      if (Wallet.isConstant(abi, triggerContractFromTransaction)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean isCallConstant(byte[] address) throws ContractValidateException {
-
-    if (TrxType.TRX_CONTRACT_CALL_TYPE == trxType) {
-      ABI abi = deposit.getContract(address).getInstance().getAbi();
-      if (Wallet.isConstant(abi, ContractCapsule.getTriggerContractFromTransaction(trx))) {
-        return true;
-      }
-    }
-    return false;
   }
 
   public void finalization() {

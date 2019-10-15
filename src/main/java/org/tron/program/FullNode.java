@@ -1,11 +1,9 @@
 package org.tron.program;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.tron.common.application.Application;
@@ -23,10 +21,10 @@ import org.tron.core.services.interfaceOnSolidity.http.solidity.HttpApiOnSolidit
 @Slf4j(topic = "app")
 public class FullNode {
 
-  public static void load (String path){
-    try{
+  public static void load(String path) {
+    try {
       File file = new File(path);
-      if (!file.exists() || !file.isFile() || !file.canRead()){
+      if (!file.exists() || !file.isFile() || !file.canRead()) {
         return;
       }
       LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -34,7 +32,7 @@ public class FullNode {
       configurator.setContext(lc);
       lc.reset();
       configurator.doConfigure(file);
-    }catch (Exception e) {
+    } catch (Exception e) {
       logger.error(e.getMessage());
     }
   }
@@ -47,7 +45,7 @@ public class FullNode {
     Args.setParam(args, Constant.TESTNET_CONF);
     Args cfgArgs = Args.getInstance();
 
-    load (cfgArgs.getLogbackPath());
+    load(cfgArgs.getLogbackPath());
 
     if (cfgArgs.isHelp()) {
       logger.info("Here is the help message.");

@@ -17,13 +17,10 @@
  */
 package org.tron.common.runtime.config;
 
-import lombok.Getter;
 import lombok.Setter;
 import org.tron.common.utils.ForkController;
 import org.tron.core.config.Parameter.ForkBlockVersionConsts;
-import org.tron.core.config.Parameter.ForkBlockVersionEnum;
 import org.tron.core.config.args.Args;
-import org.tron.core.db.Manager;
 
 /**
  * For developer only
@@ -49,7 +46,14 @@ public class VMConfig {
   private static boolean ALLOW_TVM_TRANSFER_TRC10 = false;
 
   @Setter
+  private static boolean ALLOW_TVM_CONSTANTINOPLE = false;
+
+  @Setter
   private static boolean ALLOW_MULTI_SIGN = false;
+
+  @Setter
+  private static boolean ALLOW_TVM_SOLIDITY_059 = false;
+
 
   private VMConfig() {
   }
@@ -75,11 +79,21 @@ public class VMConfig {
     ENERGY_LIMIT_HARD_FORK = ForkController.instance().pass(ForkBlockVersionConsts.ENERGY_LIMIT);
     //VERSION_3_5_HARD_FORK = ForkController.instance().pass(ForkBlockVersionEnum.VERSION_3_5);
   }
+
   public static void initAllowMultiSign(long allow) {
-    ALLOW_MULTI_SIGN = allow ==1 ;
+    ALLOW_MULTI_SIGN = allow == 1;
   }
 
-  public static void initAllowTvmTransferTrc10(long allow) {    ALLOW_TVM_TRANSFER_TRC10 = allow == 1;
+  public static void initAllowTvmTransferTrc10(long allow) {
+    ALLOW_TVM_TRANSFER_TRC10 = allow == 1;
+  }
+
+  public static void initAllowTvmConstantinople(long allow) {
+    ALLOW_TVM_CONSTANTINOPLE = allow == 1;
+  }
+
+  public static void initAllowTvmSolidity059(long allow) {
+    ALLOW_TVM_SOLIDITY_059 = allow == 1;
   }
 
   public static boolean getEnergyLimitHardFork() {
@@ -90,8 +104,15 @@ public class VMConfig {
     return ALLOW_TVM_TRANSFER_TRC10;
   }
 
+  public static boolean allowTvmConstantinople() {
+    return ALLOW_TVM_CONSTANTINOPLE;
+  }
+
   public static boolean allowMultiSign() {
     return ALLOW_MULTI_SIGN;
   }
 
+  public static boolean allowTvmSolidity059() {
+    return ALLOW_TVM_SOLIDITY_059;
+  }
 }

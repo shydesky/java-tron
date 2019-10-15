@@ -6,8 +6,14 @@ import static org.tron.common.runtime.vm.OpCode.CALL;
 import static org.tron.common.runtime.vm.OpCode.CALLTOKEN;
 import static org.tron.common.runtime.vm.OpCode.CALLTOKENID;
 import static org.tron.common.runtime.vm.OpCode.CALLTOKENVALUE;
+import static org.tron.common.runtime.vm.OpCode.CREATE2;
+import static org.tron.common.runtime.vm.OpCode.EXTCODEHASH;
+import static org.tron.common.runtime.vm.OpCode.ISCONTRACT;
 import static org.tron.common.runtime.vm.OpCode.PUSH1;
 import static org.tron.common.runtime.vm.OpCode.REVERT;
+import static org.tron.common.runtime.vm.OpCode.SAR;
+import static org.tron.common.runtime.vm.OpCode.SHL;
+import static org.tron.common.runtime.vm.OpCode.SHR;
 import static org.tron.common.runtime.vm.OpCode.TOKENBALANCE;
 import static org.tron.common.utils.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -22,16 +28,18 @@ import org.tron.common.runtime.vm.program.Program;
 import org.tron.common.runtime.vm.program.Program.JVMStackOverFlowException;
 import org.tron.common.runtime.vm.program.Program.OutOfEnergyException;
 import org.tron.common.runtime.vm.program.Program.OutOfTimeException;
+import org.tron.common.runtime.vm.program.Program.TransferException;
 import org.tron.common.runtime.vm.program.Stack;
 
 @Slf4j(topic = "VM")
 public class VM {
 
   private static final BigInteger _32_ = BigInteger.valueOf(32);
-  private static final String ENERGY_LOG_FORMATE = "{}    Op: [{}]  Energy: [{}] Deep: [{}]  Hint: [{}]";
+  private static final String ENERGY_LOG_FORMATE = "{} Op:[{}]  Energy:[{}] Deep:[{}] Hint:[{}]";
 
   // 3MB
   private static final BigInteger MEM_LIMIT = BigInteger.valueOf(3L * 1024 * 1024);
+  public static final String ADDRESS_LOG = "address: ";
 
   private final VMConfig config;
 
@@ -91,6 +99,15 @@ public class VM {
         }
       }
 
+      if (!VMConfig.allowTvmConstantinople()) {
+        if (op == SHL || op == SHR || op == SAR || op == CREATE2 || op == EXTCODEHASH) {
+          throw Program.Exception.invalidOpCode(program.getCurrentOp());
+        }
+      }
+
+      if (!VMConfig.allowTvmSolidity059() && op == ISCONTRACT) {
+        throw Program.Exception.invalidOpCode(program.getCurrentOp());
+      }
       program.setLastOp(op.val());
       program.verifyStackSize(op.require());
       program.verifyStackOverflow(op.require(), op.ret()); //Check not exceeding stack limits
@@ -111,8 +128,8 @@ public class VM {
         case SUICIDE:
           energyCost = energyCosts.getSUICIDE();
           DataWord suicideAddressWord = stack.get(stack.size() - 1);
-          if (isDeadAccount(program, suicideAddressWord) &&
-              !program.getBalance(program.getContractAddress()).isZero()) {
+          if (isDeadAccount(program, suicideAddressWord)
+              && !program.getBalance(program.getContractAddress()).isZero()) {
             energyCost += energyCosts.getNEW_ACCT_SUICIDE();
           }
           break;
@@ -139,6 +156,7 @@ public class VM {
           break;
         case TOKENBALANCE:
         case BALANCE:
+        case ISCONTRACT:
           energyCost = energyCosts.getBALANCE();
           break;
 
@@ -189,6 +207,9 @@ public class VM {
               memNeeded(stack.get(stack.size() - 2), stack.get(stack.size() - 4)),
               stack.get(stack.size() - 4).longValueSafe(), op);
           break;
+        case EXTCODEHASH:
+          energyCost = energyCosts.getEXT_CODE_HASH();
+          break;
         case CALL:
         case CALLCODE:
         case DELEGATECALL:
@@ -238,6 +259,14 @@ public class VM {
         case CREATE:
           energyCost = energyCosts.getCREATE() + calcMemEnergy(energyCosts, oldMemSize,
               memNeeded(stack.get(stack.size() - 2), stack.get(stack.size() - 3)), 0, op);
+          break;
+        case CREATE2:
+          DataWord codeSize = stack.get(stack.size() - 3);
+          energyCost = energyCosts.getCREATE();
+          energyCost += calcMemEnergy(energyCosts, oldMemSize,
+              memNeeded(stack.get(stack.size() - 2), stack.get(stack.size() - 3)), 0, op);
+          energyCost += DataWord.sizeInWords(codeSize.intValueSafe()) * energyCosts.getSHA3_WORD();
+
           break;
         case LOG0:
         case LOG1:
@@ -592,6 +621,45 @@ public class VM {
           program.step();
         }
         break;
+        case SHL: {
+          DataWord word1 = program.stackPop();
+          DataWord word2 = program.stackPop();
+          final DataWord result = word2.shiftLeft(word1);
+
+          if (logger.isInfoEnabled()) {
+            hint = "" + result.value();
+          }
+
+          program.stackPush(result);
+          program.step();
+        }
+        break;
+        case SHR: {
+          DataWord word1 = program.stackPop();
+          DataWord word2 = program.stackPop();
+          final DataWord result = word2.shiftRight(word1);
+
+          if (logger.isInfoEnabled()) {
+            hint = "" + result.value();
+          }
+
+          program.stackPush(result);
+          program.step();
+        }
+        break;
+        case SAR: {
+          DataWord word1 = program.stackPop();
+          DataWord word2 = program.stackPop();
+          final DataWord result = word2.shiftRightSigned(word1);
+
+          if (logger.isInfoEnabled()) {
+            hint = "" + result.value();
+          }
+
+          program.stackPush(result);
+          program.step();
+        }
+        break;
         case ADDMOD: {
           DataWord word1 = program.stackPop();
           DataWord word2 = program.stackPop();
@@ -642,7 +710,7 @@ public class VM {
           }
 
           if (logger.isDebugEnabled()) {
-            hint = "address: " + Hex.toHexString(address.getLast20Bytes());
+            hint = ADDRESS_LOG + Hex.toHexString(address.getLast20Bytes());
           }
 
           program.stackPush(address);
@@ -654,12 +722,20 @@ public class VM {
           DataWord balance = program.getBalance(address);
 
           if (logger.isDebugEnabled()) {
-            hint = "address: "
+            hint = ADDRESS_LOG
                 + Hex.toHexString(address.getLast20Bytes())
                 + " balance: " + balance.toString();
           }
 
           program.stackPush(balance);
+          program.step();
+        }
+        break;
+        case ISCONTRACT: {
+          DataWord address = program.stackPop();
+          DataWord isContract = program.isContract(address);
+
+          program.stackPush(isContract);
           program.step();
         }
         break;
@@ -671,7 +747,7 @@ public class VM {
           }
 
           if (logger.isDebugEnabled()) {
-            hint = "address: " + Hex.toHexString(originAddress.getLast20Bytes());
+            hint = ADDRESS_LOG + Hex.toHexString(originAddress.getLast20Bytes());
           }
 
           program.stackPush(originAddress);
@@ -686,7 +762,7 @@ public class VM {
            */
           callerAddress = new DataWord(callerAddress.getLast20Bytes());
           if (logger.isDebugEnabled()) {
-            hint = "address: " + Hex.toHexString(callerAddress.getLast20Bytes());
+            hint = ADDRESS_LOG + Hex.toHexString(callerAddress.getLast20Bytes());
           }
 
           program.stackPush(callerAddress);
@@ -811,8 +887,8 @@ public class VM {
 
           program.stackPush(codeLength);
           program.step();
+          break;
         }
-        break;
         case CODECOPY:
         case EXTCODECOPY: {
 
@@ -846,6 +922,13 @@ public class VM {
           }
 
           program.memorySave(memOffset, codeCopy);
+          program.step();
+          break;
+        }
+        case EXTCODEHASH: {
+          DataWord address = program.stackPop();
+          byte[] codeHash = program.getCodeHashAt(address);
+          program.stackPush(codeHash);
           program.step();
         }
         break;
@@ -961,8 +1044,8 @@ public class VM {
           program.stackPush(word_1.clone());
           program.step();
 
+          break;
         }
-        break;
         case SWAP1:
         case SWAP2:
         case SWAP3:
@@ -983,15 +1066,15 @@ public class VM {
           int n = op.val() - OpCode.SWAP1.val() + 2;
           stack.swap(stack.size() - 1, stack.size() - n);
           program.step();
+          break;
         }
-        break;
         case LOG0:
         case LOG1:
         case LOG2:
         case LOG3:
         case LOG4: {
 
-          if (program.isStaticCall()) {
+          if (program.isConstantCall()) {
             throw new Program.StaticCallModificationException();
           }
           DataWord address = program.getContractAddress();
@@ -1018,8 +1101,8 @@ public class VM {
 
           program.getResult().addLogInfo(logInfo);
           program.step();
+          break;
         }
-        break;
         case MLOAD: {
           DataWord addr = program.stackPop();
           DataWord data = program.memoryLoad(addr);
@@ -1069,7 +1152,7 @@ public class VM {
         }
         break;
         case SSTORE: {
-          if (program.isStaticCall()) {
+          if (program.isConstantCall()) {
             throw new Program.StaticCallModificationException();
           }
 
@@ -1193,14 +1276,14 @@ public class VM {
           }
 
           program.stackPush(data);
+          break;
         }
-        break;
         case JUMPDEST: {
           program.step();
         }
         break;
         case CREATE: {
-          if (program.isStaticCall()) {
+          if (program.isConstantCall()) {
             throw new Program.StaticCallModificationException();
           }
           DataWord value = program.stackPop();
@@ -1208,6 +1291,18 @@ public class VM {
           DataWord inSize = program.stackPop();
           program.createContract(value, inOffset, inSize);
 
+          program.step();
+        }
+        break;
+        case CREATE2: {
+          if (program.isConstantCall()) {
+            throw new Program.StaticCallModificationException();
+          }
+          DataWord value = program.stackPop();
+          DataWord inOffset = program.stackPop();
+          DataWord inSize = program.stackPop();
+          DataWord salt = program.stackPop();
+          program.createContract2(value, inOffset, inSize, salt);
           program.step();
         }
         break;
@@ -1235,7 +1330,7 @@ public class VM {
             value = DataWord.ZERO;
           }
 
-          if (program.isStaticCall() && (op == CALL || op == CALLTOKEN) && !value.isZero()) {
+          if (program.isConstantCall() && (op == CALL || op == CALLTOKEN) && !value.isZero()) {
             throw new Program.StaticCallModificationException();
           }
 
@@ -1289,8 +1384,8 @@ public class VM {
           }
 
           program.step();
+          break;
         }
-        break;
         case RETURN:
         case REVERT: {
           DataWord offset = program.stackPop();
@@ -1311,10 +1406,10 @@ public class VM {
           if (op == REVERT) {
             program.getResult().setRevert();
           }
+          break;
         }
-        break;
         case SUICIDE: {
-          if (program.isStaticCall()) {
+          if (program.isConstantCall()) {
             throw new Program.StaticCallModificationException();
           }
 
@@ -1323,7 +1418,7 @@ public class VM {
           program.getResult().addTouchAccount(address.getLast20Bytes());
 
           if (logger.isDebugEnabled()) {
-            hint = "address: " + Hex.toHexString(program.getContractAddress().getLast20Bytes());
+            hint = ADDRESS_LOG + Hex.toHexString(program.getContractAddress().getLast20Bytes());
           }
 
           program.stop();
@@ -1332,11 +1427,12 @@ public class VM {
         default:
           break;
       }
-
       program.setPreviouslyExecutedOp(op.val());
     } catch (RuntimeException e) {
       logger.info("VM halted: [{}]", e.getMessage());
-      program.spendAllEnergy();
+      if (!(e instanceof TransferException)) {
+        program.spendAllEnergy();
+      }
       program.resetFutureRefund();
       program.stop();
       throw e;
@@ -1359,7 +1455,8 @@ public class VM {
       throw e;
     } catch (RuntimeException e) {
       if (StringUtils.isEmpty(e.getMessage())) {
-        logger.warn("Unknown Exception occurred, tx id: {}", Hex.toHexString(program.getRootTransactionId()), e);
+        logger.warn("Unknown Exception occurred, tx id: {}",
+            Hex.toHexString(program.getRootTransactionId()), e);
         program.setRuntimeFailure(new RuntimeException("Unknown Exception"));
       } else {
         program.setRuntimeFailure(e);

@@ -40,8 +40,12 @@ public class WithdrawBalanceActuator extends AbstractActuator {
       throw new ContractExeException(e.getMessage());
     }
 
+    dbManager.getDelegationService().withdrawReward(withdrawBalanceContract.getOwnerAddress()
+        .toByteArray(), getDeposit());
+
     AccountCapsule accountCapsule = (Objects.isNull(getDeposit())) ? dbManager.getAccountStore().
-        get(withdrawBalanceContract.getOwnerAddress().toByteArray()) : getDeposit().getAccount(withdrawBalanceContract.getOwnerAddress().toByteArray());
+        get(withdrawBalanceContract.getOwnerAddress().toByteArray())
+        : getDeposit().getAccount(withdrawBalanceContract.getOwnerAddress().toByteArray());
     long oldBalance = accountCapsule.getBalance();
     long allowance = accountCapsule.getAllowance();
 
@@ -53,10 +57,9 @@ public class WithdrawBalanceActuator extends AbstractActuator {
         .build());
     if (Objects.isNull(getDeposit())) {
       dbManager.getAccountStore().put(accountCapsule.createDbKey(), accountCapsule);
-    }
-    else{
+    } else {
       // cache
-      deposit.putAccountValue(accountCapsule.createDbKey(),accountCapsule);
+      deposit.putAccountValue(accountCapsule.createDbKey(), accountCapsule);
     }
 
     ret.setWithdrawAmount(allowance);
@@ -90,7 +93,9 @@ public class WithdrawBalanceActuator extends AbstractActuator {
       throw new ContractValidateException("Invalid address");
     }
 
-    AccountCapsule accountCapsule = Objects.isNull(getDeposit()) ? dbManager.getAccountStore().get(ownerAddress) : getDeposit().getAccount(ownerAddress);
+    AccountCapsule accountCapsule =
+        Objects.isNull(getDeposit()) ? dbManager.getAccountStore().get(ownerAddress)
+            : getDeposit().getAccount(ownerAddress);
     if (accountCapsule == null) {
       String readableOwnerAddress = StringUtil.createReadableString(ownerAddress);
       throw new ContractValidateException(
@@ -98,10 +103,6 @@ public class WithdrawBalanceActuator extends AbstractActuator {
     }
 
     String readableOwnerAddress = StringUtil.createReadableString(ownerAddress);
-    if (!dbManager.getWitnessStore().has(ownerAddress)) {
-      throw new ContractValidateException(
-          ACCOUNT_EXCEPTION_STR + readableOwnerAddress + "] is not a witnessAccount");
-    }
 
     boolean isGP = Args.getInstance().getGenesisBlock().getWitnesses().stream().anyMatch(witness ->
         Arrays.equals(ownerAddress, witness.getAddress()));
@@ -115,15 +116,16 @@ public class WithdrawBalanceActuator extends AbstractActuator {
     long now = dbManager.getHeadBlockTimeStamp();
     long witnessAllowanceFrozenTime = Objects.isNull(getDeposit()) ?
         dbManager.getDynamicPropertiesStore().getWitnessAllowanceFrozenTime() * 86_400_000L :
-        getDeposit().getWitnessAllowanceFrozenTime() * 86_400_000L ;
+        getDeposit().getWitnessAllowanceFrozenTime() * 86_400_000L;
 
     if (now - latestWithdrawTime < witnessAllowanceFrozenTime) {
       throw new ContractValidateException("The last withdraw time is "
           + latestWithdrawTime + ",less than 24 hours");
     }
 
-    if (accountCapsule.getAllowance() <= 0) {
-      throw new ContractValidateException("witnessAccount does not have any allowance");
+    if (accountCapsule.getAllowance() <= 0 &&
+        dbManager.getDelegationService().queryReward(ownerAddress) <= 0) {
+      throw new ContractValidateException("witnessAccount does not have any reward");
     }
     try {
       LongMath.checkedAdd(accountCapsule.getBalance(), accountCapsule.getAllowance());

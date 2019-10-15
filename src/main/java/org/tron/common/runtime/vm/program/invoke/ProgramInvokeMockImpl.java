@@ -15,8 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with the ethereumJ library. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.tron.common.runtime.vm.program.invoke;
 
+import com.google.protobuf.ByteString;
+import org.spongycastle.util.Arrays;
 import org.spongycastle.util.encoders.Hex;
 import org.tron.common.crypto.ECKey;
 import org.tron.common.crypto.Hash;
@@ -25,11 +28,15 @@ import org.tron.common.runtime.vm.program.Program.IllegalOperationException;
 import org.tron.common.storage.Deposit;
 import org.tron.common.storage.DepositImpl;
 import org.tron.core.capsule.BlockCapsule;
+import org.tron.core.capsule.ContractCapsule;
 import org.tron.core.exception.StoreException;
 import org.tron.protos.Protocol;
+import org.tron.protos.Protocol.SmartContract;
 
 
 /**
+ * .
+ *
  * @author Roman Mandeleil
  * @since 03.06.2014
  */
@@ -41,11 +48,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
   private byte[] ownerAddress = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
   private final byte[] contractAddress = Hex.decode("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
 
-  private boolean isStaticCall;
+  private boolean isConstantCall;
 
   public ProgramInvokeMockImpl(byte[] msgDataRaw) {
     this();
-    this.msgData = msgDataRaw;
+    this.msgData = Arrays.clone(msgDataRaw);
   }
 
   private long energyLimit = 50;
@@ -56,6 +63,9 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     this.deposit.createAccount(ownerAddress, Protocol.AccountType.Normal);
 
     this.deposit.createAccount(contractAddress, Protocol.AccountType.Contract);
+    this.deposit.createContract(contractAddress,
+        new ContractCapsule(SmartContract.newBuilder().setContractAddress(
+            ByteString.copyFrom(contractAddress)).build()));
     this.deposit.saveCode(contractAddress,
         Hex.decode("385E60076000396000605f556014600054601e60"
             + "205463abcddcba6040545b51602001600a525451"
@@ -105,8 +115,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
   /*          CALLVALUE op    */
   public DataWord getCallValue() {
-    byte[] balance = Hex.decode("0DE0B6B3A7640000");
-    return new DataWord(balance);
+    return getBalance();
   }
 
   @Override
@@ -119,13 +128,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     return null;
   }
 
-  /*****************/
-  /***  msg data ***/
-  /**
-   * *************
-   */
+  /****************.
+   /***  msg data **.
+   /***************.
 
-  /*     CALLDATALOAD  op   */
+   /*     CALLDATALOAD  op   */
   public DataWord getDataValue(DataWord indexData) {
 
     byte[] data = new byte[32];
@@ -213,12 +220,12 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
   }
 
   public void setOwnerAddress(byte[] ownerAddress) {
-    this.ownerAddress = ownerAddress;
+    this.ownerAddress = Arrays.clone(ownerAddress);
   }
 
   @Override
-  public boolean isStaticCall() {
-    return isStaticCall;
+  public boolean isConstantCall() {
+    return isConstantCall;
   }
 
   @Override
@@ -236,8 +243,8 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
   }
 
   @Override
-  public void setStaticCall() {
-    isStaticCall = true;
+  public void setConstantCall() {
+    isConstantCall = true;
   }
 
   @Override

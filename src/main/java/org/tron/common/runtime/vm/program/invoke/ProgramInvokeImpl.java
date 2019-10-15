@@ -21,12 +21,10 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.spongycastle.util.encoders.Hex;
 import org.tron.common.runtime.vm.DataWord;
 import org.tron.common.runtime.vm.program.Program.IllegalOperationException;
 import org.tron.common.storage.Deposit;
 import org.tron.core.capsule.BlockCapsule;
-import org.tron.core.db.BlockStore;
 import org.tron.core.exception.StoreException;
 
 @Slf4j
@@ -57,13 +55,13 @@ public class ProgramInvokeImpl implements ProgramInvoke {
   private boolean byTransaction = true;
   private boolean byTestingSuite = false;
   private int callDeep = 0;
-  private boolean isStaticCall = false;
+  private boolean isConstantCall = false;
 
   public ProgramInvokeImpl(DataWord address, DataWord origin, DataWord caller, DataWord balance,
       DataWord callValue, DataWord tokenValue, DataWord tokenId, byte[] msgData,
       DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number,
       DataWord difficulty,
-      Deposit deposit, int callDeep, boolean isStaticCall, boolean byTestingSuite,
+      Deposit deposit, int callDeep, boolean isConstantCall, boolean byTestingSuite,
       long vmStartInUs, long vmShouldEndInUs, long energyLimit) {
     this.address = address;
     this.origin = origin;
@@ -85,7 +83,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     this.deposit = deposit;
     this.byTransaction = false;
-    this.isStaticCall = isStaticCall;
+    this.isConstantCall = isConstantCall;
     this.byTestingSuite = byTestingSuite;
     this.vmStartInUs = vmStartInUs;
     this.vmShouldEndInUs = vmShouldEndInUs;
@@ -97,13 +95,15 @@ public class ProgramInvokeImpl implements ProgramInvoke {
       long callValue, long tokenValue, long tokenId, byte[] msgData,
       byte[] lastHash, byte[] coinbase, long timestamp, long number, Deposit deposit,
       long vmStartInUs, long vmShouldEndInUs, boolean byTestingSuite, long energyLimit) {
-    this(address, origin, caller, balance, callValue, tokenValue, tokenId, msgData, lastHash, coinbase,
+    this(address, origin, caller, balance, callValue, tokenValue, tokenId, msgData, lastHash,
+        coinbase,
         timestamp, number, deposit, vmStartInUs, vmShouldEndInUs, energyLimit);
     this.byTestingSuite = byTestingSuite;
   }
 
   public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, long balance,
-      long callValue, long tokenValue, long tokenId, byte[] msgData, byte[] lastHash, byte[] coinbase, long timestamp,
+      long callValue, long tokenValue, long tokenId, byte[] msgData, byte[] lastHash,
+      byte[] coinbase, long timestamp,
       long number, Deposit deposit, long vmStartInUs, long vmShouldEndInUs, long energyLimit) {
 
     // Transaction env
@@ -155,10 +155,14 @@ public class ProgramInvokeImpl implements ProgramInvoke {
   }
 
   /*          TOKENVALUE op     */
-  public DataWord getTokenValue() { return tokenValue; }
+  public DataWord getTokenValue() {
+    return tokenValue;
+  }
 
   /*          TOKENID op     */
-  public DataWord getTokenId() { return tokenId; }
+  public DataWord getTokenId() {
+    return tokenId;
+  }
 
   /*****************/
   /***  msg data ***/
@@ -256,8 +260,8 @@ public class ProgramInvokeImpl implements ProgramInvoke {
   }
 
   @Override
-  public boolean isStaticCall() {
-    return isStaticCall;
+  public boolean isConstantCall() {
+    return isConstantCall;
   }
 
   @Override
@@ -368,8 +372,8 @@ public class ProgramInvokeImpl implements ProgramInvoke {
   }
 
   @Override
-  public void setStaticCall() {
-    isStaticCall = true;
+  public void setConstantCall() {
+    isConstantCall = true;
   }
 
   @Override
