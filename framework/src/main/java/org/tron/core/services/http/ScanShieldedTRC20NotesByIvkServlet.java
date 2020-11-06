@@ -29,7 +29,8 @@ public class ScanShieldedTRC20NotesByIvkServlet extends RateLimiterServlet {
       JSONArray array = jsonNotes.getJSONArray("noteTxs");
       for (int index = 0; index < array.size(); index++) {
         JSONObject item = array.getJSONObject(index);
-        item.put("index", notes.getNoteTxs(index).getIndex()); // Avoid automatically ignoring 0
+        item.put("index", notes.getNoteTxs(index).getIndex());
+        item.put("is_spent", notes.getNoteTxs(index).getIsSpent());
       }
       return jsonNotes.toJSONString();
     }
